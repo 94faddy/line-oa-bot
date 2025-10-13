@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINE OA Bot Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header-left h1 {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+        }
+
+        .header-left p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 25px;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            border: 2px solid white;
+            padding: 10px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .logout-btn:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card .icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .section {
+            padding: 30px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .edit-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .edit-btn:hover {
+            background: #764ba2;
+            transform: scale(1.05);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .save-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+
+        .save-btn:hover {
+            background: #218838;
+            transform: scale(1.05);
+        }
+
+        .cancel-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .cancel-btn:hover {
+            background: #5a6268;
+        }
+
+        .display-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+            margin-bottom: 20px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            line-height: 1.8;
+        }
+
+        .keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .keyword-tag {
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        thead {
+            background: #667eea;
+            color: white;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-cooldown {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state .icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 20px auto;
+            display: block;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background: #764ba2;
+            transform: scale(1.05);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 5px solid #28a745;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 5px solid #dc3545;
+        }
+
+        .line-config-section {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #ffc107;
+        }
+
+        .line-config-section h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                text-align: center;
+            }
+
+            .header-left h1 {
+                font-size: 1.8em;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <h1>🤖 LINE OA Bot Dashboard</h1>
+                <p>ระบบส่งกิจกรรมอัตโนมัติ</p>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <span>👤</span>
+                    <span><%= username %></span>
+                </div>
+                <a href="/logout" class="logout-btn">🚪 ออกจากระบบ</a>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="icon">👥</div>
+                <h3>ผู้ใช้งานทั้งหมด</h3>
+                <div class="value"><%= totalUsers %></div>
+            </div>
+
+            <div class="stat-card">
+                <div class="icon">⏱️</div>
+                <h3>ระยะเวลา Cooldown</h3>
+                <div class="value"><%= cooldownHours %> ชม.</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="icon">🔑</div>
+                <h3>คีย์เวิร์ด</h3>
+                <div class="value"><%= keywords.split(',').length %></div>
+            </div>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- LINE Configuration Section -->
+        <div class="section">
+            <h2>
+                🔗 การตั้งค่า LINE OA
+                <button class="edit-btn" onclick="toggleEdit('lineConfig')">✏️ แก้ไข</button>
+            </h2>
+
+            <div id="lineConfigDisplay">
+                <div class="line-config-section">
+                    <h3>⚙️ สถานะการตั้งค่า</h3>
+                    <p><strong>Channel Access Token:</strong> <%= lineAccessToken ? '✅ ตั้งค่าแล้ว' : '❌ ยังไม่ได้ตั้งค่า' %></p>
+                    <p><strong>Channel Secret:</strong> <%= lineChannelSecret ? '✅ ตั้งค่าแล้ว' : '❌ ยังไม่ได้ตั้งค่า' %></p>
+                </div>
+            </div>
+
+            <div id="lineConfigEdit" class="hidden">
+                <div class="form-group">
+                    <label for="lineAccessToken">🔑 LINE Channel Access Token</label>
+                    <input type="text" id="lineAccessToken" value="<%= lineAccessToken %>" placeholder="กรุณากรอก Channel Access Token">
+                    <small>ดูวิธีการได้ที่ LINE Developers Console</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="lineChannelSecret">🔐 LINE Channel Secret</label>
+                    <input type="text" id="lineChannelSecret" value="<%= lineChannelSecret %>" placeholder="กรุณากรอก Channel Secret">
+                    <small>ดูวิธีการได้ที่ LINE Developers Console</small>
+                </div>
+
+                <button class="save-btn" onclick="saveSettings()">💾 บันทึก</button>
+                <button class="cancel-btn" onclick="toggleEdit('lineConfig')">❌ ยกเลิก</button>
+            </div>
+        </div>
+
+        <!-- Activity Message Section -->
+        <div class="section">
+            <h2>
+                📋 ข้อความกิจกรรม
+                <button class="edit-btn" onclick="toggleEdit('activity')">✏️ แก้ไข</button>
+            </h2>
+
+            <div id="activityDisplay">
+                <div class="display-box"><%= activityMessage %></div>
+            </div>
+
+            <div id="activityEdit" class="hidden">
+                <div class="form-group">
+                    <label for="activityMessage">ข้อความกิจกรรม</label>
+                    <textarea id="activityMessage"><%= activityMessage %></textarea>
+                    <small>ข้อความที่จะส่งให้ลูกค้าเมื่อพิมพ์คีย์เวิร์ด</small>
+                </div>
+                <button class="save-btn" onclick="saveSettings()">💾 บันทึก</button>
+                <button class="cancel-btn" onclick="toggleEdit('activity')">❌ ยกเลิก</button>
+            </div>
+        </div>
+
+        <!-- Keywords Section -->
+        <div class="section">
+            <h2>
+                🔑 คีย์เวิร์ดที่ตรวจจับ
+                <button class="edit-btn" onclick="toggleEdit('keywords')">✏️ แก้ไข</button>
+            </h2>
+
+            <div id="keywordsDisplay">
+                <div class="keywords">
+                    <% keywords.split(',').forEach(keyword => { %>
+                        <span class="keyword-tag"><%= keyword.trim() %></span>
+                    <% }); %>
+                </div>
+            </div>
+
+            <div id="keywordsEdit" class="hidden">
+                <div class="form-group">
+                    <label for="keywords">คีย์เวิร์ด</label>
+                    <input type="text" id="keywords" value="<%= keywords %>" placeholder="ฟรี, free, เครดิตฟรี">
+                    <small>คั่นด้วยเครื่องหมายจุลภาค (,)</small>
+                </div>
+                <button class="save-btn" onclick="saveSettings()">💾 บันทึก</button>
+                <button class="cancel-btn" onclick="toggleEdit('keywords')">❌ ยกเลิก</button>
+            </div>
+        </div>
+
+        <!-- Cooldown Section -->
+        <div class="section">
+            <h2>
+                ⏰ ระยะเวลา Cooldown
+                <button class="edit-btn" onclick="toggleEdit('cooldown')">✏️ แก้ไข</button>
+            </h2>
+
+            <div id="cooldownDisplay">
+                <div class="display-box"><%= cooldownHours %> ชั่วโมง</div>
+            </div>
+
+            <div id="cooldownEdit" class="hidden">
+                <div class="form-group">
+                    <label for="cooldownHours">ระยะเวลา Cooldown (ชั่วโมง)</label>
+                    <input type="number" id="cooldownHours" value="<%= cooldownHours %>" min="0.1" step="0.1" placeholder="2">
+                    <small>ระยะเวลาที่ต้องรอก่อนจะส่งกิจกรรมซ้ำให้ผู้ใช้คนเดิม</small>
+                </div>
+                <button class="save-btn" onclick="saveSettings()">💾 บันทึก</button>
+                <button class="cancel-btn" onclick="toggleEdit('cooldown')">❌ ยกเลิก</button>
+            </div>
+        </div>
+
+        <!-- Users Table Section -->
+        <div class="section">
+            <h2>👤 รายชื่อผู้ใช้งาน</h2>
+            
+            <% if (users.length === 0) { %>
+                <div class="empty-state">
+                    <div class="icon">📭</div>
+                    <h3>ยังไม่มีผู้ใช้งาน</h3>
+                    <p>รอให้มีผู้ใช้ส่งข้อความที่มีคีย์เวิร์ดเข้ามาก่อนนะครับ</p>
+                </div>
+            <% } else { %>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>User ID</th>
+                                <th>ส่งข้อความล่าสุด</th>
+                                <th>สถานะ</th>
+                                <th>เวลาที่เหลือ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% users.forEach((user, index) => { %>
+                                <tr>
+                                    <td><%= index + 1 %></td>
+                                    <td><%= user.userId.substring(0, 20) %>...</td>
+                                    <td><%= user.lastSent %></td>
+                                    <td>
+                                        <span class="status-badge <%= user.canSend ? 'status-active' : 'status-cooldown' %>">
+                                            <%= user.canSend ? '✅ พร้อมส่ง' : '⏳ รอ' %>
+                                        </span>
+                                    </td>
+                                    <td><%= user.remainingTime %></td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } %>
+
+            <button class="refresh-btn" onclick="location.reload()">🔄 รีเฟรช</button>
+        </div>
+
+        <div class="footer">
+            <p>Made with ❤️ for LINE OA Bot | Last Updated: <%= new Date().toLocaleString('th-TH') %></p>
+        </div>
+    </div>
+
+    <script>
+        let editingSection = null;
+
+        function toggleEdit(section) {
+            const display = document.getElementById(section + 'Display');
+            const edit = document.getElementById(section + 'Edit');
+            
+            if (editingSection && editingSection !== section) {
+                // ปิดส่วนแก้ไขเดิม
+                document.getElementById(editingSection + 'Display').classList.remove('hidden');
+                document.getElementById(editingSection + 'Edit').classList.add('hidden');
+            }
+            
+            display.classList.toggle('hidden');
+            edit.classList.toggle('hidden');
+            
+            editingSection = edit.classList.contains('hidden') ? null : section;
+        }
+
+        async function saveSettings() {
+            const activityMessage = document.getElementById('activityMessage').value;
+            const keywords = document.getElementById('keywords').value;
+            const cooldownHours = document.getElementById('cooldownHours').value;
+            const lineAccessToken = document.getElementById('lineAccessToken').value;
+            const lineChannelSecret = document.getElementById('lineChannelSecret').value;
+
+            try {
+                const response = await fetch('/update-settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        activityMessage,
+                        keywords,
+                        cooldownHours,
+                        lineAccessToken,
+                        lineChannelSecret
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', result.message);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showAlert('error', result.message);
+                }
+            } catch (error) {
+                showAlert('error', 'เกิดข้อผิดพลาดในการบันทึก: ' + error.message);
+            }
+        }
+
+        function showAlert(type, message) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+            const icon = type === 'success' ? '✅' : '❌';
+            
+            alertContainer.innerHTML = `
+                <div class="section">
+                    <div class="alert ${alertClass}">
+                        ${icon} ${message}
+                    </div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+
+        // Auto refresh every 60 seconds
+        setTimeout(() => {
+            if (!editingSection) {
+                location.reload();
+            }
+        }, 60000);
+
+        console.log('Dashboard loaded successfully! 🚀');
+    </script>
+</body>
+</html>
