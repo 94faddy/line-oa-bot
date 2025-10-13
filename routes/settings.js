@@ -231,6 +231,11 @@ function setupSettingsRoutes(requireLogin, appConfig, saveConfig, userMessageHis
         premiumId: profileInfo.premiumId || '',
         chatMode: profileInfo.chatMode || 'bot',
         enabled: true,
+        features: {
+          activities: true,
+          promotions: true,
+          flexMessages: true
+        },
         createdAt: new Date().toISOString()
       };
 
@@ -308,7 +313,12 @@ function setupSettingsRoutes(requireLogin, appConfig, saveConfig, userMessageHis
         basicId: profileInfo.basicId || appConfig.lineChannels[channelIndex].basicId || '',
         userId: profileInfo.userId || appConfig.lineChannels[channelIndex].userId || '',
         premiumId: profileInfo.premiumId || '',
-        chatMode: profileInfo.chatMode || 'bot'
+        chatMode: profileInfo.chatMode || 'bot',
+        features: appConfig.lineChannels[channelIndex].features || {
+          activities: true,
+          promotions: true,
+          flexMessages: true
+        }
       };
 
       console.log('✅ Channel updated');
@@ -322,6 +332,44 @@ function setupSettingsRoutes(requireLogin, appConfig, saveConfig, userMessageHis
       });
     } catch (error) {
       console.error('❌ Error updating LINE channel:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'เกิดข้อผิดพลาด: ' + error.message 
+      });
+    }
+  });
+
+  // อัพเดท Features ของ Channel
+  router.post('/settings/line/features/:id', requireLogin, (req, res) => {
+    try {
+      const { id } = req.params;
+      const { activities, promotions, flexMessages } = req.body;
+      
+      const channelIndex = appConfig.lineChannels.findIndex(ch => ch.id === id);
+      
+      if (channelIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          message: 'ไม่พบ Channel นี้'
+        });
+      }
+
+      appConfig.lineChannels[channelIndex].features = {
+        activities: activities === true || activities === 'true',
+        promotions: promotions === true || promotions === 'true',
+        flexMessages: flexMessages === true || flexMessages === 'true'
+      };
+
+      console.log(`✅ Updated features for ${appConfig.lineChannels[channelIndex].name}:`, appConfig.lineChannels[channelIndex].features);
+      
+      saveConfig();
+      
+      res.json({ 
+        success: true, 
+        message: 'อัพเดทฟีเจอร์สำเร็จ'
+      });
+    } catch (error) {
+      console.error('❌ Error updating channel features:', error);
       res.status(500).json({ 
         success: false, 
         message: 'เกิดข้อผิดพลาด: ' + error.message 

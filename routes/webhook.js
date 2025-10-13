@@ -171,8 +171,17 @@ async function handleEvent(
   
   console.log(`📩 [${channelConfig.name}] Received message from ${userId}: ${messageText}`);
   
-  // 1. ตรวจสอบคีย์เวิร์ดโปรโมชั่นก่อน (ระบบเดิม)
-  if (containsPromotionKeyword(messageText)) {
+  // ตรวจสอบ Features ที่เปิดใช้งานของ Channel นี้
+  const features = channelConfig.features || {
+    activities: true,
+    promotions: true,
+    flexMessages: true
+  };
+
+  console.log(`🔧 [${channelConfig.name}] Features:`, features);
+  
+  // 1. ตรวจสอบคีย์เวิร์ดโปรโมชั่นก่อน (ถ้าเปิดใช้งาน)
+  if (features.promotions && containsPromotionKeyword(messageText)) {
     console.log(`🎨 [${channelConfig.name}] Promotion keyword detected!`);
     
     const flexMessage = createPromotionFlexMessage();
@@ -196,8 +205,8 @@ async function handleEvent(
     return null;
   }
   
-  // 2. ตรวจสอบคีย์เวิร์ดกิจกรรมแชร์ (ระบบเดิม)
-  if (containsKeyword(messageText, appConfig.botSettings.keywords)) {
+  // 2. ตรวจสอบคีย์เวิร์ดกิจกรรมแชร์ (ถ้าเปิดใช้งาน)
+  if (features.activities && containsKeyword(messageText, appConfig.botSettings.keywords)) {
     console.log(`🎁 [${channelConfig.name}] Activity keyword detected!`);
     
     if (canSendMessage(userId, userMessageHistory, getCooldownPeriod)) {
@@ -230,8 +239,8 @@ async function handleEvent(
     return null;
   }
   
-  // 3. ตรวจสอบคีย์เวิร์ด Flex Message (ระบบใหม่ - ใช้ Config)
-  if (containsFlexKeyword(messageText)) {
+  // 3. ตรวจสอบคีย์เวิร์ด Flex Message (ถ้าเปิดใช้งาน)
+  if (features.flexMessages && containsFlexKeyword(messageText)) {
     console.log(`💬 [${channelConfig.name}] Flex Message keyword detected!`);
     
     try {
@@ -284,8 +293,8 @@ async function handleEvent(
     return null;
   }
   
-  // 4. ตรวจสอบคีย์เวิร์ด Quick Reply Menu (ระบบใหม่ - ใช้ Config)
-  if (containsQuickReplyKeyword(messageText)) {
+  // 4. ตรวจสอบคีย์เวิร์ด Quick Reply Menu (ถ้าเปิดใช้งาน Flex Messages)
+  if (features.flexMessages && containsQuickReplyKeyword(messageText)) {
     console.log(`🔘 [${channelConfig.name}] Quick Reply keyword detected!`);
     
     const quickReply = getQuickReplyMenu();
@@ -309,6 +318,8 @@ async function handleEvent(
     return null;
   }
   
+  // ถ้าไม่ตรงเงื่อนไขใดๆ
+  console.log(`ℹ️ [${channelConfig.name}] No matching keyword for message: ${messageText}`);
   return null;
 }
 

@@ -94,6 +94,39 @@
         border-radius: 5px;
     }
 
+    .channel-features {
+        margin: 15px 0;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .channel-features h4 {
+        margin: 0 0 10px 0;
+        color: #667eea;
+        font-size: 0.95em;
+    }
+
+    .feature-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .feature-item:last-child {
+        border-bottom: none;
+    }
+
+    .feature-item label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9em;
+        color: #333;
+    }
+
     .channel-actions {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -109,8 +142,8 @@
     .toggle-switch {
         position: relative;
         display: inline-block;
-        width: 60px;
-        height: 30px;
+        width: 50px;
+        height: 24px;
     }
 
     .toggle-switch input {
@@ -128,16 +161,16 @@
         bottom: 0;
         background-color: #ccc;
         transition: 0.4s;
-        border-radius: 30px;
+        border-radius: 24px;
     }
 
     .slider:before {
         position: absolute;
         content: "";
-        height: 22px;
-        width: 22px;
-        left: 4px;
-        bottom: 4px;
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
         background-color: white;
         transition: 0.4s;
         border-radius: 50%;
@@ -148,7 +181,7 @@
     }
 
     input:checked + .slider:before {
-        transform: translateX(30px);
+        transform: translateX(26px);
     }
 
     .status-badge {
@@ -308,8 +341,52 @@
                             <strong><%= new Date(channel.createdAt).toLocaleDateString('th-TH') %></strong>
                         </div>
 
+                        <!-- Features Section -->
+                        <div class="channel-features">
+                            <h4>🎯 ฟีเจอร์ที่เปิดใช้งาน</h4>
+                            
+                            <div class="feature-item">
+                                <label>
+                                    <span>🎁</span>
+                                    <span>กิจกรรมแชร์</span>
+                                </label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" 
+                                           <%= channel.features?.activities ? 'checked' : '' %> 
+                                           onchange="updateFeature('<%= channel.id %>', 'activities', this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="feature-item">
+                                <label>
+                                    <span>🎨</span>
+                                    <span>โปรโมชั่น</span>
+                                </label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" 
+                                           <%= channel.features?.promotions ? 'checked' : '' %> 
+                                           onchange="updateFeature('<%= channel.id %>', 'promotions', this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="feature-item">
+                                <label>
+                                    <span>💬</span>
+                                    <span>Flex Messages & Quick Reply</span>
+                                </label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" 
+                                           <%= channel.features?.flexMessages ? 'checked' : '' %> 
+                                           onchange="updateFeature('<%= channel.id %>', 'flexMessages', this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
-                            <span style="font-weight: 600;">เปิด/ปิดใช้งาน:</span>
+                            <span style="font-weight: 600;">เปิด/ปิดใช้งาน Channel:</span>
                             <label class="toggle-switch">
                                 <input type="checkbox" <%= channel.enabled ? 'checked' : '' %> onchange="toggleChannel('<%= channel.id %>', this.checked)">
                                 <span class="slider"></span>
@@ -382,7 +459,7 @@
 
         <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 5px solid #ffc107;">
             <h4 style="color: #e0a800; margin-bottom: 10px;">📦 Version</h4>
-            <p style="font-size: 1.5em; font-weight: bold; color: #333;">2.3</p>
+            <p style="font-size: 1.5em; font-weight: bold; color: #333;">2.4</p>
         </div>
     </div>
 </div>
@@ -473,6 +550,43 @@
     let channels = <%- JSON.stringify(lineChannels) %>;
     let isEditMode = false;
     let currentChannelId = null;
+
+    // Update Feature
+    async function updateFeature(channelId, featureName, enabled) {
+        try {
+            const channel = channels.find(ch => ch.id === channelId);
+            if (!channel) return;
+
+            const features = {
+                activities: channel.features?.activities || false,
+                promotions: channel.features?.promotions || false,
+                flexMessages: channel.features?.flexMessages || false
+            };
+
+            features[featureName] = enabled;
+
+            const response = await fetch(`/settings/line/features/${channelId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(features)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('success', `${enabled ? 'เปิด' : 'ปิด'}ใช้งานฟีเจอร์สำเร็จ`);
+                // Update local data
+                channel.features = features;
+            } else {
+                showAlert('error', result.message);
+                // Revert checkbox
+                setTimeout(() => location.reload(), 1000);
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+            setTimeout(() => location.reload(), 1000);
+        }
+    }
 
     // Add Channel
     function openAddChannelModal() {
@@ -626,6 +740,12 @@
             return;
         }
 
+        const features = channel.features || { activities: true, promotions: true, flexMessages: true };
+        const featureList = [];
+        if (features.activities) featureList.push('🎁 กิจกรรมแชร์');
+        if (features.promotions) featureList.push('🎨 โปรโมชั่น');
+        if (features.flexMessages) featureList.push('💬 Flex Messages');
+
         const detailsHtml = `
             <div style="text-align: center; margin-bottom: 20px;">
                 ${channel.profilePictureUrl ? 
@@ -644,6 +764,11 @@
             <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
                 <strong>📱 Basic ID:</strong><br>
                 <code>${channel.basicId || 'N/A'}</code>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                <strong>🎯 ฟีเจอร์ที่เปิดใช้งาน:</strong><br>
+                ${featureList.length > 0 ? featureList.join('<br>') : 'ไม่มีฟีเจอร์ที่เปิดใช้งาน'}
             </div>
 
             <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 10px;">

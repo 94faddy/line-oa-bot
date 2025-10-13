@@ -1,20 +1,6 @@
 {
   "lineChannels": [
     {
-      "id": "channel-1760386084614",
-      "name": "W99 เครดิตฟรี",
-      "channelAccessToken": "dGFOHpb91Aq4bZOlV69J1cgFQ7KRDdyZqhudJl5nvwNSe8fdYOCKWlqmbKSyg6EipQDkuguhjP+cW3Xl3HDNKTJYJkaRp4i76JjrlpMrSrPSAkfwQpg4OugM2SGhEz+WAfzCym+sci1w666UyP2yBwdB04t89/1O/w1cDnyilFU=",
-      "channelSecret": "dbe8755b051192cf4f58d15118c19078",
-      "profilePictureUrl": "",
-      "displayName": "ดับบลิว9.9",
-      "basicId": "@323qzbjz",
-      "userId": "U16a65b726217fed730677220f5bbc46e",
-      "premiumId": "",
-      "chatMode": "chat",
-      "enabled": true,
-      "createdAt": "2025-10-13T20:08:04.615Z"
-    },
-    {
       "id": "channel-1760386982155",
       "name": "W99 หลัก",
       "channelAccessToken": "5zrmSlRbGN7PQ1HBAD/tFLFL0U7TJsRcAEZLBlIb8+rXdb9OIrM76Q3o2yhRudf3rwLs2FlkeTu5evPQgaJk7m6EK/XWS+9qdWGdPzaxs3Y7Cm+xHwjs17wM4HpGz0/xJwJc3/1nTW+nL5l900JxHQdB04t89/1O/w1cDnyilFU=",
@@ -26,7 +12,31 @@
       "premiumId": "",
       "chatMode": "chat",
       "enabled": true,
+      "features": {
+        "activities": true,
+        "promotions": true,
+        "flexMessages": true
+      },
       "createdAt": "2025-10-13T20:23:02.155Z"
+    },
+    {
+      "id": "channel-1760387882020",
+      "name": "W99 เครดิตฟรี",
+      "channelAccessToken": "dGFOHpb91Aq4bZOlV69J1cgFQ7KRDdyZqhudJl5nvwNSe8fdYOCKWlqmbKSyg6EipQDkuguhjP+cW3Xl3HDNKTJYJkaRp4i76JjrlpMrSrPSAkfwQpg4OugM2SGhEz+WAfzCym+sci1w666UyP2yBwdB04t89/1O/w1cDnyilFU=",
+      "channelSecret": "dbe8755b051192cf4f58d15118c19078",
+      "profilePictureUrl": "",
+      "displayName": "ดับบลิว9.9",
+      "basicId": "@323qzbjz",
+      "userId": "U16a65b726217fed730677220f5bbc46e",
+      "premiumId": "",
+      "chatMode": "chat",
+      "enabled": true,
+      "features": {
+        "activities": true,
+        "promotions": true,
+        "flexMessages": true
+      },
+      "createdAt": "2025-10-13T20:38:02.020Z"
     }
   ],
   "botSettings": {

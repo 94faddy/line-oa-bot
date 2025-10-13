@@ -37,12 +37,38 @@ if (appConfig.lineConfig && !appConfig.lineChannels) {
     channelSecret: appConfig.lineConfig.channelSecret || '',
     profilePictureUrl: '',
     enabled: true,
+    features: {
+      activities: true,
+      promotions: true,
+      flexMessages: true
+    },
     createdAt: new Date().toISOString()
   };
   appConfig.lineChannels = [oldChannel];
   delete appConfig.lineConfig;
   fs.writeFileSync(configPath, JSON.stringify(appConfig, null, 2), 'utf8');
   console.log('✅ Migration สำเร็จ');
+}
+
+// Migration: เพิ่ม features ให้กับ channels เก่าที่ยังไม่มี
+let needsSave = false;
+if (appConfig.lineChannels) {
+  appConfig.lineChannels.forEach(channel => {
+    if (!channel.features) {
+      channel.features = {
+        activities: true,
+        promotions: true,
+        flexMessages: true
+      };
+      needsSave = true;
+      console.log(`✅ เพิ่ม features ให้กับ channel: ${channel.name}`);
+    }
+  });
+  
+  if (needsSave) {
+    fs.writeFileSync(configPath, JSON.stringify(appConfig, null, 2), 'utf8');
+    console.log('✅ Migration features สำเร็จ');
+  }
 }
 
 // ฟังก์ชันบันทึก config
@@ -159,7 +185,7 @@ app.get('/health', (req, res) => {
     configuredChannels: global.lineClients.size,
     flexEnabled: quickReplyConfig.flexMessageSettings.enabled,
     quickReplyEnabled: quickReplyConfig.quickReplySettings.enabled,
-    version: '2.3'
+    version: '2.4'
   });
 });
 
@@ -169,7 +195,7 @@ const DOMAIN = process.env.DOMAIN;
 
 app.listen(PORT, () => {
   console.log('='.repeat(70));
-  console.log('🚀 LINE OA Bot Server Started! (Version 2.3 - Multi-Channel)');
+  console.log('🚀 LINE OA Bot Server Started! (Version 2.4 - Feature Control)');
   console.log('='.repeat(70));
   console.log(`📡 Server running on port ${PORT}`);
 
@@ -202,18 +228,22 @@ app.listen(PORT, () => {
     console.log('📱 Configured LINE Channels:');
     global.lineChannels.forEach(channel => {
       if (channel.enabled) {
-        console.log(`   ✅ ${channel.name} (ID: ${channel.id})`);
+        const features = [];
+        if (channel.features?.activities) features.push('Activities');
+        if (channel.features?.promotions) features.push('Promotions');
+        if (channel.features?.flexMessages) features.push('Flex');
+        console.log(`   ✅ ${channel.name} [${features.join(', ')}]`);
       }
     });
   }
   
   console.log('\n💡 Features:');
   console.log('   ✅ Multi-Channel: รองรับหลาย LINE OA');
+  console.log('   ✅ Feature Control: เลือกฟีเจอร์แยกตาม Channel');
   console.log('   ✅ กิจกรรมแชร์: จัดการข้อความและ Cooldown');
   console.log('   ✅ โปรโมชั่น: สร้าง Flex Messages สวยงาม');
   console.log('   ✅ Flex Messages: สุ่มส่ง Flex + จัดการผ่าน Dashboard');
   console.log('   ✅ Quick Reply: จัดการปุ่มและคีย์เวิร์ดได้เต็มรูปแบบ');
-  console.log('   ✅ Settings: ตั้งค่า LINE API และ Webhook');
   
   console.log('\n🔑 Keywords:');
   console.log(`   🎁 Activity: ${appConfig.botSettings.keywords.join(', ')}`);
