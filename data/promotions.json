@@ -1,0 +1,42 @@
+{
+  "promotionSettings": {
+    "keywords": [
+      "โปร",
+      "โปรโมชั่น",
+      "สอบถามโปรโมชั่น",
+      "promo",
+      "promotion"
+    ],
+    "enabled": true
+  },
+  "flexMessages": [
+    {
+      "id": "promo-1",
+      "title": "โปร 19 รับ 100 ทำยอด 700 ถอนได้ 200",
+      "imageUrl": "https://img5.pic.in.th/file/secure-sv1/19x.md.png",
+      "linkUrl": "https://m.w99.in/promotions",
+      "enabled": true
+    },
+    {
+      "id": "promo-2",
+      "title": "โปรยอดฮิตทุนต่่ำสมาชิกใหม่รับโบนัส 50 รับ 100 ทำยอด 600 ถอนได้ 300",
+      "imageUrl": "https://img5.pic.in.th/file/secure-sv1/50-1000cdb06b0e0099de9.md.png",
+      "linkUrl": "https://m.w99.in/promotions",
+      "enabled": true
+    },
+    {
+      "id": "promo-1760355912556",
+      "title": "สมัครสมาชิกรับ 100% รับได้ไม่อั้น ฝาก 100 รับ 200 ฝาก 200 รับ 400 ทำยอด 6 เท่าถอนได้ 4 เท่า",
+      "imageUrl": "https://img2.pic.in.th/pic/100perfbaa0d73d141f613.md.png",
+      "linkUrl": "https://m.w99.in/promotions",
+      "enabled": true
+    },
+    {
+      "id": "promo-1760355944018",
+      "title": "โปรคนใหญ่ใจใหญ่ สมัครสมาชิกรับ 300% โบนัสสูงสุดถึง 1,000 บาท ทำยอด 6 เท่าถอนได้ 4 เท่า",
+      "imageUrl": "https://img2.pic.in.th/pic/100-400.md.png",
+      "linkUrl": "https://m.w99.in/promotions",
+      "enabled": true
+    }
+  ]
+}

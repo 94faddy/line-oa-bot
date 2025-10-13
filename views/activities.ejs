@@ -1,0 +1,247 @@
+<%- include('partials/header', {
+    title: 'กิจกรรมแชร์',
+    pageIcon: '🎁',
+    pageTitle: 'กิจกรรมแชร์',
+    pageSubtitle: 'จัดการข้อความและคีย์เวิร์ดกิจกรรม',
+    username: username,
+    activePage: 'activities'
+}) %>
+
+<!-- Stats -->
+<div class="stats">
+    <div class="stat-card">
+        <div class="icon">👥</div>
+        <h3>ผู้ใช้งานทั้งหมด</h3>
+        <div class="value"><%= totalUsers %></div>
+    </div>
+
+    <div class="stat-card">
+        <div class="icon">⏱️</div>
+        <h3>ระยะเวลา Cooldown</h3>
+        <div class="value"><%= cooldownHours %> ชม.</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="icon">🔑</div>
+        <h3>คีย์เวิร์ด</h3>
+        <div class="value"><%= keywords.split(',').length %></div>
+    </div>
+
+    <div class="stat-card">
+        <div class="icon">✅</div>
+        <h3>ผู้ใช้พร้อมรับ</h3>
+        <div class="value"><%= usersCanSend %></div>
+    </div>
+</div>
+
+<!-- Activity Message Section -->
+<div class="section">
+    <h2>
+        📝 ข้อความกิจกรรม
+        <button class="btn btn-primary" onclick="toggleEdit('activity')">✏️ แก้ไข</button>
+    </h2>
+
+    <div id="activityDisplay">
+        <div class="display-box"><%= activityMessage %></div>
+        <div class="info-box">
+            💡 <strong>คำแนะนำ:</strong> ข้อความนี้จะถูกส่งให้ผู้ใช้เมื่อพิมพ์คีย์เวิร์ดที่กำหนด
+        </div>
+    </div>
+
+    <div id="activityEdit" class="hidden">
+        <div class="form-group">
+            <label for="activityMessage">ข้อความกิจกรรม</label>
+            <textarea id="activityMessage" style="min-height: 200px; font-family: inherit;"><%= activityMessage %></textarea>
+            <small>แก้ไขข้อความกิจกรรมที่จะส่งให้ลูกค้า</small>
+        </div>
+        <button class="btn btn-success" onclick="saveSettings()">💾 บันทึก</button>
+        <button class="btn btn-secondary" onclick="toggleEdit('activity')">❌ ยกเลิก</button>
+    </div>
+</div>
+
+<!-- Cooldown Message Section -->
+<div class="section">
+    <h2>
+        ⏰ ข้อความแจ้งเตือน Cooldown
+        <button class="btn btn-primary" onclick="toggleEdit('cooldownMsg')">✏️ แก้ไข</button>
+    </h2>
+
+    <div id="cooldownMsgDisplay">
+        <div class="display-box"><%= cooldownMessage %></div>
+        <div class="info-box">
+            💡 <strong>ใช้ Placeholder:</strong> <code>{timeLeft}</code> จะถูกแทนที่ด้วยเวลาที่เหลืออัตโนมัติ เช่น "2 ชั่วโมง 30 นาที"
+        </div>
+    </div>
+
+    <div id="cooldownMsgEdit" class="hidden">
+        <div class="form-group">
+            <label for="cooldownMessage">ข้อความแจ้งเตือน Cooldown</label>
+            <textarea id="cooldownMessage" style="min-height: 120px; font-family: inherit;"><%= cooldownMessage %></textarea>
+            <small>ข้อความที่จะส่งเมื่อผู้ใช้ขอกิจกรรมซ้ำก่อนครบเวลา Cooldown</small>
+            <div class="info-box" style="margin-top: 10px;">
+                💡 <strong>Placeholder ที่ใช้ได้:</strong> <code>{timeLeft}</code> = เวลาที่เหลือ (เช่น "2 ชั่วโมง 30 นาที")
+            </div>
+        </div>
+        <button class="btn btn-success" onclick="saveSettings()">💾 บันทึก</button>
+        <button class="btn btn-secondary" onclick="toggleEdit('cooldownMsg')">❌ ยกเลิก</button>
+    </div>
+</div>
+
+<!-- Keywords Section -->
+<div class="section">
+    <h2>
+        🔑 คีย์เวิร์ดที่ตรวจจับ
+        <button class="btn btn-primary" onclick="toggleEdit('keywords')">✏️ แก้ไข</button>
+    </h2>
+
+    <div id="keywordsDisplay">
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
+            <% keywords.split(',').forEach(keyword => { %>
+                <span style="background: #667eea; color: white; padding: 8px 15px; border-radius: 20px; font-size: 0.9em;">
+                    <%= keyword.trim() %>
+                </span>
+            <% }); %>
+        </div>
+        <div class="info-box" style="margin-top: 15px;">
+            💡 <strong>คำแนะนำ:</strong> เมื่อผู้ใช้พิมพ์ข้อความที่มีคีย์เวิร์ดเหล่านี้ ระบบจะส่งข้อความกิจกรรมกลับไปให้
+        </div>
+    </div>
+
+    <div id="keywordsEdit" class="hidden">
+        <div class="form-group">
+            <label for="keywords">คีย์เวิร์ด</label>
+            <input type="text" id="keywords" value="<%= keywords %>" placeholder="ฟรี, free, เครดิตฟรี">
+            <small>คั่นด้วยเครื่องหมายจุลภาค (,)</small>
+        </div>
+        <button class="btn btn-success" onclick="saveSettings()">💾 บันทึก</button>
+        <button class="btn btn-secondary" onclick="toggleEdit('keywords')">❌ ยกเลิก</button>
+    </div>
+</div>
+
+<!-- Cooldown Time Section -->
+<div class="section">
+    <h2>
+        ⏱️ ระยะเวลา Cooldown
+        <button class="btn btn-primary" onclick="toggleEdit('cooldown')">✏️ แก้ไข</button>
+    </h2>
+
+    <div id="cooldownDisplay">
+        <div class="display-box"><%= cooldownHours %> ชั่วโมง</div>
+        <div class="info-box">
+            💡 <strong>คำอธิบาย:</strong> ระยะเวลาที่ผู้ใช้ต้องรอก่อนจะสามารถรับกิจกรรมซ้ำได้อีกครั้ง
+        </div>
+    </div>
+
+    <div id="cooldownEdit" class="hidden">
+        <div class="form-group">
+            <label for="cooldownHours">ระยะเวลา Cooldown (ชั่วโมง)</label>
+            <input type="number" id="cooldownHours" value="<%= cooldownHours %>" min="0.1" step="0.1" placeholder="2">
+            <small>กำหนดระยะเวลารอ (เช่น 2 = 2 ชั่วโมง, 0.5 = 30 นาที)</small>
+        </div>
+        <button class="btn btn-success" onclick="saveSettings()">💾 บันทึก</button>
+        <button class="btn btn-secondary" onclick="toggleEdit('cooldown')">❌ ยกเลิก</button>
+    </div>
+</div>
+
+<!-- Users Table Section -->
+<div class="section">
+    <h2>👤 รายชื่อผู้ใช้งาน</h2>
+    
+    <% if (users.length === 0) { %>
+        <div class="empty-state">
+            <div class="icon">📭</div>
+            <h3>ยังไม่มีผู้ใช้งาน</h3>
+            <p>รอให้มีผู้ใช้ส่งข้อความที่มีคีย์เวิร์ดเข้ามาก่อนนะครับ</p>
+        </div>
+    <% } else { %>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                <thead style="background: #667eea; color: white;">
+                    <tr>
+                        <th style="padding: 15px; text-align: left;">#</th>
+                        <th style="padding: 15px; text-align: left;">User ID</th>
+                        <th style="padding: 15px; text-align: left;">ส่งข้อความล่าสุด</th>
+                        <th style="padding: 15px; text-align: left;">สถานะ</th>
+                        <th style="padding: 15px; text-align: left;">เวลาที่เหลือ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% users.forEach((user, index) => { %>
+                        <tr style="border-bottom: 1px solid #ddd; <% if (index % 2 === 0) { %>background: #f9f9f9;<% } %>">
+                            <td style="padding: 15px;"><%= index + 1 %></td>
+                            <td style="padding: 15px;"><%= user.userId.substring(0, 20) %>...</td>
+                            <td style="padding: 15px;"><%= user.lastSent %></td>
+                            <td style="padding: 15px;">
+                                <span style="padding: 5px 12px; border-radius: 15px; font-size: 0.85em; font-weight: bold; background: <%= user.canSend ? '#d4edda' : '#fff3cd' %>; color: <%= user.canSend ? '#155724' : '#856404' %>;">
+                                    <%= user.canSend ? '✅ พร้อมส่ง' : '⏳ รอ' %>
+                                </span>
+                            </td>
+                            <td style="padding: 15px;"><%= user.remainingTime %></td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+
+        <button class="btn btn-primary" onclick="location.reload()" style="margin: 20px auto; display: block;">🔄 รีเฟรช</button>
+    <% } %>
+</div>
+
+<script>
+    let editingSection = null;
+
+    function toggleEdit(section) {
+        const display = document.getElementById(section + 'Display');
+        const edit = document.getElementById(section + 'Edit');
+        
+        if (editingSection && editingSection !== section) {
+            document.getElementById(editingSection + 'Display').classList.remove('hidden');
+            document.getElementById(editingSection + 'Edit').classList.add('hidden');
+        }
+        
+        display.classList.toggle('hidden');
+        edit.classList.toggle('hidden');
+        
+        editingSection = edit.classList.contains('hidden') ? null : section;
+    }
+
+    async function saveSettings() {
+        const activityMessage = document.getElementById('activityMessage').value;
+        const cooldownMessage = document.getElementById('cooldownMessage').value;
+        const keywords = document.getElementById('keywords').value;
+        const cooldownHours = document.getElementById('cooldownHours').value;
+
+        try {
+            const response = await fetch('/activities/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    activityMessage,
+                    cooldownMessage,
+                    keywords,
+                    cooldownHours
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('success', result.message);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', result.message);
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+        }
+    }
+
+    // Auto refresh every 60 seconds
+    setTimeout(() => {
+        if (!editingSection) {
+            location.reload();
+        }
+    }, 60000);
+</script>
+
+<%- include('partials/footer') %>

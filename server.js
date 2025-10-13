@@ -3,13 +3,12 @@ const express = require('express');
 const line = require('@line/bot-sdk');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
-const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
 const app = express();
 
 // โหลดการตั้งค่าจาก config.json
-const configPath = path.join(__dirname, 'config.json');
+const configPath = path.join(__dirname, 'data', 'config.json');
 
 // สร้างไฟล์ config.json ถ้ายังไม่มี
 if (!fs.existsSync(configPath)) {
@@ -36,22 +35,22 @@ function saveConfig() {
   fs.writeFileSync(configPath, JSON.stringify(appConfig, null, 2), 'utf8');
 }
 
-// LINE Bot Configuration
-let config = {
+// LINE Bot Configuration (ใช้ global เพื่อให้ routes อื่นเข้าถึงได้)
+global.lineConfig = {
   channelAccessToken: appConfig.lineConfig.channelAccessToken || 'dummy_token',
   channelSecret: appConfig.lineConfig.channelSecret || 'dummy_secret'
 };
 
-let client;
-let isLineConfigured = false;
+global.lineClient = null;
+global.isLineConfigured = false;
 
 // ตรวจสอบว่ามีการตั้งค่า LINE หรือยัง
 if (appConfig.lineConfig.channelAccessToken && appConfig.lineConfig.channelSecret) {
   try {
-    client = new line.messagingApi.MessagingApiClient({
+    global.lineClient = new line.messagingApi.MessagingApiClient({
       channelAccessToken: appConfig.lineConfig.channelAccessToken
     });
-    isLineConfigured = true;
+    global.isLineConfigured = true;
     console.log('✅ LINE Bot configured successfully');
   } catch (error) {
     console.log('⚠️ LINE Bot configuration failed:', error.message);
@@ -79,269 +78,26 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: { 
-    secure: false, // ตั้งเป็น true ถ้าใช้ HTTPS
-    maxAge: 24 * 60 * 60 * 1000 // 24 ชั่วโมง
+    secure: false,
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
-// Middleware ตรวจสอบการ Login
-function requireLogin(req, res, next) {
-  if (req.session && req.session.isLoggedIn) {
-    next();
-  } else {
-    res.redirect('/login');
-  }
-}
+// โหลด Routes
+const { router: authRouter, requireLogin } = require('./routes/auth');
+const { setupDashboardRoute } = require('./routes/dashboard');
+const { setupActivitiesRoutes } = require('./routes/activities');
+const { setupPromotionsRoutes, containsPromotionKeyword, createPromotionFlexMessage, promotionsConfig } = require('./routes/promotions');
+const { setupSettingsRoutes } = require('./routes/settings');
+const { setupWebhookRoute } = require('./routes/webhook');
 
-// ฟังก์ชันตรวจสอบว่าข้อความมีคีย์เวิร์ดหรือไม่
-function containsKeyword(text) {
-  if (!text) return false;
-  const lowerText = text.toLowerCase();
-  return appConfig.botSettings.keywords.some(keyword => 
-    lowerText.includes(keyword.toLowerCase())
-  );
-}
-
-// ฟังก์ชันตรวจสอบว่าสามารถส่งข้อความได้หรือไม่
-function canSendMessage(userId) {
-  const lastSentTime = userMessageHistory.get(userId);
-  if (!lastSentTime) return true;
-  
-  const currentTime = Date.now();
-  const timeDiff = currentTime - lastSentTime;
-  return timeDiff >= getCooldownPeriod();
-}
-
-// ฟังก์ชันบันทึกเวลาที่ส่งข้อความ
-function recordMessageSent(userId) {
-  userMessageHistory.set(userId, Date.now());
-}
-
-// ฟังก์ชันคำนวณเวลาที่เหลือ
-function getRemainingTime(userId) {
-  const lastSentTime = userMessageHistory.get(userId);
-  if (!lastSentTime) return 0;
-  
-  const currentTime = Date.now();
-  const timeDiff = currentTime - lastSentTime;
-  const remaining = getCooldownPeriod() - timeDiff;
-  
-  return remaining > 0 ? remaining : 0;
-}
-
-// ฟังก์ชันแปลงมิลลิวินาทีเป็นชั่วโมงและนาที
-function formatTime(milliseconds) {
-  const hours = Math.floor(milliseconds / (1000 * 60 * 60));
-  const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
-  return `${hours} ชั่วโมง ${minutes} นาที`;
-}
-
-// ฟังก์ชันสร้างข้อความ Cooldown พร้อม placeholder
-function getCooldownMessage(userId) {
-  const remaining = getRemainingTime(userId);
-  const timeLeft = formatTime(remaining);
-  const template = appConfig.botSettings.cooldownMessage || "คุณได้รับกิจกรรมไปแล้วค่ะ กรุณารอ {timeLeft} ก่อนขอรับกิจกรรมอีกครั้งนะคะ 😊";
-  return template.replace('{timeLeft}', timeLeft);
-}
-
-// ===================== ROUTES =====================
-
-// Login Page
-app.get('/login', (req, res) => {
-  if (req.session && req.session.isLoggedIn) {
-    return res.redirect('/');
-  }
-  res.render('login', { error: null });
-});
-
-// Login Handler
-app.post('/login', async (req, res) => {
-  const { username, password } = req.body;
-  
-  const adminUsername = process.env.ADMIN_USERNAME || 'jonz';
-  const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
-  
-  if (!adminPasswordHash) {
-    return res.render('login', { 
-      error: 'ระบบยังไม่ได้ตั้งค่ารหัสผ่าน กรุณาตั้งค่า ADMIN_PASSWORD_HASH ใน .env' 
-    });
-  }
-  
-  if (username === adminUsername && bcrypt.compareSync(password, adminPasswordHash)) {
-    req.session.isLoggedIn = true;
-    req.session.username = username;
-    res.redirect('/');
-  } else {
-    res.render('login', { error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
-  }
-});
-
-// Logout
-app.get('/logout', (req, res) => {
-  req.session.destroy();
-  res.redirect('/login');
-});
-
-// Dashboard
-app.get('/', requireLogin, (req, res) => {
-  const users = Array.from(userMessageHistory.entries()).map(([userId, timestamp]) => {
-    const date = new Date(timestamp);
-    const remaining = getRemainingTime(userId);
-    const canSend = remaining === 0;
-    
-    return {
-      userId,
-      lastSent: date.toLocaleString('th-TH'),
-      canSend,
-      remainingTime: canSend ? 'สามารถส่งได้' : formatTime(remaining)
-    };
-  });
-  
-  res.render('dashboard', { 
-    users,
-    totalUsers: users.length,
-    activityMessage: appConfig.botSettings.activityMessage,
-    cooldownMessage: appConfig.botSettings.cooldownMessage || "คุณได้รับกิจกรรมไปแล้วค่ะ กรุณารอ {timeLeft} ก่อนขอรับกิจกรรมอีกครั้งนะคะ 😊",
-    keywords: appConfig.botSettings.keywords.join(', '),
-    cooldownHours: appConfig.botSettings.cooldownHours,
-    lineAccessToken: appConfig.lineConfig.channelAccessToken,
-    lineChannelSecret: appConfig.lineConfig.channelSecret,
-    username: req.session.username
-  });
-});
-
-// Update Settings
-app.post('/update-settings', requireLogin, (req, res) => {
-  try {
-    const { activityMessage, cooldownMessage, keywords, cooldownHours, lineAccessToken, lineChannelSecret } = req.body;
-    
-    // อัพเดทการตั้งค่า
-    appConfig.botSettings.activityMessage = activityMessage;
-    appConfig.botSettings.cooldownMessage = cooldownMessage || "คุณได้รับกิจกรรมไปแล้วค่ะ กรุณารอ {timeLeft} ก่อนขอรับกิจกรรมอีกครั้งนะคะ 😊";
-    appConfig.botSettings.keywords = keywords.split(',').map(k => k.trim()).filter(k => k);
-    appConfig.botSettings.cooldownHours = parseFloat(cooldownHours) || 2;
-    appConfig.lineConfig.channelAccessToken = lineAccessToken || '';
-    appConfig.lineConfig.channelSecret = lineChannelSecret || '';
-    
-    // บันทึกลง config.json
-    saveConfig();
-    
-    // อัพเดท LINE Client
-    if (lineAccessToken && lineChannelSecret) {
-      config = {
-        channelAccessToken: lineAccessToken,
-        channelSecret: lineChannelSecret
-      };
-      try {
-        client = new line.messagingApi.MessagingApiClient({
-          channelAccessToken: lineAccessToken
-        });
-        isLineConfigured = true;
-        console.log('✅ LINE Bot reconfigured successfully');
-      } catch (error) {
-        console.error('❌ Failed to configure LINE Bot:', error.message);
-        isLineConfigured = false;
-      }
-    }
-    
-    res.json({ success: true, message: 'บันทึกการตั้งค่าสำเร็จ' });
-  } catch (error) {
-    console.error('Error updating settings:', error);
-    res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดในการบันทึก' });
-  }
-});
-
-// Webhook Endpoint - ใช้ custom middleware เพื่อจัดการกรณีที่ยังไม่มี config
-app.post('/webhook', express.json(), async (req, res) => {
-  try {
-    // ตรวจสอบว่ามีการตั้งค่า LINE หรือยัง
-    if (!isLineConfigured) {
-      console.log('⚠️ Webhook received but LINE is not configured yet');
-      return res.status(200).send('LINE not configured');
-    }
-
-    // ตรวจสอบ signature
-    const signature = req.get('x-line-signature');
-    if (!signature) {
-      return res.status(401).send('No signature');
-    }
-
-    // Verify signature
-    const crypto = require('crypto');
-    const body = JSON.stringify(req.body);
-    const hash = crypto
-      .createHmac('SHA256', config.channelSecret)
-      .update(body)
-      .digest('base64');
-
-    if (hash !== signature) {
-      console.log('❌ Invalid signature');
-      return res.status(401).send('Invalid signature');
-    }
-
-    const events = req.body.events;
-    await Promise.all(events.map(handleEvent));
-    
-    res.status(200).send('OK');
-  } catch (err) {
-    console.error('Error in webhook:', err);
-    res.status(500).send('Internal Server Error');
-  }
-});
-
-// ฟังก์ชันจัดการ Event
-async function handleEvent(event) {
-  if (event.type !== 'message' || event.message.type !== 'text') {
-    return null;
-  }
-  
-  if (!client || !isLineConfigured) {
-    console.error('LINE client not initialized');
-    return null;
-  }
-  
-  const userId = event.source.userId;
-  const messageText = event.message.text;
-  
-  console.log(`Received message from ${userId}: ${messageText}`);
-  
-  if (containsKeyword(messageText)) {
-    console.log('Keyword detected!');
-    
-    if (canSendMessage(userId)) {
-      await client.replyMessage({
-        replyToken: event.replyToken,
-        messages: [
-          {
-            type: 'text',
-            text: appConfig.botSettings.activityMessage
-          }
-        ]
-      });
-      
-      recordMessageSent(userId);
-      console.log(`Activity sent to ${userId}`);
-    } else {
-      const cooldownMsg = getCooldownMessage(userId);
-      
-      await client.replyMessage({
-        replyToken: event.replyToken,
-        messages: [
-          {
-            type: 'text',
-            text: cooldownMsg
-          }
-        ]
-      });
-      
-      const remaining = getRemainingTime(userId);
-      const timeLeft = formatTime(remaining);
-      console.log(`Cooldown active for ${userId}, ${timeLeft} remaining`);
-    }
-  }
-  
-  return null;
-}
+// ใช้งาน Routes
+app.use('/', authRouter);
+app.use('/', setupDashboardRoute(requireLogin, appConfig, userMessageHistory, getCooldownPeriod, promotionsConfig));
+app.use('/', setupActivitiesRoutes(requireLogin, appConfig, userMessageHistory, getCooldownPeriod, saveConfig));
+app.use('/', setupPromotionsRoutes(requireLogin));
+app.use('/', setupSettingsRoutes(requireLogin, appConfig, saveConfig, userMessageHistory));
+app.use('/', setupWebhookRoute(appConfig, userMessageHistory, getCooldownPeriod, containsPromotionKeyword, createPromotionFlexMessage));
 
 // Health Check
 app.get('/health', (req, res) => {
@@ -349,24 +105,34 @@ app.get('/health', (req, res) => {
     status: 'OK', 
     timestamp: new Date().toISOString(),
     activeUsers: userMessageHistory.size,
-    lineConfigured: isLineConfigured
+    lineConfigured: global.isLineConfigured,
+    version: '2.0'
   });
 });
 
 // Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log('='.repeat(50));
-  console.log('🚀 LINE OA Bot Server Started!');
-  console.log('='.repeat(50));
+  console.log('='.repeat(60));
+  console.log('🚀 LINE OA Bot Server Started! (Version 2.0)');
+  console.log('='.repeat(60));
   console.log(`📡 Server running on port ${PORT}`);
-  console.log(`🔐 Login: http://localhost:${PORT}/login`);
-  console.log(`📊 Dashboard: http://localhost:${PORT}`);
+  console.log(`🔐 Login:       http://localhost:${PORT}/login`);
+  console.log(`📊 Dashboard:   http://localhost:${PORT}/`);
+  console.log(`🎁 Activities:  http://localhost:${PORT}/activities`);
+  console.log(`🎨 Promotions:  http://localhost:${PORT}/promotions`);
+  console.log(`⚙️  Settings:    http://localhost:${PORT}/settings`);
   console.log(`🔗 Webhook URL: http://localhost:${PORT}/webhook`);
-  console.log(`🤖 LINE Bot: ${isLineConfigured ? '✅ Configured' : '⚠️ Not Configured Yet'}`);
-  console.log('='.repeat(50));
+  console.log(`🤖 LINE Bot:    ${global.isLineConfigured ? '✅ Configured' : '⚠️ Not Configured Yet'}`);
+  console.log('='.repeat(60));
   
-  if (!isLineConfigured) {
-    console.log('⚠️ กรุณาตั้งค่า LINE Channel Access Token และ Channel Secret ใน Dashboard');
+  if (!global.isLineConfigured) {
+    console.log('⚠️  กรุณาไปที่หน้า Settings เพื่อตั้งค่า LINE API');
+    console.log('   👉 http://localhost:${PORT}/settings');
   }
+  
+  console.log('\n💡 Tips:');
+  console.log('   - กิจกรรมแชร์: จัดการข้อความและ Cooldown');
+  console.log('   - โปรโมชั่น: สร้าง Flex Messages สวยงาม');
+  console.log('   - Settings: ตั้งค่า LINE API และ Webhook\n');
 });

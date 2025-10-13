@@ -1,0 +1,244 @@
+<%- include('partials/header', {
+    title: 'ตั้งค่าระบบ',
+    pageIcon: '⚙️',
+    pageTitle: 'ตั้งค่าระบบ',
+    pageSubtitle: 'จัดการการเชื่อมต่อ LINE API และการตั้งค่าอื่นๆ',
+    username: username,
+    activePage: 'settings'
+}) %>
+
+<!-- LINE Configuration Section -->
+<div class="section">
+    <h2>
+        🔗 การเชื่อมต่อ LINE OA
+        <button class="btn btn-primary" onclick="toggleEdit('lineConfig')">✏️ แก้ไข</button>
+    </h2>
+
+    <div id="lineConfigDisplay">
+        <div style="background: <%= lineAccessToken ? '#d4edda' : '#fff3cd' %>; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid <%= lineAccessToken ? '#28a745' : '#ffc107' %>;">
+            <h3 style="color: <%= lineAccessToken ? '#155724' : '#856404' %>; margin-bottom: 15px;">
+                <%= lineAccessToken ? '✅ สถานะ: เชื่อมต่อสำเร็จ' : '⚠️ สถานะ: ยังไม่ได้เชื่อมต่อ' %>
+            </h3>
+            <p><strong>Channel Access Token:</strong> <%= lineAccessToken ? '✅ ตั้งค่าแล้ว (' + lineAccessToken.substring(0, 20) + '...)' : '❌ ยังไม่ได้ตั้งค่า' %></p>
+            <p style="margin-top: 10px;"><strong>Channel Secret:</strong> <%= lineChannelSecret ? '✅ ตั้งค่าแล้ว (' + lineChannelSecret.substring(0, 10) + '...)' : '❌ ยังไม่ได้ตั้งค่า' %></p>
+        </div>
+
+        <div class="info-box">
+            💡 <strong>วิธีหา Channel Access Token และ Channel Secret:</strong><br>
+            1. ไปที่ <a href="https://developers.line.biz/console/" target="_blank" style="color: #667eea;">LINE Developers Console</a><br>
+            2. เลือก Provider และ Channel ของคุณ<br>
+            3. ไปที่แท็บ "Messaging API"<br>
+            4. ค้นหา "Channel access token" และ "Channel secret"
+        </div>
+    </div>
+
+    <div id="lineConfigEdit" class="hidden">
+        <div class="form-group">
+            <label for="lineAccessToken">🔑 LINE Channel Access Token</label>
+            <input type="text" id="lineAccessToken" value="<%= lineAccessToken %>" placeholder="กรุณากรอก Channel Access Token">
+            <small>ดูวิธีการได้ที่ LINE Developers Console → Messaging API</small>
+        </div>
+
+        <div class="form-group">
+            <label for="lineChannelSecret">🔐 LINE Channel Secret</label>
+            <input type="text" id="lineChannelSecret" value="<%= lineChannelSecret %>" placeholder="กรุณากรอก Channel Secret">
+            <small>ดูวิธีการได้ที่ LINE Developers Console → Basic settings</small>
+        </div>
+
+        <button class="btn btn-success" onclick="saveLineSettings()">💾 บันทึก</button>
+        <button class="btn btn-secondary" onclick="toggleEdit('lineConfig')">❌ ยกเลิก</button>
+    </div>
+</div>
+
+<!-- Webhook Configuration Section -->
+<div class="section">
+    <h2>🔔 Webhook URL</h2>
+    
+    <div style="background: #e7f3ff; padding: 20px; border-radius: 10px; border-left: 5px solid #2196F3;">
+        <h3 style="color: #1976D2; margin-bottom: 15px;">📍 Webhook URL ของคุณ</h3>
+        <div style="background: white; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; word-break: break-all; margin-bottom: 15px;">
+            <%= webhookUrl %>
+        </div>
+        <button class="btn btn-primary" onclick="copyWebhookUrl()">📋 คัดลอก URL</button>
+    </div>
+
+    <div class="info-box" style="margin-top: 20px;">
+        💡 <strong>วิธีตั้งค่า Webhook URL ใน LINE:</strong><br>
+        1. ไปที่ <a href="https://developers.line.biz/console/" target="_blank" style="color: #667eea;">LINE Developers Console</a><br>
+        2. เลือก Provider และ Channel ของคุณ<br>
+        3. ไปที่แท็บ "Messaging API"<br>
+        4. หาส่วน "Webhook settings"<br>
+        5. กด "Edit" และวาง Webhook URL<br>
+        6. เปิดใช้งาน "Use webhook" และ "Verify webhook"
+    </div>
+</div>
+
+<!-- Server Configuration Section -->
+<div class="section">
+    <h2>🖥️ ข้อมูลเซิร์ฟเวอร์</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 5px solid #667eea;">
+            <h4 style="color: #667eea; margin-bottom: 10px;">🔌 Server Port</h4>
+            <p style="font-size: 1.5em; font-weight: bold; color: #333;"><%= serverPort %></p>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 5px solid #28a745;">
+            <h4 style="color: #28a745; margin-bottom: 10px;">📊 สถานะระบบ</h4>
+            <p style="font-size: 1.5em; font-weight: bold; color: #333;">✅ Online</p>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 5px solid #17a2b8;">
+            <h4 style="color: #17a2b8; margin-bottom: 10px;">🕐 Uptime</h4>
+            <p style="font-size: 1.5em; font-weight: bold; color: #333;"><%= uptime %></p>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 5px solid #ffc107;">
+            <h4 style="color: #e0a800; margin-bottom: 10px;">📦 Version</h4>
+            <p style="font-size: 1.5em; font-weight: bold; color: #333;">2.0</p>
+        </div>
+    </div>
+</div>
+
+<!-- API Test Section -->
+<div class="section">
+    <h2>🧪 ทดสอบการเชื่อมต่อ</h2>
+    
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+        <h4 style="margin-bottom: 15px;">ทดสอบ Webhook</h4>
+        <p style="margin-bottom: 15px; color: #666;">คลิกปุ่มด้านล่างเพื่อส่งข้อความทดสอบไปยัง LINE Bot</p>
+        <button class="btn btn-warning" onclick="testWebhook()" id="testBtn">🔬 ทดสอบการเชื่อมต่อ</button>
+        <div id="testResult" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="info-box" style="margin-top: 20px;">
+        💡 <strong>หมายเหตุ:</strong> ฟังก์ชันนี้จะตรวจสอบว่า Webhook URL สามารถเข้าถึงได้และตอบสนองอย่างถูกต้อง
+    </div>
+</div>
+
+<!-- Danger Zone Section -->
+<div class="section">
+    <h2 style="color: #dc3545;">⚠️ Danger Zone</h2>
+    
+    <div style="background: #f8d7da; padding: 20px; border-radius: 10px; border-left: 5px solid #dc3545;">
+        <h4 style="color: #721c24; margin-bottom: 15px;">🗑️ ล้างข้อมูลผู้ใช้</h4>
+        <p style="color: #721c24; margin-bottom: 15px;">ลบข้อมูลประวัติการส่งข้อความของผู้ใช้ทั้งหมด (ไม่สามารถย้อนกลับได้)</p>
+        <button class="btn btn-danger" onclick="clearUserData()">🗑️ ล้างข้อมูลผู้ใช้</button>
+    </div>
+</div>
+
+<script>
+    let editingSection = null;
+
+    function toggleEdit(section) {
+        const display = document.getElementById(section + 'Display');
+        const edit = document.getElementById(section + 'Edit');
+        
+        if (editingSection && editingSection !== section) {
+            document.getElementById(editingSection + 'Display').classList.remove('hidden');
+            document.getElementById(editingSection + 'Edit').classList.add('hidden');
+        }
+        
+        display.classList.toggle('hidden');
+        edit.classList.toggle('hidden');
+        
+        editingSection = edit.classList.contains('hidden') ? null : section;
+    }
+
+    async function saveLineSettings() {
+        const lineAccessToken = document.getElementById('lineAccessToken').value;
+        const lineChannelSecret = document.getElementById('lineChannelSecret').value;
+
+        if (!lineAccessToken || !lineChannelSecret) {
+            showAlert('error', 'กรุณากรอกข้อมูลให้ครบถ้วน');
+            return;
+        }
+
+        try {
+            const response = await fetch('/settings/line', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lineAccessToken, lineChannelSecret })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('success', result.message);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', result.message);
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+        }
+    }
+
+    function copyWebhookUrl() {
+        const url = '<%= webhookUrl %>';
+        navigator.clipboard.writeText(url).then(() => {
+            showAlert('success', 'คัดลอก Webhook URL สำเร็จ!');
+        }).catch(() => {
+            showAlert('error', 'ไม่สามารถคัดลอกได้');
+        });
+    }
+
+    async function testWebhook() {
+        const btn = document.getElementById('testBtn');
+        const result = document.getElementById('testResult');
+        
+        btn.disabled = true;
+        btn.textContent = '🔄 กำลังทดสอบ...';
+        result.innerHTML = '';
+
+        try {
+            const response = await fetch('/settings/test-webhook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                result.innerHTML = `<div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin-top: 10px;">✅ ${data.message}</div>`;
+            } else {
+                result.innerHTML = `<div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin-top: 10px;">❌ ${data.message}</div>`;
+            }
+        } catch (error) {
+            result.innerHTML = `<div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin-top: 10px;">❌ เกิดข้อผิดพลาด: ${error.message}</div>`;
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '🔬 ทดสอบการเชื่อมต่อ';
+        }
+    }
+
+    async function clearUserData() {
+        if (!confirm('⚠️ คุณแน่ใจหรือไม่ที่จะลบข้อมูลผู้ใช้ทั้งหมด?\n\nการกระทำนี้ไม่สามารถย้อนกลับได้!')) {
+            return;
+        }
+
+        if (!confirm('⚠️ ยืนยันอีกครั้ง: ลบข้อมูลผู้ใช้ทั้งหมดใช่หรือไม่?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/settings/clear-users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('success', result.message);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', result.message);
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+        }
+    }
+</script>
+
+<%- include('partials/footer') %>

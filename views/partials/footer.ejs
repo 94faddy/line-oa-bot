@@ -1,0 +1,29 @@
+<div class="footer" style="background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 0.9em; border-top: 2px solid #e0e0e0;">
+            <p>Made with ❤️ for LINE OA Bot | Version 2.0</p>
+            <p>Last Updated: <%= new Date().toLocaleString('th-TH') %></p>
+        </div>
+    </div>
+
+    <script>
+        function showAlert(type, message) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertClass = type === 'success' ? 'alert-success' : type === 'error' ? 'alert-error' : 'alert-info';
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+            
+            alertContainer.innerHTML = `
+                <div class="section">
+                    <div class="alert ${alertClass}">
+                        ${icon} ${message}
+                    </div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+
+        console.log('Page loaded successfully! 🚀');
+    </script>
+</body>
+</html>
