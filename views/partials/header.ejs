@@ -386,20 +386,23 @@
             </div>
         </div>
 
-        <!-- Navigation Menu -->
-        <div class="nav-menu">
-            <a href="/" class="nav-item <%= activePage === 'dashboard' ? 'active' : '' %>">
-                📊 Dashboard
-            </a>
-            <a href="/activities" class="nav-item <%= activePage === 'activities' ? 'active' : '' %>">
-                🎁 กิจกรรมแชร์
-            </a>
-            <a href="/promotions" class="nav-item <%= activePage === 'promotions' ? 'active' : '' %>">
-                🎨 โปรโมชั่น
-            </a>
-            <a href="/settings" class="nav-item <%= activePage === 'settings' ? 'active' : '' %>">
-                ⚙️ ตั้งค่าระบบ
-            </a>
-        </div>
+    <!-- Navigation Menu -->
+    <div class="nav-menu">
+        <a href="/" class="nav-item <%= activePage === 'dashboard' ? 'active' : '' %>">
+            📊 Dashboard
+        </a>
+        <a href="/activities" class="nav-item <%= activePage === 'activities' ? 'active' : '' %>">
+            🎁 กิจกรรมแชร์
+        </a>
+        <a href="/promotions" class="nav-item <%= activePage === 'promotions' ? 'active' : '' %>">
+            🎨 โปรโมชั่น
+        </a>
+        <a href="/flex-messages" class="nav-item <%= activePage === 'flex-messages' ? 'active' : '' %>">
+            💬 Flex Messages    <!-- ⭐ บรรทัดนี้ถูกเพิ่มเข้าไป -->
+        </a>
+        <a href="/settings" class="nav-item <%= activePage === 'settings' ? 'active' : '' %>">
+            ⚙️ ตั้งค่าระบบ
+        </a>
+    </div>
 
         <div id="alertContainer"></div>

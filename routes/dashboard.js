@@ -46,9 +46,19 @@ function setupDashboardRoute(requireLogin, appConfig, userMessageHistory, getCoo
     const recentUsers = users.slice(0, 5);
 
     // สร้าง Webhook URL
-    const protocol = req.protocol;
-    const host = req.get('host');
-    const webhookUrl = `${protocol}://${host}/webhook`;
+    const domain = process.env.DOMAIN;
+    let webhookUrl;
+    
+    if (domain) {
+      // ใช้ domain จาก .env
+      const protocol = domain.includes('localhost') ? 'http' : 'https';
+      webhookUrl = `${protocol}://${domain}/webhook`;
+    } else {
+      // Fallback ถ้าไม่มี DOMAIN ใน .env
+      const protocol = req.protocol;
+      const host = req.get('host');
+      webhookUrl = `${protocol}://${host}/webhook`;
+    }
     
     res.render('dashboard', { 
       totalUsers: users.length,

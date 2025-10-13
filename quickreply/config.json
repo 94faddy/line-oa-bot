@@ -1,0 +1,46 @@
+{
+  "quickReplySettings": {
+    "enabled": true,
+    "text": "เลือกรายการที่ต้องการได้เลยค่ะ",
+    "keywords": [
+      "เมนู",
+      "menu",
+      "ปุ่มลอย"
+    ]
+  },
+  "flexMessageSettings": {
+    "enabled": true,
+    "keywords": [
+      "bonustime",
+      "อัตราชนะ",
+      "สถิติเกม"
+    ],
+    "sendWithQuickReply": true
+  },
+  "quickReplyButtons": [
+    {
+      "id": "btn-1",
+      "type": "uri",
+      "label": "สมัครสมาชิก",
+      "imageUrl": "https://cdn.linkz.ltd/images/line-quickreply/ic-logged-profile.png",
+      "uri": "https://m.top747.com/register",
+      "enabled": true
+    },
+    {
+      "id": "btn-2",
+      "type": "uri",
+      "label": "ทางเข้าเล่น",
+      "imageUrl": "https://cdn.linkz.ltd/images/line-quickreply/300x262.png",
+      "uri": "https://m.top747.com/",
+      "enabled": true
+    },
+    {
+      "id": "btn-3",
+      "type": "message",
+      "label": "bonustime",
+      "imageUrl": "https://cdn.linkz.ltd/images/line-quickreply/freegame.png",
+      "text": "bonustime",
+      "enabled": true
+    }
+  ]
+}

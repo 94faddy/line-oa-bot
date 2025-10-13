@@ -89,6 +89,14 @@ const { setupDashboardRoute } = require('./routes/dashboard');
 const { setupActivitiesRoutes } = require('./routes/activities');
 const { setupPromotionsRoutes, containsPromotionKeyword, createPromotionFlexMessage, promotionsConfig } = require('./routes/promotions');
 const { setupSettingsRoutes } = require('./routes/settings');
+const { 
+  setupFlexRoutes, 
+  getRandomFlex, 
+  getQuickReplyMenu,
+  containsQuickReplyKeyword,
+  containsFlexKeyword,
+  quickReplyConfig
+} = require('./routes/flexMessages');
 const { setupWebhookRoute } = require('./routes/webhook');
 
 // ใช้งาน Routes
@@ -96,8 +104,20 @@ app.use('/', authRouter);
 app.use('/', setupDashboardRoute(requireLogin, appConfig, userMessageHistory, getCooldownPeriod, promotionsConfig));
 app.use('/', setupActivitiesRoutes(requireLogin, appConfig, userMessageHistory, getCooldownPeriod, saveConfig));
 app.use('/', setupPromotionsRoutes(requireLogin));
+app.use('/', setupFlexRoutes(requireLogin));
 app.use('/', setupSettingsRoutes(requireLogin, appConfig, saveConfig, userMessageHistory));
-app.use('/', setupWebhookRoute(appConfig, userMessageHistory, getCooldownPeriod, containsPromotionKeyword, createPromotionFlexMessage));
+app.use('/', setupWebhookRoute(
+  appConfig, 
+  userMessageHistory, 
+  getCooldownPeriod, 
+  containsPromotionKeyword, 
+  createPromotionFlexMessage, 
+  getRandomFlex, 
+  getQuickReplyMenu,
+  containsQuickReplyKeyword,
+  containsFlexKeyword,
+  quickReplyConfig
+));
 
 // Health Check
 app.get('/health', (req, res) => {
@@ -106,33 +126,59 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     activeUsers: userMessageHistory.size,
     lineConfigured: global.isLineConfigured,
-    version: '2.0'
+    flexEnabled: quickReplyConfig.flexMessageSettings.enabled,
+    quickReplyEnabled: quickReplyConfig.quickReplySettings.enabled,
+    version: '2.2'
   });
 });
 
 // Start Server
 const PORT = process.env.PORT || 3000;
+const DOMAIN = process.env.DOMAIN;
+
 app.listen(PORT, () => {
-  console.log('='.repeat(60));
-  console.log('🚀 LINE OA Bot Server Started! (Version 2.0)');
-  console.log('='.repeat(60));
+  console.log('='.repeat(70));
+  console.log('🚀 LINE OA Bot Server Started! (Version 2.2 - Full Featured)');
+  console.log('='.repeat(70));
   console.log(`📡 Server running on port ${PORT}`);
-  console.log(`🔐 Login:       http://localhost:${PORT}/login`);
-  console.log(`📊 Dashboard:   http://localhost:${PORT}/`);
-  console.log(`🎁 Activities:  http://localhost:${PORT}/activities`);
-  console.log(`🎨 Promotions:  http://localhost:${PORT}/promotions`);
-  console.log(`⚙️  Settings:    http://localhost:${PORT}/settings`);
-  console.log(`🔗 Webhook URL: http://localhost:${PORT}/webhook`);
-  console.log(`🤖 LINE Bot:    ${global.isLineConfigured ? '✅ Configured' : '⚠️ Not Configured Yet'}`);
-  console.log('='.repeat(60));
+
+ // แสดง Webhook URL ตาม DOMAIN
+  if (DOMAIN) {
+    const protocol = DOMAIN.includes('localhost') ? 'http' : 'https';
+    console.log(`🔗 Webhook URL: ${protocol}://${DOMAIN}/webhook`);
+  } else {
+    console.log(`🔗 Webhook URL: http://localhost:${PORT}/webhook`);
+    console.log(`⚠️  แนะนำ: ตั้งค่า DOMAIN ใน .env สำหรับ Production`);
+  }
+
+  console.log(`🔐 Login:          http://localhost:${PORT}/login`);
+  console.log(`📊 Dashboard:      http://localhost:${PORT}/`);
+  console.log(`🎁 Activities:     http://localhost:${PORT}/activities`);
+  console.log(`🎨 Promotions:     http://localhost:${PORT}/promotions`);
+  console.log(`💬 Flex Messages:  http://localhost:${PORT}/flex-messages`);
+  console.log(`⚙️  Settings:       http://localhost:${PORT}/settings`);
+  console.log(`🔗 Webhook URL:    http://localhost:${PORT}/webhook`);
+  console.log('='.repeat(70));
+  console.log(`🤖 LINE Bot:       ${global.isLineConfigured ? '✅ Configured' : '⚠️ Not Configured Yet'}`);
+  console.log(`💬 Flex Messages:  ${quickReplyConfig.flexMessageSettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
+  console.log(`🔘 Quick Reply:    ${quickReplyConfig.quickReplySettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
+  console.log('='.repeat(70));
   
   if (!global.isLineConfigured) {
     console.log('⚠️  กรุณาไปที่หน้า Settings เพื่อตั้งค่า LINE API');
-    console.log('   👉 http://localhost:${PORT}/settings');
+    console.log(`   👉 http://localhost:${PORT}/settings`);
   }
   
-  console.log('\n💡 Tips:');
-  console.log('   - กิจกรรมแชร์: จัดการข้อความและ Cooldown');
-  console.log('   - โปรโมชั่น: สร้าง Flex Messages สวยงาม');
-  console.log('   - Settings: ตั้งค่า LINE API และ Webhook\n');
+  console.log('\n💡 Features:');
+  console.log('   ✅ กิจกรรมแชร์: จัดการข้อความและ Cooldown');
+  console.log('   ✅ โปรโมชั่น: สร้าง Flex Messages สวยงาม');
+  console.log('   ✅ Flex Messages: สุ่มส่ง Flex + จัดการผ่าน Dashboard');
+  console.log('   ✅ Quick Reply: จัดการปุ่มและคีย์เวิร์ดได้เต็มรูปแบบ');
+  console.log('   ✅ Settings: ตั้งค่า LINE API และ Webhook');
+  
+  console.log('\n🔑 Keywords:');
+  console.log(`   🎁 Activity: ${appConfig.botSettings.keywords.join(', ')}`);
+  console.log(`   🎨 Promotion: ${promotionsConfig.promotionSettings.keywords.join(', ')}`);
+  console.log(`   💬 Flex: ${quickReplyConfig.flexMessageSettings.keywords.join(', ')}`);
+  console.log(`   🔘 Quick Reply: ${quickReplyConfig.quickReplySettings.keywords.join(', ')}\n`);
 });

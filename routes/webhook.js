@@ -54,7 +54,18 @@ function getCooldownMessage(userId, cooldownMessageTemplate, userMessageHistory,
 }
 
 // Setup Webhook Route
-function setupWebhookRoute(appConfig, userMessageHistory, getCooldownPeriod, containsPromotionKeyword, createPromotionFlexMessage) {
+function setupWebhookRoute(
+  appConfig, 
+  userMessageHistory, 
+  getCooldownPeriod, 
+  containsPromotionKeyword, 
+  createPromotionFlexMessage, 
+  getRandomFlex, 
+  getQuickReplyMenu,
+  containsQuickReplyKeyword,
+  containsFlexKeyword,
+  quickReplyConfig
+) {
   
   router.post('/webhook', express.json(), async (req, res) => {
     try {
@@ -84,7 +95,19 @@ function setupWebhookRoute(appConfig, userMessageHistory, getCooldownPeriod, con
 
       const events = req.body.events;
       await Promise.all(events.map(event => 
-        handleEvent(event, appConfig, userMessageHistory, getCooldownPeriod, containsPromotionKeyword, createPromotionFlexMessage)
+        handleEvent(
+          event, 
+          appConfig, 
+          userMessageHistory, 
+          getCooldownPeriod, 
+          containsPromotionKeyword, 
+          createPromotionFlexMessage, 
+          getRandomFlex, 
+          getQuickReplyMenu,
+          containsQuickReplyKeyword,
+          containsFlexKeyword,
+          quickReplyConfig
+        )
       ));
       
       res.status(200).send('OK');
@@ -98,7 +121,19 @@ function setupWebhookRoute(appConfig, userMessageHistory, getCooldownPeriod, con
 }
 
 // ฟังก์ชันจัดการ Event
-async function handleEvent(event, appConfig, userMessageHistory, getCooldownPeriod, containsPromotionKeyword, createPromotionFlexMessage) {
+async function handleEvent(
+  event, 
+  appConfig, 
+  userMessageHistory, 
+  getCooldownPeriod, 
+  containsPromotionKeyword, 
+  createPromotionFlexMessage, 
+  getRandomFlex, 
+  getQuickReplyMenu,
+  containsQuickReplyKeyword,
+  containsFlexKeyword,
+  quickReplyConfig
+) {
   if (event.type !== 'message' || event.message.type !== 'text') {
     return null;
   }
@@ -111,11 +146,11 @@ async function handleEvent(event, appConfig, userMessageHistory, getCooldownPeri
   const userId = event.source.userId;
   const messageText = event.message.text;
   
-  console.log(`Received message from ${userId}: ${messageText}`);
+  console.log(`📩 Received message from ${userId}: ${messageText}`);
   
-  // ตรวจสอบคีย์เวิร์ดโปรโมชั่นก่อน
+  // 1. ตรวจสอบคีย์เวิร์ดโปรโมชั่นก่อน (ระบบเดิม)
   if (containsPromotionKeyword(messageText)) {
-    console.log('Promotion keyword detected!');
+    console.log('🎨 Promotion keyword detected!');
     
     const flexMessage = createPromotionFlexMessage();
     
@@ -124,7 +159,7 @@ async function handleEvent(event, appConfig, userMessageHistory, getCooldownPeri
         replyToken: event.replyToken,
         messages: [flexMessage]
       });
-      console.log(`Promotions sent to ${userId}`);
+      console.log(`✅ Promotions sent to ${userId}`);
     } else {
       await global.lineClient.replyMessage({
         replyToken: event.replyToken,
@@ -138,9 +173,9 @@ async function handleEvent(event, appConfig, userMessageHistory, getCooldownPeri
     return null;
   }
   
-  // ตรวจสอบคีย์เวิร์ดกิจกรรมปกติ
+  // 2. ตรวจสอบคีย์เวิร์ดกิจกรรมแชร์ (ระบบเดิม)
   if (containsKeyword(messageText, appConfig.botSettings.keywords)) {
-    console.log('Activity keyword detected!');
+    console.log('🎁 Activity keyword detected!');
     
     if (canSendMessage(userId, userMessageHistory, getCooldownPeriod)) {
       await global.lineClient.replyMessage({
@@ -152,7 +187,7 @@ async function handleEvent(event, appConfig, userMessageHistory, getCooldownPeri
       });
       
       recordMessageSent(userId, userMessageHistory);
-      console.log(`Activity sent to ${userId}`);
+      console.log(`✅ Activity sent to ${userId}`);
     } else {
       const cooldownMsg = getCooldownMessage(userId, appConfig.botSettings.cooldownMessage, userMessageHistory, getCooldownPeriod);
       
@@ -166,8 +201,89 @@ async function handleEvent(event, appConfig, userMessageHistory, getCooldownPeri
       
       const remaining = getRemainingTime(userId, userMessageHistory, getCooldownPeriod);
       const timeLeft = formatTime(remaining);
-      console.log(`Cooldown active for ${userId}, ${timeLeft} remaining`);
+      console.log(`⏳ Cooldown active for ${userId}, ${timeLeft} remaining`);
     }
+    
+    return null;
+  }
+  
+  // 3. ตรวจสอบคีย์เวิร์ด Flex Message (ระบบใหม่ - ใช้ Config)
+  if (containsFlexKeyword(messageText)) {
+    console.log('💬 Flex Message keyword detected!');
+    
+    try {
+      const randomFlex = getRandomFlex();
+      
+      if (!randomFlex) {
+        await global.lineClient.replyMessage({
+          replyToken: event.replyToken,
+          messages: [{
+            type: 'text',
+            text: 'ขออภัยค่ะ ขณะนี้ยังไม่มี Flex Message'
+          }]
+        });
+        return null;
+      }
+
+      const messages = [
+        {
+          type: 'flex',
+          altText: '📊 เกมอัตราชนะสูง',
+          contents: randomFlex
+        }
+      ];
+
+      // ส่ง Quick Reply พร้อมกับ Flex ถ้าตั้งค่าไว้
+      if (quickReplyConfig.flexMessageSettings.sendWithQuickReply) {
+        const quickReply = getQuickReplyMenu();
+        if (quickReply) {
+          messages.push(quickReply);
+        }
+      }
+      
+      await global.lineClient.replyMessage({
+        replyToken: event.replyToken,
+        messages: messages
+      });
+      
+      console.log(`✅ Flex Message ${quickReplyConfig.flexMessageSettings.sendWithQuickReply ? '+ Quick Reply' : ''} sent to ${userId}`);
+    } catch (error) {
+      console.error('❌ Error sending Flex Message:', error);
+      await global.lineClient.replyMessage({
+        replyToken: event.replyToken,
+        messages: [{
+          type: 'text',
+          text: 'ขออภัยค่ะ เกิดข้อผิดพลาดในการส่งข้อมูล'
+        }]
+      });
+    }
+    
+    return null;
+  }
+  
+  // 4. ตรวจสอบคีย์เวิร์ด Quick Reply Menu (ระบบใหม่ - ใช้ Config)
+  if (containsQuickReplyKeyword(messageText)) {
+    console.log('🔘 Quick Reply keyword detected!');
+    
+    const quickReply = getQuickReplyMenu();
+    
+    if (quickReply) {
+      await global.lineClient.replyMessage({
+        replyToken: event.replyToken,
+        messages: [quickReply]
+      });
+      console.log(`✅ Quick Reply Menu sent to ${userId}`);
+    } else {
+      await global.lineClient.replyMessage({
+        replyToken: event.replyToken,
+        messages: [{
+          type: 'text',
+          text: 'ขออภัยค่ะ Quick Reply Menu ถูกปิดการใช้งาน'
+        }]
+      });
+    }
+    
+    return null;
   }
   
   return null;
