@@ -16,6 +16,13 @@
     </div>
 
     <div class="stat-card">
+        <div class="icon">📱</div>
+        <h3>LINE Channels</h3>
+        <div class="value"><%= activeChannels %>/<%= totalChannels %></div>
+        <small style="color: #666;">เปิดใช้งาน/ทั้งหมด</small>
+    </div>
+
+    <div class="stat-card">
         <div class="icon">🎁</div>
         <h3>กิจกรรมแชร์</h3>
         <div class="value"><%= activityKeywords %></div>
@@ -27,12 +34,6 @@
         <h3>โปรโมชั่น</h3>
         <div class="value"><%= totalPromotions %></div>
         <small style="color: #666;">รายการ</small>
-    </div>
-
-    <div class="stat-card">
-        <div class="icon">⏱️</div>
-        <h3>Cooldown</h3>
-        <div class="value"><%= cooldownHours %> ชม.</div>
     </div>
 </div>
 
@@ -81,7 +82,7 @@
     
     <div class="info-box">
         <strong>🤖 สถานะ LINE Bot:</strong> 
-        <%= lineConfigured ? '✅ เชื่อมต่อสำเร็จ' : '❌ ยังไม่ได้ตั้งค่า - กรุณาไปที่เมนู "ตั้งค่าระบบ"' %>
+        <%= lineConfigured ? '✅ เชื่อมต่อสำเร็จ (' + activeChannels + ' channel(s))' : '❌ ยังไม่ได้ตั้งค่า - กรุณาไปที่เมนู "ตั้งค่าระบบ"' %>
     </div>
 
     <div class="info-box" style="margin-top: 10px;">

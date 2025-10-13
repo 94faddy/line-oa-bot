@@ -2,52 +2,339 @@
     title: 'ตั้งค่าระบบ',
     pageIcon: '⚙️',
     pageTitle: 'ตั้งค่าระบบ',
-    pageSubtitle: 'จัดการการเชื่อมต่อ LINE API และการตั้งค่าอื่นๆ',
+    pageSubtitle: 'จัดการ LINE Channels และการตั้งค่าอื่นๆ',
     username: username,
     activePage: 'settings'
 }) %>
 
-<!-- LINE Configuration Section -->
+<style>
+    .channel-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .channel-card {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 15px;
+        overflow: hidden;
+        transition: all 0.3s;
+        position: relative;
+    }
+
+    .channel-card:hover {
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        transform: translateY(-5px);
+        border-color: #667eea;
+    }
+
+    .channel-card.disabled {
+        opacity: 0.6;
+        background: #f8f9fa;
+    }
+
+    .channel-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .channel-header img {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: 3px solid white;
+        object-fit: cover;
+        background: white;
+    }
+
+    .channel-header .placeholder-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: 3px solid white;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2em;
+    }
+
+    .channel-info {
+        flex: 1;
+    }
+
+    .channel-info h3 {
+        margin: 0 0 5px 0;
+        font-size: 1.2em;
+    }
+
+    .channel-info small {
+        opacity: 0.9;
+        font-size: 0.85em;
+    }
+
+    .channel-body {
+        padding: 20px;
+    }
+
+    .channel-detail {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 0.9em;
+        color: #666;
+        padding: 8px;
+        background: #f8f9fa;
+        border-radius: 5px;
+    }
+
+    .channel-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .channel-actions button {
+        padding: 10px;
+        font-size: 0.9em;
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 30px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 30px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .slider {
+        background-color: #28a745;
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(30px);
+    }
+
+    .status-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.8em;
+        font-weight: bold;
+    }
+
+    .status-enabled {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-disabled {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        animation: fadeIn 0.3s;
+        overflow-y: auto;
+    }
+
+    .modal-content {
+        background-color: white;
+        margin: 3% auto;
+        padding: 0;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 600px;
+        animation: slideDown 0.3s;
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px 15px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        border: none;
+        padding: 0;
+    }
+
+    .close {
+        color: white;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .close:hover {
+        opacity: 0.8;
+    }
+
+    .modal-body {
+        padding: 30px;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideDown {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .channel-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .channel-actions {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<!-- LINE Channels Section -->
 <div class="section">
     <h2>
-        🔗 การเชื่อมต่อ LINE OA
-        <button class="btn btn-primary" onclick="toggleEdit('lineConfig')">✏️ แก้ไข</button>
+        📱 LINE Channels
+        <button class="btn btn-success" onclick="openAddChannelModal()">➕ เพิ่ม Channel</button>
     </h2>
 
-    <div id="lineConfigDisplay">
-        <div style="background: <%= lineAccessToken ? '#d4edda' : '#fff3cd' %>; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid <%= lineAccessToken ? '#28a745' : '#ffc107' %>;">
-            <h3 style="color: <%= lineAccessToken ? '#155724' : '#856404' %>; margin-bottom: 15px;">
-                <%= lineAccessToken ? '✅ สถานะ: เชื่อมต่อสำเร็จ' : '⚠️ สถานะ: ยังไม่ได้เชื่อมต่อ' %>
-            </h3>
-            <p><strong>Channel Access Token:</strong> <%= lineAccessToken ? '✅ ตั้งค่าแล้ว (' + lineAccessToken.substring(0, 20) + '...)' : '❌ ยังไม่ได้ตั้งค่า' %></p>
-            <p style="margin-top: 10px;"><strong>Channel Secret:</strong> <%= lineChannelSecret ? '✅ ตั้งค่าแล้ว (' + lineChannelSecret.substring(0, 10) + '...)' : '❌ ยังไม่ได้ตั้งค่า' %></p>
+    <% if (lineChannels.length === 0) { %>
+        <div class="empty-state">
+            <div class="icon">📱</div>
+            <h3>ยังไม่มี LINE Channel</h3>
+            <p>คลิกปุ่ม "เพิ่ม Channel" เพื่อเชื่อมต่อ LINE OA ของคุณ</p>
         </div>
+    <% } else { %>
+        <div class="channel-grid">
+            <% lineChannels.forEach(function(channel) { %>
+                <div class="channel-card <%= !channel.enabled ? 'disabled' : '' %>">
+                    <span class="status-badge <%= channel.enabled ? 'status-enabled' : 'status-disabled' %>">
+                        <%= channel.enabled ? '✅ เปิดใช้งาน' : '❌ ปิดใช้งาน' %>
+                    </span>
+                    
+                    <div class="channel-header">
+                        <% if (channel.profilePictureUrl) { %>
+                            <img src="<%= channel.profilePictureUrl %>" alt="<%= channel.name %>" onerror="this.outerHTML='<div class=\'placeholder-avatar\'>🤖</div>'">
+                        <% } else { %>
+                            <div class="placeholder-avatar">🤖</div>
+                        <% } %>
+                        <div class="channel-info">
+                            <h3><%= channel.name %></h3>
+                            <small><%= channel.displayName || 'N/A' %></small>
+                            <% if (channel.basicId) { %>
+                                <br><small>ID: <%= channel.basicId %></small>
+                            <% } %>
+                        </div>
+                    </div>
 
-        <div class="info-box">
-            💡 <strong>วิธีหา Channel Access Token และ Channel Secret:</strong><br>
-            1. ไปที่ <a href="https://developers.line.biz/console/" target="_blank" style="color: #667eea;">LINE Developers Console</a><br>
-            2. เลือก Provider และ Channel ของคุณ<br>
-            3. ไปที่แท็บ "Messaging API"<br>
-            4. ค้นหา "Channel access token" และ "Channel secret"
+                    <div class="channel-body">
+                        <div class="channel-detail">
+                            <span>🔑 Access Token:</span>
+                            <strong><%= channel.channelAccessToken.substring(0, 20) %>...</strong>
+                        </div>
+
+                        <div class="channel-detail">
+                            <span>🔐 Channel Secret:</span>
+                            <strong><%= channel.channelSecret.substring(0, 10) %>...</strong>
+                        </div>
+
+                        <div class="channel-detail">
+                            <span>📅 เพิ่มเมื่อ:</span>
+                            <strong><%= new Date(channel.createdAt).toLocaleDateString('th-TH') %></strong>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                            <span style="font-weight: 600;">เปิด/ปิดใช้งาน:</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" <%= channel.enabled ? 'checked' : '' %> onchange="toggleChannel('<%= channel.id %>', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="channel-actions">
+                            <button class="btn btn-primary" onclick="testChannel('<%= channel.id %>')">
+                                🧪 ทดสอบ
+                            </button>
+                            <button class="btn btn-warning" onclick="editChannel('<%= channel.id %>')">
+                                ✏️ แก้ไข
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteChannel('<%= channel.id %>', '<%= channel.name %>')">
+                                🗑️ ลบ
+                            </button>
+                            <button class="btn btn-secondary" onclick="viewChannelDetails('<%= channel.id %>')">
+                                👁️ ดูรายละเอียด
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
         </div>
-    </div>
-
-    <div id="lineConfigEdit" class="hidden">
-        <div class="form-group">
-            <label for="lineAccessToken">🔑 LINE Channel Access Token</label>
-            <input type="text" id="lineAccessToken" value="<%= lineAccessToken %>" placeholder="กรุณากรอก Channel Access Token">
-            <small>ดูวิธีการได้ที่ LINE Developers Console → Messaging API</small>
-        </div>
-
-        <div class="form-group">
-            <label for="lineChannelSecret">🔐 LINE Channel Secret</label>
-            <input type="text" id="lineChannelSecret" value="<%= lineChannelSecret %>" placeholder="กรุณากรอก Channel Secret">
-            <small>ดูวิธีการได้ที่ LINE Developers Console → Basic settings</small>
-        </div>
-
-        <button class="btn btn-success" onclick="saveLineSettings()">💾 บันทึก</button>
-        <button class="btn btn-secondary" onclick="toggleEdit('lineConfig')">❌ ยกเลิก</button>
-    </div>
+    <% } %>
 </div>
 
 <!-- Webhook Configuration Section -->
@@ -69,7 +356,7 @@
         3. ไปที่แท็บ "Messaging API"<br>
         4. หาส่วน "Webhook settings"<br>
         5. กด "Edit" และวาง Webhook URL<br>
-        6. เปิดใช้งาน "Use webhook" และ "Verify webhook"
+        6. เปิดใช้งาน "Use webhook"
     </div>
 </div>
 
@@ -95,7 +382,7 @@
 
         <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 5px solid #ffc107;">
             <h4 style="color: #e0a800; margin-bottom: 10px;">📦 Version</h4>
-            <p style="font-size: 1.5em; font-weight: bold; color: #333;">2.0</p>
+            <p style="font-size: 1.5em; font-weight: bold; color: #333;">2.3</p>
         </div>
     </div>
 </div>
@@ -106,13 +393,9 @@
     
     <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
         <h4 style="margin-bottom: 15px;">ทดสอบ Webhook</h4>
-        <p style="margin-bottom: 15px; color: #666;">คลิกปุ่มด้านล่างเพื่อส่งข้อความทดสอบไปยัง LINE Bot</p>
+        <p style="margin-bottom: 15px; color: #666;">คลิกปุ่มด้านล่างเพื่อทดสอบ Webhook URL</p>
         <button class="btn btn-warning" onclick="testWebhook()" id="testBtn">🔬 ทดสอบการเชื่อมต่อ</button>
         <div id="testResult" style="margin-top: 15px;"></div>
-    </div>
-
-    <div class="info-box" style="margin-top: 20px;">
-        💡 <strong>หมายเหตุ:</strong> ฟังก์ชันนี้จะตรวจสอบว่า Webhook URL สามารถเข้าถึงได้และตอบสนองอย่างถูกต้อง
     </div>
 </div>
 
@@ -127,38 +410,146 @@
     </div>
 </div>
 
-<script>
-    let editingSection = null;
+<!-- Add/Edit Channel Modal -->
+<div id="channelModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">➕ เพิ่ม LINE Channel</h2>
+            <button class="close" onclick="closeChannelModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="channelForm">
+                <input type="hidden" id="channelId">
+                
+                <div class="form-group">
+                    <label for="channelName">📝 ชื่อ Channel</label>
+                    <input type="text" id="channelName" placeholder="เช่น: LINE OA หลัก" required>
+                    <small>ชื่อที่จะแสดงในระบบ (ไม่ใช่ชื่อใน LINE)</small>
+                </div>
 
-    function toggleEdit(section) {
-        const display = document.getElementById(section + 'Display');
-        const edit = document.getElementById(section + 'Edit');
-        
-        if (editingSection && editingSection !== section) {
-            document.getElementById(editingSection + 'Display').classList.remove('hidden');
-            document.getElementById(editingSection + 'Edit').classList.add('hidden');
-        }
-        
-        display.classList.toggle('hidden');
-        edit.classList.toggle('hidden');
-        
-        editingSection = edit.classList.contains('hidden') ? null : section;
+                <div class="form-group">
+                    <label for="lineAccessToken">🔑 Channel Access Token</label>
+                    <textarea id="lineAccessToken" style="min-height: 100px; font-family: 'Courier New', monospace;" placeholder="กรุณากรอก Channel Access Token" required></textarea>
+                    <small>หาได้จาก LINE Developers Console → Messaging API</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="lineChannelSecret">🔐 Channel Secret</label>
+                    <input type="text" id="lineChannelSecret" placeholder="กรุณากรอก Channel Secret" required>
+                    <small>หาได้จาก LINE Developers Console → Basic settings</small>
+                </div>
+
+                <div class="info-box">
+                    💡 <strong>วิธีหาข้อมูล:</strong><br>
+                    1. ไปที่ <a href="https://developers.line.biz/console/" target="_blank">LINE Developers Console</a><br>
+                    2. เลือก Provider และ Channel<br>
+                    3. Channel Access Token: แท็บ "Messaging API"<br>
+                    4. Channel Secret: แท็บ "Basic settings"
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">💾 บันทึก</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeChannelModal()" style="flex: 1;">❌ ยกเลิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Details Modal -->
+<div id="detailsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>👁️ รายละเอียด Channel</h2>
+            <button class="close" onclick="closeDetailsModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="detailsContent">
+            <!-- Details will be inserted here -->
+        </div>
+    </div>
+</div>
+
+<script>
+    let channels = <%- JSON.stringify(lineChannels) %>;
+    let isEditMode = false;
+    let currentChannelId = null;
+
+    // Add Channel
+    function openAddChannelModal() {
+        isEditMode = false;
+        currentChannelId = null;
+        document.getElementById('modalTitle').textContent = '➕ เพิ่ม LINE Channel';
+        document.getElementById('channelForm').reset();
+        document.getElementById('channelId').value = '';
+        document.getElementById('channelModal').style.display = 'block';
     }
 
-    async function saveLineSettings() {
-        const lineAccessToken = document.getElementById('lineAccessToken').value;
-        const lineChannelSecret = document.getElementById('lineChannelSecret').value;
+    // Edit Channel
+    function editChannel(id) {
+        isEditMode = true;
+        currentChannelId = id;
+        const channel = channels.find(ch => ch.id === id);
+        
+        if (!channel) {
+            showAlert('error', 'ไม่พบ Channel');
+            return;
+        }
 
-        if (!lineAccessToken || !lineChannelSecret) {
+        document.getElementById('modalTitle').textContent = '✏️ แก้ไข LINE Channel';
+        document.getElementById('channelId').value = channel.id;
+        document.getElementById('channelName').value = channel.name;
+        document.getElementById('lineAccessToken').value = channel.channelAccessToken;
+        document.getElementById('lineChannelSecret').value = channel.channelSecret;
+        document.getElementById('channelModal').style.display = 'block';
+    }
+
+    // Submit Form
+    document.getElementById('channelForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            channelName: document.getElementById('channelName').value.trim(),
+            lineAccessToken: document.getElementById('lineAccessToken').value.trim(),
+            lineChannelSecret: document.getElementById('lineChannelSecret').value.trim()
+        };
+
+        if (!formData.channelName || !formData.lineAccessToken || !formData.lineChannelSecret) {
             showAlert('error', 'กรุณากรอกข้อมูลให้ครบถ้วน');
             return;
         }
 
+        const url = isEditMode ? `/settings/line/update/${currentChannelId}` : '/settings/line/add';
+        
         try {
-            const response = await fetch('/settings/line', {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lineAccessToken, lineChannelSecret })
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('success', result.message);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', result.message);
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+        }
+    });
+
+    // Delete Channel
+    async function deleteChannel(id, name) {
+        if (!confirm(`ลบ Channel "${name}"?\n\nการกระทำนี้ไม่สามารถย้อนกลับได้!`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/settings/line/delete/${id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
             });
 
             const result = await response.json();
@@ -174,6 +565,118 @@
         }
     }
 
+    // Toggle Channel
+    async function toggleChannel(id, enabled) {
+        try {
+            const response = await fetch(`/settings/line/toggle/${id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('success', result.message);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert('error', result.message);
+                setTimeout(() => location.reload(), 1000);
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+            setTimeout(() => location.reload(), 1000);
+        }
+    }
+
+    // Test Channel
+    async function testChannel(id) {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '🔄 กำลังทดสอบ...';
+
+        try {
+            const response = await fetch(`/settings/line/test/${id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('success', `✅ ${result.message}\n\nชื่อแสดง: ${result.profile.displayName || 'N/A'}\nBasic ID: ${result.profile.basicId || 'N/A'}`);
+            } else {
+                showAlert('error', result.message);
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+
+    // View Channel Details
+    function viewChannelDetails(id) {
+        const channel = channels.find(ch => ch.id === id);
+        
+        if (!channel) {
+            showAlert('error', 'ไม่พบ Channel');
+            return;
+        }
+
+        const detailsHtml = `
+            <div style="text-align: center; margin-bottom: 20px;">
+                ${channel.profilePictureUrl ? 
+                    `<img src="${channel.profilePictureUrl}" alt="${channel.name}" style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid #667eea;" onerror="this.outerHTML='<div style=\\'width:100px;height:100px;border-radius:50%;background:#667eea;color:white;display:flex;align-items:center;justify-content:center;font-size:3em;margin:0 auto\\'>🤖</div>'">` :
+                    `<div style="width: 100px; height: 100px; border-radius: 50%; background: #667eea; color: white; display: flex; align-items: center; justify-content: center; font-size: 3em; margin: 0 auto;">🤖</div>`
+                }
+                <h3 style="margin-top: 15px;">${channel.name}</h3>
+                <small style="color: #666;">${channel.displayName || 'N/A'}</small>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                <strong>🆔 Channel ID:</strong><br>
+                <code style="word-break: break-all;">${channel.id}</code>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                <strong>📱 Basic ID:</strong><br>
+                <code>${channel.basicId || 'N/A'}</code>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                <strong>🔑 Channel Access Token:</strong><br>
+                <code style="word-break: break-all; font-size: 0.8em;">${channel.channelAccessToken}</code>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                <strong>🔐 Channel Secret:</strong><br>
+                <code style="word-break: break-all;">${channel.channelSecret}</code>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                <strong>📅 เพิ่มเมื่อ:</strong><br>
+                ${new Date(channel.createdAt).toLocaleString('th-TH')}
+            </div>
+
+            <div style="background: ${channel.enabled ? '#d4edda' : '#f8d7da'}; padding: 15px; border-radius: 10px; text-align: center;">
+                <strong style="color: ${channel.enabled ? '#155724' : '#721c24'};">
+                    ${channel.enabled ? '✅ เปิดใช้งาน' : '❌ ปิดใช้งาน'}
+                </strong>
+            </div>
+
+            <button class="btn btn-secondary" onclick="closeDetailsModal()" style="width: 100%; margin-top: 20px;">
+                ✖️ ปิด
+            </button>
+        `;
+
+        document.getElementById('detailsContent').innerHTML = detailsHtml;
+        document.getElementById('detailsModal').style.display = 'block';
+    }
+
+    // Copy Webhook URL
     function copyWebhookUrl() {
         const url = '<%= webhookUrl %>';
         navigator.clipboard.writeText(url).then(() => {
@@ -183,6 +686,7 @@
         });
     }
 
+    // Test Webhook
     async function testWebhook() {
         const btn = document.getElementById('testBtn');
         const result = document.getElementById('testResult');
@@ -212,6 +716,7 @@
         }
     }
 
+    // Clear User Data
     async function clearUserData() {
         if (!confirm('⚠️ คุณแน่ใจหรือไม่ที่จะลบข้อมูลผู้ใช้ทั้งหมด?\n\nการกระทำนี้ไม่สามารถย้อนกลับได้!')) {
             return;
@@ -237,6 +742,21 @@
             }
         } catch (error) {
             showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+        }
+    }
+
+    // Modal Functions
+    function closeChannelModal() {
+        document.getElementById('channelModal').style.display = 'none';
+    }
+
+    function closeDetailsModal() {
+        document.getElementById('detailsModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
         }
     }
 </script>

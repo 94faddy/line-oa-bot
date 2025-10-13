@@ -59,6 +59,10 @@ function setupDashboardRoute(requireLogin, appConfig, userMessageHistory, getCoo
       const host = req.get('host');
       webhookUrl = `${protocol}://${host}/webhook`;
     }
+
+    // นับจำนวน channel ที่เปิดใช้งาน
+    const activeChannels = (appConfig.lineChannels || []).filter(ch => ch.enabled).length;
+    const totalChannels = (appConfig.lineChannels || []).length;
     
     res.render('dashboard', { 
       totalUsers: users.length,
@@ -66,6 +70,8 @@ function setupDashboardRoute(requireLogin, appConfig, userMessageHistory, getCoo
       totalPromotions: promotionsConfig.flexMessages.length,
       cooldownHours: appConfig.botSettings.cooldownHours,
       lineConfigured: global.isLineConfigured,
+      activeChannels: activeChannels,
+      totalChannels: totalChannels,
       webhookUrl: webhookUrl,
       activityKeywordsList: appConfig.botSettings.keywords.join(', '),
       promotionKeywordsList: promotionsConfig.promotionSettings.keywords.join(', '),

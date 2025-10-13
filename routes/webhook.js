@@ -53,6 +53,25 @@ function getCooldownMessage(userId, cooldownMessageTemplate, userMessageHistory,
   return template.replace('{timeLeft}', timeLeft);
 }
 
+// ฟังก์ชันหา LINE Client จาก signature
+function findClientBySignature(signature, body) {
+  for (const [channelId, clientData] of global.lineClients.entries()) {
+    const hash = crypto
+      .createHmac('SHA256', clientData.channelSecret)
+      .update(body)
+      .digest('base64');
+    
+    if (hash === signature) {
+      return {
+        client: clientData.client,
+        channelId: channelId,
+        config: clientData.config
+      };
+    }
+  }
+  return null;
+}
+
 // Setup Webhook Route
 function setupWebhookRoute(
   appConfig, 
@@ -69,34 +88,36 @@ function setupWebhookRoute(
   
   router.post('/webhook', express.json(), async (req, res) => {
     try {
-      // ตรวจสอบว่ามีการตั้งค่า LINE หรือยัง
-      if (!global.isLineConfigured) {
-        console.log('⚠️ Webhook received but LINE is not configured yet');
-        return res.status(200).send('LINE not configured');
+      // ตรวจสอบว่ามี LINE Channel ที่เปิดใช้งานหรือไม่
+      if (global.lineClients.size === 0) {
+        console.log('⚠️ Webhook received but no LINE channels are configured');
+        return res.status(200).send('No channels configured');
       }
 
       // ตรวจสอบ signature
       const signature = req.get('x-line-signature');
       if (!signature) {
+        console.log('❌ No signature provided');
         return res.status(401).send('No signature');
       }
 
-      // Verify signature
+      // หา LINE Client ที่ตรงกับ signature
       const body = JSON.stringify(req.body);
-      const hash = crypto
-        .createHmac('SHA256', global.lineConfig.channelSecret)
-        .update(body)
-        .digest('base64');
+      const clientData = findClientBySignature(signature, body);
 
-      if (hash !== signature) {
-        console.log('❌ Invalid signature');
+      if (!clientData) {
+        console.log('❌ Invalid signature - no matching channel found');
         return res.status(401).send('Invalid signature');
       }
+
+      console.log(`✅ Webhook verified for channel: ${clientData.config.name} (${clientData.channelId})`);
 
       const events = req.body.events;
       await Promise.all(events.map(event => 
         handleEvent(
           event, 
+          clientData.client,
+          clientData.config,
           appConfig, 
           userMessageHistory, 
           getCooldownPeriod, 
@@ -123,6 +144,8 @@ function setupWebhookRoute(
 // ฟังก์ชันจัดการ Event
 async function handleEvent(
   event, 
+  lineClient,
+  channelConfig,
   appConfig, 
   userMessageHistory, 
   getCooldownPeriod, 
@@ -138,30 +161,30 @@ async function handleEvent(
     return null;
   }
   
-  if (!global.lineClient || !global.isLineConfigured) {
-    console.error('LINE client not initialized');
+  if (!lineClient) {
+    console.error('LINE client not available');
     return null;
   }
   
   const userId = event.source.userId;
   const messageText = event.message.text;
   
-  console.log(`📩 Received message from ${userId}: ${messageText}`);
+  console.log(`📩 [${channelConfig.name}] Received message from ${userId}: ${messageText}`);
   
   // 1. ตรวจสอบคีย์เวิร์ดโปรโมชั่นก่อน (ระบบเดิม)
   if (containsPromotionKeyword(messageText)) {
-    console.log('🎨 Promotion keyword detected!');
+    console.log(`🎨 [${channelConfig.name}] Promotion keyword detected!`);
     
     const flexMessage = createPromotionFlexMessage();
     
     if (flexMessage) {
-      await global.lineClient.replyMessage({
+      await lineClient.replyMessage({
         replyToken: event.replyToken,
         messages: [flexMessage]
       });
-      console.log(`✅ Promotions sent to ${userId}`);
+      console.log(`✅ [${channelConfig.name}] Promotions sent to ${userId}`);
     } else {
-      await global.lineClient.replyMessage({
+      await lineClient.replyMessage({
         replyToken: event.replyToken,
         messages: [{
           type: 'text',
@@ -175,10 +198,10 @@ async function handleEvent(
   
   // 2. ตรวจสอบคีย์เวิร์ดกิจกรรมแชร์ (ระบบเดิม)
   if (containsKeyword(messageText, appConfig.botSettings.keywords)) {
-    console.log('🎁 Activity keyword detected!');
+    console.log(`🎁 [${channelConfig.name}] Activity keyword detected!`);
     
     if (canSendMessage(userId, userMessageHistory, getCooldownPeriod)) {
-      await global.lineClient.replyMessage({
+      await lineClient.replyMessage({
         replyToken: event.replyToken,
         messages: [{
           type: 'text',
@@ -187,11 +210,11 @@ async function handleEvent(
       });
       
       recordMessageSent(userId, userMessageHistory);
-      console.log(`✅ Activity sent to ${userId}`);
+      console.log(`✅ [${channelConfig.name}] Activity sent to ${userId}`);
     } else {
       const cooldownMsg = getCooldownMessage(userId, appConfig.botSettings.cooldownMessage, userMessageHistory, getCooldownPeriod);
       
-      await global.lineClient.replyMessage({
+      await lineClient.replyMessage({
         replyToken: event.replyToken,
         messages: [{
           type: 'text',
@@ -201,7 +224,7 @@ async function handleEvent(
       
       const remaining = getRemainingTime(userId, userMessageHistory, getCooldownPeriod);
       const timeLeft = formatTime(remaining);
-      console.log(`⏳ Cooldown active for ${userId}, ${timeLeft} remaining`);
+      console.log(`⏳ [${channelConfig.name}] Cooldown active for ${userId}, ${timeLeft} remaining`);
     }
     
     return null;
@@ -209,13 +232,13 @@ async function handleEvent(
   
   // 3. ตรวจสอบคีย์เวิร์ด Flex Message (ระบบใหม่ - ใช้ Config)
   if (containsFlexKeyword(messageText)) {
-    console.log('💬 Flex Message keyword detected!');
+    console.log(`💬 [${channelConfig.name}] Flex Message keyword detected!`);
     
     try {
       const randomFlex = getRandomFlex();
       
       if (!randomFlex) {
-        await global.lineClient.replyMessage({
+        await lineClient.replyMessage({
           replyToken: event.replyToken,
           messages: [{
             type: 'text',
@@ -241,15 +264,15 @@ async function handleEvent(
         }
       }
       
-      await global.lineClient.replyMessage({
+      await lineClient.replyMessage({
         replyToken: event.replyToken,
         messages: messages
       });
       
-      console.log(`✅ Flex Message ${quickReplyConfig.flexMessageSettings.sendWithQuickReply ? '+ Quick Reply' : ''} sent to ${userId}`);
+      console.log(`✅ [${channelConfig.name}] Flex Message ${quickReplyConfig.flexMessageSettings.sendWithQuickReply ? '+ Quick Reply' : ''} sent to ${userId}`);
     } catch (error) {
-      console.error('❌ Error sending Flex Message:', error);
-      await global.lineClient.replyMessage({
+      console.error(`❌ [${channelConfig.name}] Error sending Flex Message:`, error);
+      await lineClient.replyMessage({
         replyToken: event.replyToken,
         messages: [{
           type: 'text',
@@ -263,18 +286,18 @@ async function handleEvent(
   
   // 4. ตรวจสอบคีย์เวิร์ด Quick Reply Menu (ระบบใหม่ - ใช้ Config)
   if (containsQuickReplyKeyword(messageText)) {
-    console.log('🔘 Quick Reply keyword detected!');
+    console.log(`🔘 [${channelConfig.name}] Quick Reply keyword detected!`);
     
     const quickReply = getQuickReplyMenu();
     
     if (quickReply) {
-      await global.lineClient.replyMessage({
+      await lineClient.replyMessage({
         replyToken: event.replyToken,
         messages: [quickReply]
       });
-      console.log(`✅ Quick Reply Menu sent to ${userId}`);
+      console.log(`✅ [${channelConfig.name}] Quick Reply Menu sent to ${userId}`);
     } else {
-      await global.lineClient.replyMessage({
+      await lineClient.replyMessage({
         replyToken: event.replyToken,
         messages: [{
           type: 'text',

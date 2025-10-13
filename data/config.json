@@ -1,8 +1,34 @@
 {
-  "lineConfig": {
-    "channelAccessToken": "dGFOHpb91Aq4bZOlV69J1cgFQ7KRDdyZqhudJl5nvwNSe8fdYOCKWlqmbKSyg6EipQDkuguhjP+cW3Xl3HDNKTJYJkaRp4i76JjrlpMrSrPSAkfwQpg4OugM2SGhEz+WAfzCym+sci1w666UyP2yBwdB04t89/1O/w1cDnyilFU=",
-    "channelSecret": "dbe8755b051192cf4f58d15118c19078"
-  },
+  "lineChannels": [
+    {
+      "id": "channel-1760386084614",
+      "name": "W99 เครดิตฟรี",
+      "channelAccessToken": "dGFOHpb91Aq4bZOlV69J1cgFQ7KRDdyZqhudJl5nvwNSe8fdYOCKWlqmbKSyg6EipQDkuguhjP+cW3Xl3HDNKTJYJkaRp4i76JjrlpMrSrPSAkfwQpg4OugM2SGhEz+WAfzCym+sci1w666UyP2yBwdB04t89/1O/w1cDnyilFU=",
+      "channelSecret": "dbe8755b051192cf4f58d15118c19078",
+      "profilePictureUrl": "",
+      "displayName": "ดับบลิว9.9",
+      "basicId": "@323qzbjz",
+      "userId": "U16a65b726217fed730677220f5bbc46e",
+      "premiumId": "",
+      "chatMode": "chat",
+      "enabled": true,
+      "createdAt": "2025-10-13T20:08:04.615Z"
+    },
+    {
+      "id": "channel-1760386982155",
+      "name": "W99 หลัก",
+      "channelAccessToken": "5zrmSlRbGN7PQ1HBAD/tFLFL0U7TJsRcAEZLBlIb8+rXdb9OIrM76Q3o2yhRudf3rwLs2FlkeTu5evPQgaJk7m6EK/XWS+9qdWGdPzaxs3Y7Cm+xHwjs17wM4HpGz0/xJwJc3/1nTW+nL5l900JxHQdB04t89/1O/w1cDnyilFU=",
+      "channelSecret": "e14cdc6e479a95058a4639d0a13ed12e",
+      "profilePictureUrl": "",
+      "displayName": "MAINEZY69",
+      "basicId": "@031juhjq",
+      "userId": "Ua9ba40cfc73bef10dba44935f9cccf64",
+      "premiumId": "",
+      "chatMode": "chat",
+      "enabled": true,
+      "createdAt": "2025-10-13T20:23:02.155Z"
+    }
+  ],
   "botSettings": {
     "activityMessage": "กิจกรรมรับรางวัลฟรี 100\nแชร์โพสลงกลุ่มจำนวน 6 กลุ่ม Facebook เฉพาะ สล็อต การพนันเท่านั้น (ห้ามซ้ำ)\n🔷 https://9iot.cc/w99\n\nกดติดตาม 🎯 กดถูกใจ ด้วยนะคะ\n\n💞ทำเสร็จแล้วแคปหลักฐานกิจกรรมให้น้องแอดด้วยนะคะ\n(หากส่งกิจกรรมไม่ครบและเกินระยะเวลาทำกิจกรรม 4 ชั่วโมงขอตัดสิทธินะคะ)",
     "cooldownMessage": "คุณได้รับกิจกรรมไปแล้วค่ะ กรุณารอ {timeLeft} ก่อนกรุณาทำกิจกรรมที่ทางเราส่งให้ก่อนนะคะ 😊",
