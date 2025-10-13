@@ -38,6 +38,7 @@ if (appConfig.lineConfig && !appConfig.lineChannels) {
     profilePictureUrl: '',
     enabled: true,
     features: {
+      welcome: true,
       activities: true,
       promotions: true,
       flexMessages: true
@@ -55,13 +56,20 @@ let needsSave = false;
 if (appConfig.lineChannels) {
   appConfig.lineChannels.forEach(channel => {
     if (!channel.features) {
+      // ถ้าไม่มี features เลย ให้สร้างใหม่
       channel.features = {
+        welcome: true,
         activities: true,
         promotions: true,
         flexMessages: true
       };
       needsSave = true;
       console.log(`✅ เพิ่ม features ให้กับ channel: ${channel.name}`);
+    } else if (channel.features.welcome === undefined) {
+      // ถ้ามี features แต่ไม่มี welcome ให้เพิ่ม welcome เข้าไป
+      channel.features.welcome = true;
+      needsSave = true;
+      console.log(`✅ เพิ่ม welcome feature ให้กับ channel: ${channel.name}`);
     }
   });
   
@@ -153,11 +161,17 @@ const {
   containsFlexKeyword,
   quickReplyConfig
 } = require('./routes/flexMessages');
+const { 
+  setupWelcomeRoutes, 
+  createWelcomeFlexMessage, 
+  welcomeConfig 
+} = require('./routes/welcome');
 const { setupWebhookRoute } = require('./routes/webhook');
 
-// ใช้งาน Routes - ส่งฟังก์ชัน saveConfig และ initializeLineClients
+// ใช้งาน Routes
 app.use('/', authRouter);
 app.use('/', setupDashboardRoute(requireLogin, appConfig, userMessageHistory, getCooldownPeriod, promotionsConfig));
+app.use('/', setupWelcomeRoutes(requireLogin));
 app.use('/', setupActivitiesRoutes(requireLogin, appConfig, userMessageHistory, getCooldownPeriod, saveConfig));
 app.use('/', setupPromotionsRoutes(requireLogin));
 app.use('/', setupFlexRoutes(requireLogin));
@@ -172,7 +186,9 @@ app.use('/', setupWebhookRoute(
   getQuickReplyMenu,
   containsQuickReplyKeyword,
   containsFlexKeyword,
-  quickReplyConfig
+  quickReplyConfig,
+  createWelcomeFlexMessage,
+  welcomeConfig
 ));
 
 // Health Check
@@ -185,7 +201,8 @@ app.get('/health', (req, res) => {
     configuredChannels: global.lineClients.size,
     flexEnabled: quickReplyConfig.flexMessageSettings.enabled,
     quickReplyEnabled: quickReplyConfig.quickReplySettings.enabled,
-    version: '2.4'
+    welcomeEnabled: welcomeConfig.welcomeSettings.enabled,
+    version: '2.5'
   });
 });
 
@@ -195,7 +212,7 @@ const DOMAIN = process.env.DOMAIN;
 
 app.listen(PORT, () => {
   console.log('='.repeat(70));
-  console.log('🚀 LINE OA Bot Server Started! (Version 2.4 - Feature Control)');
+  console.log('🚀 LINE OA Bot Server Started! (Version 2.5 - Welcome Message)');
   console.log('='.repeat(70));
   console.log(`📡 Server running on port ${PORT}`);
 
@@ -208,15 +225,17 @@ app.listen(PORT, () => {
     console.log(`⚠️  แนะนำ: ตั้งค่า DOMAIN ใน .env สำหรับ Production`);
   }
 
+  console.log(`\n📍 URLs:`);
   console.log(`🔐 Login:          http://localhost:${PORT}/login`);
   console.log(`📊 Dashboard:      http://localhost:${PORT}/`);
+  console.log(`👋 Welcome:        http://localhost:${PORT}/welcome`);
   console.log(`🎁 Activities:     http://localhost:${PORT}/activities`);
   console.log(`🎨 Promotions:     http://localhost:${PORT}/promotions`);
   console.log(`💬 Flex Messages:  http://localhost:${PORT}/flex-messages`);
   console.log(`⚙️  Settings:       http://localhost:${PORT}/settings`);
-  console.log(`🔗 Webhook URL:    http://localhost:${PORT}/webhook`);
   console.log('='.repeat(70));
   console.log(`🤖 LINE Channels:  ${global.lineClients.size} configured`);
+  console.log(`👋 Welcome Message: ${welcomeConfig.welcomeSettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
   console.log(`💬 Flex Messages:  ${quickReplyConfig.flexMessageSettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
   console.log(`🔘 Quick Reply:    ${quickReplyConfig.quickReplySettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
   console.log('='.repeat(70));
@@ -229,6 +248,7 @@ app.listen(PORT, () => {
     global.lineChannels.forEach(channel => {
       if (channel.enabled) {
         const features = [];
+        if (channel.features?.welcome) features.push('Welcome');
         if (channel.features?.activities) features.push('Activities');
         if (channel.features?.promotions) features.push('Promotions');
         if (channel.features?.flexMessages) features.push('Flex');
@@ -240,6 +260,7 @@ app.listen(PORT, () => {
   console.log('\n💡 Features:');
   console.log('   ✅ Multi-Channel: รองรับหลาย LINE OA');
   console.log('   ✅ Feature Control: เลือกฟีเจอร์แยกตาม Channel');
+  console.log('   ✅ Welcome Message: ทักทายเพื่อนใหม่อัตโนมัติ');
   console.log('   ✅ กิจกรรมแชร์: จัดการข้อความและ Cooldown');
   console.log('   ✅ โปรโมชั่น: สร้าง Flex Messages สวยงาม');
   console.log('   ✅ Flex Messages: สุ่มส่ง Flex + จัดการผ่าน Dashboard');

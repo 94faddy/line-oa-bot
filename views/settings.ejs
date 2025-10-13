@@ -347,6 +347,19 @@
                             
                             <div class="feature-item">
                                 <label>
+                                    <span>👋</span>
+                                    <span>Welcome Message</span>
+                                </label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" 
+                                           <%= channel.features?.welcome ? 'checked' : '' %> 
+                                           onchange="updateFeature('<%= channel.id %>', 'welcome', this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="feature-item">
+                                <label>
                                     <span>🎁</span>
                                     <span>กิจกรรมแชร์</span>
                                 </label>
@@ -459,7 +472,7 @@
 
         <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 5px solid #ffc107;">
             <h4 style="color: #e0a800; margin-bottom: 10px;">📦 Version</h4>
-            <p style="font-size: 1.5em; font-weight: bold; color: #333;">2.4</p>
+            <p style="font-size: 1.5em; font-weight: bold; color: #333;">2.5</p>
         </div>
     </div>
 </div>
@@ -558,6 +571,7 @@
             if (!channel) return;
 
             const features = {
+                welcome: channel.features?.welcome || false,
                 activities: channel.features?.activities || false,
                 promotions: channel.features?.promotions || false,
                 flexMessages: channel.features?.flexMessages || false
@@ -574,7 +588,14 @@
             const result = await response.json();
 
             if (result.success) {
-                showAlert('success', `${enabled ? 'เปิด' : 'ปิด'}ใช้งานฟีเจอร์สำเร็จ`);
+                // แสดงชื่อฟีเจอร์ภาษาไทย
+                const featureNames = {
+                    welcome: 'Welcome Message',
+                    activities: 'กิจกรรมแชร์',
+                    promotions: 'โปรโมชั่น',
+                    flexMessages: 'Flex Messages & Quick Reply'
+                };
+                showAlert('success', `${enabled ? 'เปิด' : 'ปิด'}ใช้งาน ${featureNames[featureName]} สำเร็จ`);
                 // Update local data
                 channel.features = features;
             } else {
@@ -740,8 +761,9 @@
             return;
         }
 
-        const features = channel.features || { activities: true, promotions: true, flexMessages: true };
+        const features = channel.features || { welcome: true, activities: true, promotions: true, flexMessages: true };
         const featureList = [];
+        if (features.welcome) featureList.push('👋 Welcome Message');
         if (features.activities) featureList.push('🎁 กิจกรรมแชร์');
         if (features.promotions) featureList.push('🎨 โปรโมชั่น');
         if (features.flexMessages) featureList.push('💬 Flex Messages');

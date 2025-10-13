@@ -232,6 +232,7 @@ function setupSettingsRoutes(requireLogin, appConfig, saveConfig, userMessageHis
         chatMode: profileInfo.chatMode || 'bot',
         enabled: true,
         features: {
+          welcome: true,
           activities: true,
           promotions: true,
           flexMessages: true
@@ -315,6 +316,7 @@ function setupSettingsRoutes(requireLogin, appConfig, saveConfig, userMessageHis
         premiumId: profileInfo.premiumId || '',
         chatMode: profileInfo.chatMode || 'bot',
         features: appConfig.lineChannels[channelIndex].features || {
+          welcome: true,
           activities: true,
           promotions: true,
           flexMessages: true
@@ -343,7 +345,7 @@ function setupSettingsRoutes(requireLogin, appConfig, saveConfig, userMessageHis
   router.post('/settings/line/features/:id', requireLogin, (req, res) => {
     try {
       const { id } = req.params;
-      const { activities, promotions, flexMessages } = req.body;
+      const { welcome, activities, promotions, flexMessages } = req.body;
       
       const channelIndex = appConfig.lineChannels.findIndex(ch => ch.id === id);
       
@@ -355,6 +357,7 @@ function setupSettingsRoutes(requireLogin, appConfig, saveConfig, userMessageHis
       }
 
       appConfig.lineChannels[channelIndex].features = {
+        welcome: welcome === true || welcome === 'true',
         activities: activities === true || activities === 'true',
         promotions: promotions === true || promotions === 'true',
         flexMessages: flexMessages === true || flexMessages === 'true'

@@ -13,6 +13,7 @@
       "chatMode": "chat",
       "enabled": true,
       "features": {
+        "welcome": true,
         "activities": true,
         "promotions": true,
         "flexMessages": true
@@ -32,6 +33,7 @@
       "chatMode": "chat",
       "enabled": true,
       "features": {
+        "welcome": true,
         "activities": true,
         "promotions": true,
         "flexMessages": true

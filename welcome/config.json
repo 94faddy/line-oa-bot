@@ -1,0 +1,53 @@
+{
+  "welcomeSettings": {
+    "enabled": true,
+    "showOnFollow": true,
+    "title": "ยินดีต้อนรับสู่ W99! 🎉",
+    "description": "ขอบคุณที่เป็นเพื่อนกับเรา เลือกเมนูด้านล่างเพื่อเริ่มต้นใช้งาน",
+    "backgroundColor": "#4de30d",
+    "textColor": "#141414",
+    "backgroundImageUrl": ""
+  },
+  "welcomeButtons": [
+    {
+      "id": "btn-welcome-1",
+      "type": "uri",
+      "label": "🎨 โปรโมชั่น",
+      "uri": "https://m.w99.in/promotions",
+      "enabled": true,
+      "color": "#667eea"
+    },
+    {
+      "id": "btn-welcome-2",
+      "type": "message",
+      "label": "🎁 รับเครดิตฟรี",
+      "text": "ฟรี",
+      "enabled": true,
+      "color": "#28a745"
+    },
+    {
+      "id": "btn-welcome-3",
+      "type": "uri",
+      "label": "📝 สมัครสมาชิก",
+      "uri": "https://m.w99.in/register",
+      "enabled": true,
+      "color": "#ffc107"
+    },
+    {
+      "id": "btn-welcome-4",
+      "type": "uri",
+      "label": "🎮 เกมโบนัส",
+      "enabled": true,
+      "color": "#17a2b8",
+      "uri": ""
+    },
+    {
+      "id": "btn-welcome-5",
+      "type": "uri",
+      "label": "💰 ฝากถอน",
+      "enabled": true,
+      "color": "#4f1c21",
+      "uri": "https://m.w99.in/"
+    }
+  ]
+}

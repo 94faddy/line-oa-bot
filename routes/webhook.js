@@ -83,7 +83,9 @@ function setupWebhookRoute(
   getQuickReplyMenu,
   containsQuickReplyKeyword,
   containsFlexKeyword,
-  quickReplyConfig
+  quickReplyConfig,
+  createWelcomeFlexMessage,
+  welcomeConfig
 ) {
   
   router.post('/webhook', express.json(), async (req, res) => {
@@ -127,7 +129,9 @@ function setupWebhookRoute(
           getQuickReplyMenu,
           containsQuickReplyKeyword,
           containsFlexKeyword,
-          quickReplyConfig
+          quickReplyConfig,
+          createWelcomeFlexMessage,
+          welcomeConfig
         )
       ));
       
@@ -155,8 +159,49 @@ async function handleEvent(
   getQuickReplyMenu,
   containsQuickReplyKeyword,
   containsFlexKeyword,
-  quickReplyConfig
+  quickReplyConfig,
+  createWelcomeFlexMessage,
+  welcomeConfig
 ) {
+  // ============================================
+  // ตรวจสอบ Event Type: Follow Event (เพื่อนใหม่)
+  // ============================================
+  if (event.type === 'follow') {
+    console.log(`👋 [${channelConfig.name}] New follower: ${event.source.userId}`);
+    
+    // ตรวจสอบว่า Channel นี้เปิดใช้งาน Welcome Feature หรือไม่
+    const features = channelConfig.features || {};
+    
+    if (!features.welcome) {
+      console.log(`ℹ️ [${channelConfig.name}] Welcome feature is disabled for this channel`);
+      return null;
+    }
+    
+    // ส่ง Welcome Message ถ้าเปิดใช้งานทั้งใน Global Config และ Channel Feature
+    if (welcomeConfig.welcomeSettings.enabled && welcomeConfig.welcomeSettings.showOnFollow) {
+      const welcomeMessage = createWelcomeFlexMessage();
+      
+      if (welcomeMessage) {
+        try {
+          await lineClient.pushMessage({
+            to: event.source.userId,
+            messages: [welcomeMessage]
+          });
+          console.log(`✅ [${channelConfig.name}] Welcome message sent to new follower`);
+        } catch (error) {
+          console.error(`❌ [${channelConfig.name}] Error sending welcome message:`, error);
+        }
+      }
+    } else {
+      console.log(`ℹ️ [${channelConfig.name}] Welcome message is disabled in global settings`);
+    }
+    
+    return null;
+  }
+
+  // ============================================
+  // ตรวจสอบ Event Type: Message Event
+  // ============================================
   if (event.type !== 'message' || event.message.type !== 'text') {
     return null;
   }
@@ -173,6 +218,7 @@ async function handleEvent(
   
   // ตรวจสอบ Features ที่เปิดใช้งานของ Channel นี้
   const features = channelConfig.features || {
+    welcome: true,
     activities: true,
     promotions: true,
     flexMessages: true
@@ -180,7 +226,9 @@ async function handleEvent(
 
   console.log(`🔧 [${channelConfig.name}] Features:`, features);
   
+  // ============================================
   // 1. ตรวจสอบคีย์เวิร์ดโปรโมชั่นก่อน (ถ้าเปิดใช้งาน)
+  // ============================================
   if (features.promotions && containsPromotionKeyword(messageText)) {
     console.log(`🎨 [${channelConfig.name}] Promotion keyword detected!`);
     
@@ -205,7 +253,9 @@ async function handleEvent(
     return null;
   }
   
+  // ============================================
   // 2. ตรวจสอบคีย์เวิร์ดกิจกรรมแชร์ (ถ้าเปิดใช้งาน)
+  // ============================================
   if (features.activities && containsKeyword(messageText, appConfig.botSettings.keywords)) {
     console.log(`🎁 [${channelConfig.name}] Activity keyword detected!`);
     
@@ -239,7 +289,9 @@ async function handleEvent(
     return null;
   }
   
+  // ============================================
   // 3. ตรวจสอบคีย์เวิร์ด Flex Message (ถ้าเปิดใช้งาน)
+  // ============================================
   if (features.flexMessages && containsFlexKeyword(messageText)) {
     console.log(`💬 [${channelConfig.name}] Flex Message keyword detected!`);
     
@@ -293,7 +345,9 @@ async function handleEvent(
     return null;
   }
   
+  // ============================================
   // 4. ตรวจสอบคีย์เวิร์ด Quick Reply Menu (ถ้าเปิดใช้งาน Flex Messages)
+  // ============================================
   if (features.flexMessages && containsQuickReplyKeyword(messageText)) {
     console.log(`🔘 [${channelConfig.name}] Quick Reply keyword detected!`);
     
@@ -318,7 +372,9 @@ async function handleEvent(
     return null;
   }
   
+  // ============================================
   // ถ้าไม่ตรงเงื่อนไขใดๆ
+  // ============================================
   console.log(`ℹ️ [${channelConfig.name}] No matching keyword for message: ${messageText}`);
   return null;
 }
