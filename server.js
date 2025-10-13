@@ -20,6 +20,7 @@ if (!fs.existsSync(configPath)) {
     },
     botSettings: {
       activityMessage: "กิจกรรมรับรางวัลฟรี 100\nแชร์โพสลงกลุ่มจำนวน 6 กลุ่ม Facebook เฉพาะ สล็อต การพนันเท่านั้น (ห้ามซ้ำ)\n🔷 https://9iot.cc/w99\nกดติดตาม 🎯 กดถูกใจ ด้วยนะคะ\n💞ทำเสร็จแล้วแคปหลักฐานกิจกรรมให้น้องแอดด้วยนะคะ\n(หากส่งกิจกรรมไม่ครบและเกินระยะเวลาทำกิจกรรม 4 ชั่วโมงขอตัดสิทธินะคะ)",
+      cooldownMessage: "คุณได้รับกิจกรรมไปแล้วค่ะ กรุณารอ {timeLeft} ก่อนขอรับกิจกรรมอีกครั้งนะคะ 😊",
       keywords: ["ฟรี", "free", "เครดิตฟรี", "เครดิต", "รับเครดิต"],
       cooldownHours: 2
     }
@@ -135,6 +136,14 @@ function formatTime(milliseconds) {
   return `${hours} ชั่วโมง ${minutes} นาที`;
 }
 
+// ฟังก์ชันสร้างข้อความ Cooldown พร้อม placeholder
+function getCooldownMessage(userId) {
+  const remaining = getRemainingTime(userId);
+  const timeLeft = formatTime(remaining);
+  const template = appConfig.botSettings.cooldownMessage || "คุณได้รับกิจกรรมไปแล้วค่ะ กรุณารอ {timeLeft} ก่อนขอรับกิจกรรมอีกครั้งนะคะ 😊";
+  return template.replace('{timeLeft}', timeLeft);
+}
+
 // ===================== ROUTES =====================
 
 // Login Page
@@ -192,6 +201,7 @@ app.get('/', requireLogin, (req, res) => {
     users,
     totalUsers: users.length,
     activityMessage: appConfig.botSettings.activityMessage,
+    cooldownMessage: appConfig.botSettings.cooldownMessage || "คุณได้รับกิจกรรมไปแล้วค่ะ กรุณารอ {timeLeft} ก่อนขอรับกิจกรรมอีกครั้งนะคะ 😊",
     keywords: appConfig.botSettings.keywords.join(', '),
     cooldownHours: appConfig.botSettings.cooldownHours,
     lineAccessToken: appConfig.lineConfig.channelAccessToken,
@@ -203,10 +213,11 @@ app.get('/', requireLogin, (req, res) => {
 // Update Settings
 app.post('/update-settings', requireLogin, (req, res) => {
   try {
-    const { activityMessage, keywords, cooldownHours, lineAccessToken, lineChannelSecret } = req.body;
+    const { activityMessage, cooldownMessage, keywords, cooldownHours, lineAccessToken, lineChannelSecret } = req.body;
     
     // อัพเดทการตั้งค่า
     appConfig.botSettings.activityMessage = activityMessage;
+    appConfig.botSettings.cooldownMessage = cooldownMessage || "คุณได้รับกิจกรรมไปแล้วค่ะ กรุณารอ {timeLeft} ก่อนขอรับกิจกรรมอีกครั้งนะคะ 😊";
     appConfig.botSettings.keywords = keywords.split(',').map(k => k.trim()).filter(k => k);
     appConfig.botSettings.cooldownHours = parseFloat(cooldownHours) || 2;
     appConfig.lineConfig.channelAccessToken = lineAccessToken || '';
@@ -311,19 +322,20 @@ async function handleEvent(event) {
       recordMessageSent(userId);
       console.log(`Activity sent to ${userId}`);
     } else {
-      const remaining = getRemainingTime(userId);
-      const timeLeft = formatTime(remaining);
+      const cooldownMsg = getCooldownMessage(userId);
       
       await client.replyMessage({
         replyToken: event.replyToken,
         messages: [
           {
             type: 'text',
-            text: `คุณได้รับกิจกรรมไปแล้วค่ะ กรุณารอ ${timeLeft} ก่อนขอรับกิจกรรมอีกครั้งนะคะ 😊`
+            text: cooldownMsg
           }
         ]
       });
       
+      const remaining = getRemainingTime(userId);
+      const timeLeft = formatTime(remaining);
       console.log(`Cooldown active for ${userId}, ${timeLeft} remaining`);
     }
   }
