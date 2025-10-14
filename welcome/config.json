@@ -6,7 +6,7 @@
     "description": "ยินดีให้บริการ 24 ช.ม\nสามารถติดต่อสอบถามแอดมินได้24 ชม",
     "backgroundColor": "#e3d10d",
     "textColor": "#141414",
-    "backgroundImageUrl": ""
+    "bodyBackgroundColor": "#e5dcdc"
   },
   "welcomeButtons": [
     {
@@ -15,7 +15,8 @@
       "label": "🎨 โปรโมชั่น",
       "enabled": true,
       "color": "#ed9907",
-      "text": "โปรโมชั่น"
+      "text": "โปรโมชั่น",
+      "order": 2
     },
     {
       "id": "btn-welcome-2",
@@ -23,7 +24,8 @@
       "label": "🎁 รับเครดิตฟรี",
       "enabled": true,
       "color": "#28a745",
-      "text": "ฟรี"
+      "text": "ฟรี",
+      "order": 1
     },
     {
       "id": "btn-welcome-3",
@@ -31,7 +33,8 @@
       "label": "📝 สมัครสมาชิก",
       "enabled": true,
       "color": "#c509c8",
-      "uri": "https://m.w99.in/register"
+      "uri": "https://m.w99.in/register",
+      "order": 0
     },
     {
       "id": "btn-welcome-4",
@@ -39,7 +42,8 @@
       "label": "🎮 เกมโบนัส",
       "enabled": true,
       "color": "#e53010",
-      "text": "โบนัสไทม์"
+      "text": "โบนัสไทม์",
+      "order": 3
     },
     {
       "id": "btn-welcome-5",
@@ -47,7 +51,8 @@
       "label": "🎛️ เลือกเมนู",
       "enabled": true,
       "color": "#0a37eb",
-      "text": "menu"
+      "text": "menu",
+      "order": 4
     }
   ]
 }

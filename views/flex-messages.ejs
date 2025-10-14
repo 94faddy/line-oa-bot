@@ -158,6 +158,12 @@
         padding: 15px;
         margin-bottom: 15px;
         transition: all 0.3s;
+        position: relative;
+        user-select: none;
+    }
+
+    .button-card[draggable="true"] {
+        cursor: move;
     }
 
     .button-card:hover {
@@ -165,11 +171,50 @@
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
 
+    .button-card.dragging {
+        opacity: 0.5;
+        transform: scale(0.95);
+    }
+
+    .button-card.drag-over {
+        border-color: #28a745;
+        border-style: dashed;
+        background: #f0fff4;
+    }
+
     .button-card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 10px;
+    }
+
+    .button-card-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+    }
+
+    .drag-handle {
+        cursor: grab;
+        padding: 5px 10px;
+        color: #999;
+        font-size: 1.2em;
+        user-select: none;
+    }
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .order-badge {
+        background: #667eea;
+        color: white;
+        padding: 3px 10px;
+        border-radius: 15px;
+        font-size: 0.85em;
+        font-weight: bold;
     }
 
     .button-preview {
@@ -402,38 +447,56 @@
             <button class="btn btn-primary" onclick="openQuickReplyTextModal()" style="margin-left: 10px;">✏️ แก้ไข</button>
         </div>
 
-        <% quickReplyConfig.quickReplyButtons.forEach(function(btn) { %>
-            <div class="button-card">
-                <div class="button-card-header">
-                    <h3 style="margin: 0;">🔘 <%= btn.label %></h3>
-                    <label class="toggle-switch">
-                        <input type="checkbox" <%= btn.enabled ? 'checked' : '' %> onchange="toggleButton('<%= btn.id %>', this.checked)">
-                        <span class="slider"></span>
-                    </label>
-                </div>
+        <div class="info-box" style="background: #e3f2fd; border-left: 4px solid #2196f3; margin-bottom: 20px;">
+            💡 <strong>เคล็ดลับ:</strong> ลากปุ่มเพื่อเรียงลำดับ (ปุ่มที่อยู่บนจะแสดงก่อน)
+        </div>
 
-                <div class="button-preview">
-                    <% if (btn.imageUrl) { %>
-                        <img src="<%= btn.imageUrl %>" alt="<%= btn.label %>" onerror="this.src='https://via.placeholder.com/40'">
-                    <% } %>
-                    <div>
-                        <strong><%= btn.label %></strong><br>
-                        <small style="color: #666;">
-                            <%= btn.type === 'uri' ? '🔗 ' + btn.uri : '💬 ' + btn.text %>
-                        </small>
-                    </div>
-                </div>
-
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button class="btn btn-warning" onclick="editButton('<%= JSON.stringify(btn).replace(/'/g, "\\'") %>')" style="flex: 1;">
-                        ✏️ แก้ไข
-                    </button>
-                    <button class="btn btn-danger" onclick="deleteButton('<%= btn.id %>')" style="flex: 1;">
-                        🗑️ ลบ
-                    </button>
-                </div>
+        <% if (quickReplyConfig.quickReplyButtons.length === 0) { %>
+            <div class="empty-state">
+                <div class="icon">📭</div>
+                <h3>ยังไม่มีปุ่ม Quick Reply</h3>
+                <p>คลิกปุ่ม "เพิ่มปุ่ม" เพื่อเริ่มสร้าง</p>
             </div>
-        <% }); %>
+        <% } else { %>
+            <div id="buttonsContainer">
+                <% quickReplyConfig.quickReplyButtons.forEach(function(btn, index) { %>
+                    <div class="button-card" draggable="true" data-id="<%= btn.id %>" data-order="<%= btn.order || index %>">
+                        <div class="button-card-header">
+                            <div class="button-card-title">
+                                <span class="drag-handle">⋮⋮</span>
+                                <span class="order-badge">#<%= index + 1 %></span>
+                                <h3 style="margin: 0;">🔘 <%= btn.label %></h3>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" <%= btn.enabled ? 'checked' : '' %> onchange="toggleButton('<%= btn.id %>', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="button-preview">
+                            <% if (btn.imageUrl) { %>
+                                <img src="<%= btn.imageUrl %>" alt="<%= btn.label %>" onerror="this.src='https://via.placeholder.com/40'">
+                            <% } %>
+                            <div>
+                                <strong><%= btn.label %></strong><br>
+                                <small style="color: #666;">
+                                    <%= btn.type === 'uri' ? '🔗 ' + btn.uri : '💬 ' + btn.text %>
+                                </small>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button class="btn btn-warning" onclick="editButton('<%= JSON.stringify(btn).replace(/'/g, "\\'") %>')" style="flex: 1;">
+                                ✏️ แก้ไข
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteButton('<%= btn.id %>')" style="flex: 1;">
+                                🗑️ ลบ
+                            </button>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
     </div>
 
     <!-- Tab 3: Keywords -->
@@ -571,7 +634,7 @@
 
                 <div class="form-group" id="uriField">
                     <label for="buttonUri">URL ลิงก์</label>
-                    <input type="url" id="buttonUri" placeholder="https://m.top747.com/register">
+                    <input type="url" id="buttonUri" placeholder="https://m.w99.in/register">
                 </div>
 
                 <div class="form-group hidden" id="textField">
@@ -616,6 +679,159 @@
     let currentFlexId = null;
     let isViewMode = false;
     let isEditButton = false;
+    let draggedElement = null;
+
+    // ========== Drag and Drop System for Quick Reply ==========
+    function initDragAndDrop() {
+        const container = document.getElementById('buttonsContainer');
+        if (!container) return;
+
+        const cards = container.querySelectorAll('.button-card');
+        
+        cards.forEach(card => {
+            // ลบ event listeners เก่าก่อน (ป้องกัน duplicate)
+            card.removeEventListener('dragstart', handleDragStart);
+            card.removeEventListener('dragend', handleDragEnd);
+            card.removeEventListener('dragover', handleDragOver);
+            card.removeEventListener('drop', handleDrop);
+            card.removeEventListener('dragenter', handleDragEnter);
+            card.removeEventListener('dragleave', handleDragLeave);
+            
+            // เพิ่ม event listeners ใหม่
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+            card.addEventListener('dragover', handleDragOver);
+            card.addEventListener('drop', handleDrop);
+            card.addEventListener('dragenter', handleDragEnter);
+            card.addEventListener('dragleave', handleDragLeave);
+            
+            // ป้องกันการ drag เมื่อคลิกที่ปุ่ม
+            const buttons = card.querySelectorAll('button, input, select, textarea');
+            buttons.forEach(btn => {
+                btn.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                });
+            });
+        });
+    }
+
+    function handleDragStart(e) {
+        // ป้องกันไม่ให้ drag ถ้าคลิกที่ปุ่ม
+        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') {
+            e.preventDefault();
+            return false;
+        }
+        
+        draggedElement = this;
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', this.dataset.id);
+        
+        // ลด opacity ของ element ที่กำลังลาก
+        setTimeout(() => {
+            this.style.opacity = '0.5';
+        }, 0);
+    }
+
+    function handleDragEnd(e) {
+        // คืนค่า opacity
+        this.style.opacity = '1';
+        this.classList.remove('dragging');
+        
+        // ลบ class drag-over จากทุก card
+        document.querySelectorAll('.button-card').forEach(card => {
+            card.classList.remove('drag-over');
+        });
+        
+        draggedElement = null;
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (this === draggedElement) {
+            return false;
+        }
+        
+        e.dataTransfer.dropEffect = 'move';
+        return false;
+    }
+
+    function handleDragEnter(e) {
+        e.preventDefault();
+        if (this !== draggedElement && draggedElement) {
+            this.classList.add('drag-over');
+        }
+    }
+
+    function handleDragLeave(e) {
+        e.preventDefault();
+        this.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        this.classList.remove('drag-over');
+        
+        if (!draggedElement || draggedElement === this) {
+            return false;
+        }
+        
+        const container = document.getElementById('buttonsContainer');
+        const allCards = [...container.querySelectorAll('.button-card')];
+        const draggedIndex = allCards.indexOf(draggedElement);
+        const targetIndex = allCards.indexOf(this);
+        
+        if (draggedIndex !== -1 && targetIndex !== -1) {
+            if (draggedIndex < targetIndex) {
+                this.parentNode.insertBefore(draggedElement, this.nextSibling);
+            } else {
+                this.parentNode.insertBefore(draggedElement, this);
+            }
+            
+            // บันทึกลำดับใหม่
+            saveNewOrder();
+        }
+        
+        return false;
+    }
+
+    async function saveNewOrder() {
+        const container = document.getElementById('buttonsContainer');
+        const cards = container.querySelectorAll('.button-card');
+        const buttonIds = Array.from(cards).map(card => card.getAttribute('data-id'));
+        
+        try {
+            const response = await fetch('/quickreply/reorder-buttons', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ buttonIds })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // อัพเดทหมายเลขลำดับ
+                cards.forEach((card, index) => {
+                    const badge = card.querySelector('.order-badge');
+                    if (badge) {
+                        badge.textContent = `#${index + 1}`;
+                    }
+                });
+                
+                showAlert('success', '✅ จัดเรียงลำดับสำเร็จ');
+            } else {
+                showAlert('error', result.message);
+                location.reload();
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+            location.reload();
+        }
+    }
 
     // Tab switching
     function switchTab(tab) {
@@ -624,6 +840,11 @@
         
         document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
         document.getElementById(`tab-${tab}`).classList.add('active');
+        
+        // Re-init drag and drop when switching to quickreply tab
+        if (tab === 'quickreply') {
+            setTimeout(() => initDragAndDrop(), 100);
+        }
     }
 
     // Flex Functions
@@ -910,6 +1131,11 @@
             event.target.style.display = 'none';
         }
     }
+
+    // Initialize on page load
+    window.addEventListener('load', function() {
+        initDragAndDrop();
+    });
 </script>
 
 <%- include('partials/footer') %>

@@ -15,6 +15,8 @@
         padding: 15px;
         margin-bottom: 15px;
         transition: all 0.3s;
+        cursor: move;
+        position: relative;
     }
 
     .button-card:hover {
@@ -22,11 +24,41 @@
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
 
+    .button-card.dragging {
+        opacity: 0.5;
+        transform: scale(0.95);
+    }
+
+    .button-card.drag-over {
+        border-color: #28a745;
+        border-style: dashed;
+        background: #f0fff4;
+    }
+
     .button-card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 10px;
+    }
+
+    .drag-handle {
+        cursor: grab;
+        padding: 5px 10px;
+        color: #999;
+        font-size: 1.2em;
+        user-select: none;
+    }
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .button-card-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
     }
 
     .button-preview {
@@ -190,6 +222,15 @@
         padding: 30px;
     }
 
+    .order-badge {
+        background: #667eea;
+        color: white;
+        padding: 3px 10px;
+        border-radius: 15px;
+        font-size: 0.85em;
+        font-weight: bold;
+    }
+
     @keyframes fadeIn {
         from { opacity: 0; }
         to { opacity: 1; }
@@ -255,7 +296,7 @@
         
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
             <div>
-                <strong>🎨 สีพื้นหลัง:</strong><br>
+                <strong>🎨 สีพื้นหลังหัวข้อ:</strong><br>
                 <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
                     <div style="width: 40px; height: 40px; background: <%= settings.backgroundColor %>; border-radius: 8px; border: 2px solid #e0e0e0;"></div>
                     <code><%= settings.backgroundColor %></code>
@@ -263,10 +304,18 @@
             </div>
 
             <div>
-                <strong>📝 สีข้อความ:</strong><br>
+                <strong>📝 สีข้อความหัวข้อ:</strong><br>
                 <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
                     <div style="width: 40px; height: 40px; background: <%= settings.textColor %>; border-radius: 8px; border: 2px solid #e0e0e0;"></div>
                     <code><%= settings.textColor %></code>
+                </div>
+            </div>
+
+            <div>
+                <strong>🖼️ สีพื้นหลังเนื้อหา:</strong><br>
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                    <div style="width: 40px; height: 40px; background: <%= settings.bodyBackgroundColor || '#ffffff' %>; border-radius: 8px; border: 2px solid #e0e0e0;"></div>
+                    <code><%= settings.bodyBackgroundColor || '#ffffff' %></code>
                 </div>
             </div>
 
@@ -287,6 +336,10 @@
         <button class="btn btn-success" onclick="openAddButtonModal()">➕ เพิ่มปุ่ม</button>
     </h2>
 
+    <div class="info-box" style="background: #e3f2fd; border-left: 4px solid #2196f3;">
+        💡 <strong>เคล็ดลับ:</strong> ลากปุ่มเพื่อเรียงลำดับ (ปุ่มที่อยู่บนจะแสดงก่อน)
+    </div>
+
     <% if (buttons.length === 0) { %>
         <div class="empty-state">
             <div class="icon">📭</div>
@@ -294,36 +347,42 @@
             <p>คลิกปุ่ม "เพิ่มปุ่ม" เพื่อเริ่มสร้างปุ่มแรกของคุณ</p>
         </div>
     <% } else { %>
-        <% buttons.forEach(function(btn) { %>
-            <div class="button-card">
-                <div class="button-card-header">
-                    <h3 style="margin: 0;">🔘 <%= btn.label %></h3>
-                    <label class="toggle-switch">
-                        <input type="checkbox" <%= btn.enabled ? 'checked' : '' %> onchange="toggleButton('<%= btn.id %>', this.checked)">
-                        <span class="slider"></span>
-                    </label>
-                </div>
+        <div id="buttonsContainer">
+            <% buttons.forEach(function(btn, index) { %>
+                <div class="button-card" draggable="true" data-id="<%= btn.id %>" data-order="<%= btn.order || index %>">
+                    <div class="button-card-header">
+                        <div class="button-card-title">
+                            <span class="drag-handle">⋮⋮</span>
+                            <span class="order-badge">#<%= index + 1 %></span>
+                            <h3 style="margin: 0;">🔘 <%= btn.label %></h3>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" <%= btn.enabled ? 'checked' : '' %> onchange="toggleButton('<%= btn.id %>', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
 
-                <div class="button-preview">
-                    <div class="color-box" style="background: <%= btn.color %>;"></div>
-                    <div>
-                        <strong><%= btn.label %></strong><br>
-                        <small style="color: #666;">
-                            <%= btn.type === 'uri' ? '🔗 ' + btn.uri : '💬 ' + btn.text %>
-                        </small>
+                    <div class="button-preview">
+                        <div class="color-box" style="background: <%= btn.color %>;"></div>
+                        <div>
+                            <strong><%= btn.label %></strong><br>
+                            <small style="color: #666;">
+                                <%= btn.type === 'uri' ? '🔗 ' + btn.uri : '💬 ' + btn.text %>
+                            </small>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button class="btn btn-warning" onclick="editButton('<%= JSON.stringify(btn).replace(/'/g, "\\'") %>')" style="flex: 1;">
+                            ✏️ แก้ไข
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteButton('<%= btn.id %>')" style="flex: 1;">
+                            🗑️ ลบ
+                        </button>
                     </div>
                 </div>
-
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button class="btn btn-warning" onclick="editButton('<%= JSON.stringify(btn).replace(/'/g, "\\'") %>')" style="flex: 1;">
-                        ✏️ แก้ไข
-                    </button>
-                    <button class="btn btn-danger" onclick="deleteButton('<%= btn.id %>')" style="flex: 1;">
-                        🗑️ ลบ
-                    </button>
-                </div>
-            </div>
-        <% }); %>
+            <% }); %>
+        </div>
     <% } %>
 </div>
 
@@ -379,7 +438,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="settingsBackgroundColor">🎨 สีพื้นหลัง</label>
+                    <label for="settingsBackgroundColor">🎨 สีพื้นหลังหัวข้อ</label>
                     <div class="color-picker-wrapper">
                         <input type="color" id="settingsBackgroundColor" value="<%= settings.backgroundColor %>">
                         <input type="text" id="settingsBackgroundColorText" value="<%= settings.backgroundColor %>" placeholder="#667eea">
@@ -387,7 +446,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="settingsTextColor">📝 สีข้อความ</label>
+                    <label for="settingsTextColor">📝 สีข้อความหัวข้อ</label>
                     <div class="color-picker-wrapper">
                         <input type="color" id="settingsTextColor" value="<%= settings.textColor %>">
                         <input type="text" id="settingsTextColorText" value="<%= settings.textColor %>" placeholder="#ffffff">
@@ -395,8 +454,17 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="settingsBodyBackgroundColor">🖼️ สีพื้นหลังเนื้อหา</label>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="settingsBodyBackgroundColor" value="<%= settings.bodyBackgroundColor || '#ffffff' %>">
+                        <input type="text" id="settingsBodyBackgroundColorText" value="<%= settings.bodyBackgroundColor || '#ffffff' %>" placeholder="#ffffff">
+                    </div>
+                    <small>สีพื้นหลังของส่วนเนื้อหาและปุ่ม</small>
+                </div>
+
+                <div class="form-group">
                     <label for="settingsBackgroundImage">🖼️ URL รูปพื้นหลัง (ไม่บังคับ)</label>
-                    <input type="url" id="settingsBackgroundImage" value="<%= settings.backgroundImageUrl %>" placeholder="https://...">
+                    <input type="url" id="settingsBackgroundImage" value="<%= settings.backgroundImageUrl || '' %>" placeholder="https://...">
                     <small>ขนาดแนะนำ: 1040x670 พิกเซล (อัตราส่วน 20:13)</small>
                 </div>
 
@@ -462,8 +530,123 @@
 
 <script>
     let isEditButton = false;
+    let draggedElement = null;
 
-    // Sync color picker with text input
+    // ========== Drag and Drop System ==========
+    function initDragAndDrop() {
+        const container = document.getElementById('buttonsContainer');
+        if (!container) return;
+
+        const cards = container.querySelectorAll('.button-card');
+        
+        cards.forEach(card => {
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+            card.addEventListener('dragover', handleDragOver);
+            card.addEventListener('drop', handleDrop);
+            card.addEventListener('dragenter', handleDragEnter);
+            card.addEventListener('dragleave', handleDragLeave);
+        });
+    }
+
+    function handleDragStart(e) {
+        draggedElement = this;
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.innerHTML);
+    }
+
+    function handleDragEnd(e) {
+        this.classList.remove('dragging');
+        
+        // ลบ class drag-over จากทุก card
+        document.querySelectorAll('.button-card').forEach(card => {
+            card.classList.remove('drag-over');
+        });
+        
+        draggedElement = null;
+    }
+
+    function handleDragOver(e) {
+        if (e.preventDefault) {
+            e.preventDefault();
+        }
+        e.dataTransfer.dropEffect = 'move';
+        return false;
+    }
+
+    function handleDragEnter(e) {
+        if (this !== draggedElement) {
+            this.classList.add('drag-over');
+        }
+    }
+
+    function handleDragLeave(e) {
+        this.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+        if (e.stopPropagation) {
+            e.stopPropagation();
+        }
+        
+        this.classList.remove('drag-over');
+        
+        if (draggedElement !== this) {
+            const container = document.getElementById('buttonsContainer');
+            const allCards = [...container.querySelectorAll('.button-card')];
+            const draggedIndex = allCards.indexOf(draggedElement);
+            const targetIndex = allCards.indexOf(this);
+            
+            if (draggedIndex < targetIndex) {
+                this.parentNode.insertBefore(draggedElement, this.nextSibling);
+            } else {
+                this.parentNode.insertBefore(draggedElement, this);
+            }
+            
+            // บันทึกลำดับใหม่
+            saveNewOrder();
+        }
+        
+        return false;
+    }
+
+    async function saveNewOrder() {
+        const container = document.getElementById('buttonsContainer');
+        const cards = container.querySelectorAll('.button-card');
+        const buttonIds = Array.from(cards).map(card => card.getAttribute('data-id'));
+        
+        try {
+            const response = await fetch('/welcome/reorder-buttons', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ buttonIds })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // อัพเดทหมายเลขลำดับ
+                cards.forEach((card, index) => {
+                    const badge = card.querySelector('.order-badge');
+                    if (badge) {
+                        badge.textContent = `#${index + 1}`;
+                    }
+                });
+                
+                showAlert('success', '✅ จัดเรียงลำดับสำเร็จ');
+                setTimeout(() => refreshPreview(), 500);
+            } else {
+                showAlert('error', result.message);
+                location.reload();
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+            location.reload();
+        }
+    }
+
+    // ========== Color Picker Sync ==========
     document.getElementById('settingsBackgroundColor')?.addEventListener('input', function() {
         document.getElementById('settingsBackgroundColorText').value = this.value;
     });
@@ -480,6 +663,14 @@
         document.getElementById('settingsTextColor').value = this.value;
     });
 
+    document.getElementById('settingsBodyBackgroundColor')?.addEventListener('input', function() {
+        document.getElementById('settingsBodyBackgroundColorText').value = this.value;
+    });
+
+    document.getElementById('settingsBodyBackgroundColorText')?.addEventListener('input', function() {
+        document.getElementById('settingsBodyBackgroundColor').value = this.value;
+    });
+
     document.getElementById('buttonColor')?.addEventListener('input', function() {
         document.getElementById('buttonColorText').value = this.value;
     });
@@ -488,7 +679,7 @@
         document.getElementById('buttonColor').value = this.value;
     });
 
-    // Settings Form
+    // ========== Settings Form ==========
     document.getElementById('settingsForm')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -499,6 +690,7 @@
             description: document.getElementById('settingsDescription').value,
             backgroundColor: document.getElementById('settingsBackgroundColorText').value,
             textColor: document.getElementById('settingsTextColorText').value,
+            bodyBackgroundColor: document.getElementById('settingsBodyBackgroundColorText').value,
             backgroundImageUrl: document.getElementById('settingsBackgroundImage').value
         };
 
@@ -522,7 +714,7 @@
         }
     });
 
-    // Button Form
+    // ========== Button Form ==========
     document.getElementById('buttonForm')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -562,7 +754,7 @@
         }
     });
 
-    // Toggle Button Fields
+    // ========== Toggle Button Fields ==========
     function toggleButtonFields() {
         const type = document.getElementById('buttonType').value;
         const uriField = document.getElementById('uriField');
@@ -577,7 +769,7 @@
         }
     }
 
-    // Button Management
+    // ========== Button Management ==========
     function openAddButtonModal() {
         isEditButton = false;
         document.getElementById('buttonModalTitle').textContent = '➕ เพิ่มปุ่ม';
@@ -653,7 +845,7 @@
         }
     }
 
-    // Preview
+    // ========== Preview ==========
     async function refreshPreview() {
         const previewPhone = document.getElementById('previewPhone');
         previewPhone.innerHTML = '<div style="text-align: center; padding: 40px 20px; color: #999;"><div style="font-size: 3em;">⏳</div><p>กำลังโหลด...</p></div>';
@@ -682,7 +874,8 @@
 
                 // Body
                 if (flex.body) {
-                    html += `<div style="padding: 20px;">`;
+                    const bodyBg = flex.body.backgroundColor || '#ffffff';
+                    html += `<div style="padding: 20px; background: ${bodyBg}; border-radius: 0 0 15px 15px;">`;
                     
                     // Description
                     const desc = flex.body.contents.find(c => c.type === 'text');
@@ -712,7 +905,7 @@
         }
     }
 
-    // Modal Functions
+    // ========== Modal Functions ==========
     function openSettingsModal() {
         document.getElementById('settingsModal').style.display = 'block';
     }
@@ -731,8 +924,9 @@
         }
     }
 
-    // Auto load preview on page load
+    // ========== Initialize ==========
     window.addEventListener('load', function() {
+        initDragAndDrop();
         setTimeout(refreshPreview, 500);
     });
 </script>

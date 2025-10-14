@@ -21,7 +21,8 @@ if (!fs.existsSync(WELCOME_CONFIG_PATH)) {
       title: "ยินดีต้อนรับสู่ W99! 🎉",
       description: "ขอบคุณที่เป็นเพื่อนกับเรา เลือกเมนูด้านล่างเพื่อเริ่มต้นใช้งาน",
       backgroundColor: "#667eea",
-      textColor: "#ffffff"
+      textColor: "#ffffff",
+      bodyBackgroundColor: "#ffffff"
     },
     welcomeButtons: [
       {
@@ -30,7 +31,8 @@ if (!fs.existsSync(WELCOME_CONFIG_PATH)) {
         label: "🎨 โปรโมชั่น",
         uri: "https://m.w99.in/promotions",
         enabled: true,
-        color: "#667eea"
+        color: "#667eea",
+        order: 0
       },
       {
         id: "btn-welcome-2",
@@ -38,7 +40,8 @@ if (!fs.existsSync(WELCOME_CONFIG_PATH)) {
         label: "🎁 รับเครดิตฟรี",
         text: "ฟรี",
         enabled: true,
-        color: "#28a745"
+        color: "#28a745",
+        order: 1
       },
       {
         id: "btn-welcome-3",
@@ -46,7 +49,8 @@ if (!fs.existsSync(WELCOME_CONFIG_PATH)) {
         label: "📝 สมัครสมาชิก",
         uri: "https://m.w99.in/register",
         enabled: true,
-        color: "#ffc107"
+        color: "#ffc107",
+        order: 2
       }
     ]
   };
@@ -55,6 +59,24 @@ if (!fs.existsSync(WELCOME_CONFIG_PATH)) {
 
 // โหลด Welcome Config
 let welcomeConfig = JSON.parse(fs.readFileSync(WELCOME_CONFIG_PATH, 'utf8'));
+
+// Migration: เพิ่ม bodyBackgroundColor ถ้ายังไม่มี
+if (!welcomeConfig.welcomeSettings.bodyBackgroundColor) {
+  welcomeConfig.welcomeSettings.bodyBackgroundColor = "#ffffff";
+  fs.writeFileSync(WELCOME_CONFIG_PATH, JSON.stringify(welcomeConfig, null, 2), 'utf8');
+}
+
+// Migration: เพิ่ม order ให้กับปุ่มที่ยังไม่มี
+let needsSave = false;
+welcomeConfig.welcomeButtons.forEach((btn, index) => {
+  if (btn.order === undefined) {
+    btn.order = index;
+    needsSave = true;
+  }
+});
+if (needsSave) {
+  fs.writeFileSync(WELCOME_CONFIG_PATH, JSON.stringify(welcomeConfig, null, 2), 'utf8');
+}
 
 // ฟังก์ชันบันทึก Welcome Config
 function saveWelcomeConfig() {
@@ -76,7 +98,11 @@ function createWelcomeFlexMessage() {
     }
 
     const settings = welcomeConfig.welcomeSettings;
-    const enabledButtons = (welcomeConfig.welcomeButtons || []).filter(btn => btn.enabled);
+    
+    // เรียงลำดับปุ่มตาม order แล้วกรองเฉพาะที่เปิดใช้งาน
+    const enabledButtons = (welcomeConfig.welcomeButtons || [])
+      .filter(btn => btn.enabled)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
 
     if (enabledButtons.length === 0) {
       console.log('⚠️ No enabled buttons found');
@@ -193,7 +219,8 @@ function createWelcomeFlexMessage() {
         type: "box",
         layout: "vertical",
         contents: bodyContents,
-        paddingAll: "20px"
+        paddingAll: "20px",
+        backgroundColor: settings.bodyBackgroundColor || "#ffffff"
       }
     };
 
@@ -243,9 +270,12 @@ function setupWelcomeRoutes(requireLogin) {
   
   // หน้าจัดการ Welcome Message
   router.get('/welcome', requireLogin, (req, res) => {
+    // เรียงลำดับปุ่มตาม order ก่อนส่งไปแสดง
+    const sortedButtons = [...welcomeConfig.welcomeButtons].sort((a, b) => (a.order || 0) - (b.order || 0));
+    
     res.render('welcome', {
       settings: welcomeConfig.welcomeSettings,
-      buttons: welcomeConfig.welcomeButtons,
+      buttons: sortedButtons,
       totalButtons: welcomeConfig.welcomeButtons.length,
       enabledButtons: welcomeConfig.welcomeButtons.filter(b => b.enabled).length,
       username: req.session.username
@@ -255,7 +285,7 @@ function setupWelcomeRoutes(requireLogin) {
   // อัพเดทการตั้งค่า Welcome
   router.post('/welcome/settings', requireLogin, (req, res) => {
     try {
-      const { enabled, showOnFollow, title, description, backgroundColor, textColor, backgroundImageUrl } = req.body;
+      const { enabled, showOnFollow, title, description, backgroundColor, textColor, bodyBackgroundColor, backgroundImageUrl } = req.body;
       
       welcomeConfig.welcomeSettings.enabled = enabled === 'true' || enabled === true;
       welcomeConfig.welcomeSettings.showOnFollow = showOnFollow === 'true' || showOnFollow === true;
@@ -263,6 +293,7 @@ function setupWelcomeRoutes(requireLogin) {
       welcomeConfig.welcomeSettings.description = (description && description.trim()) || welcomeConfig.welcomeSettings.description;
       welcomeConfig.welcomeSettings.backgroundColor = (backgroundColor && backgroundColor.trim()) || '#667eea';
       welcomeConfig.welcomeSettings.textColor = (textColor && textColor.trim()) || '#ffffff';
+      welcomeConfig.welcomeSettings.bodyBackgroundColor = (bodyBackgroundColor && bodyBackgroundColor.trim()) || '#ffffff';
       
       // จัดการ backgroundImageUrl
       if (backgroundImageUrl && backgroundImageUrl.trim() !== '') {
@@ -282,7 +313,8 @@ function setupWelcomeRoutes(requireLogin) {
       console.log('✅ Welcome settings updated:', {
         enabled: welcomeConfig.welcomeSettings.enabled,
         showOnFollow: welcomeConfig.welcomeSettings.showOnFollow,
-        hasBackgroundImage: !!welcomeConfig.welcomeSettings.backgroundImageUrl
+        hasBackgroundImage: !!welcomeConfig.welcomeSettings.backgroundImageUrl,
+        bodyBackgroundColor: welcomeConfig.welcomeSettings.bodyBackgroundColor
       });
       
       res.json({ success: true, message: 'บันทึกการตั้งค่าสำเร็จ' });
@@ -309,12 +341,18 @@ function setupWelcomeRoutes(requireLogin) {
         return res.status(400).json({ success: false, message: 'กรุณากรอก Text สำหรับปุ่มประเภท Message' });
       }
 
+      // หา order ใหม่ (เอาค่าสูงสุด + 1)
+      const maxOrder = welcomeConfig.welcomeButtons.length > 0 
+        ? Math.max(...welcomeConfig.welcomeButtons.map(b => b.order || 0))
+        : -1;
+
       const newButton = {
         id: `btn-welcome-${Date.now()}`,
         type: type,
         label: label.trim(),
         enabled: true,
-        color: (color && color.trim()) || '#667eea'
+        color: (color && color.trim()) || '#667eea',
+        order: maxOrder + 1
       };
 
       if (type === 'uri') {
@@ -355,12 +393,16 @@ function setupWelcomeRoutes(requireLogin) {
         return res.status(400).json({ success: false, message: 'กรุณากรอก Text' });
       }
 
+      // เก็บ order เดิมไว้
+      const currentOrder = welcomeConfig.welcomeButtons[index].order;
+
       welcomeConfig.welcomeButtons[index] = {
         id: id,
         type: type,
         label: label.trim(),
         enabled: enabled === 'true' || enabled === true,
-        color: (color && color.trim()) || '#667eea'
+        color: (color && color.trim()) || '#667eea',
+        order: currentOrder !== undefined ? currentOrder : index
       };
 
       if (type === 'uri') {
@@ -377,12 +419,46 @@ function setupWelcomeRoutes(requireLogin) {
     }
   });
 
+  // อัพเดทลำดับปุ่ม (ใหม่)
+  router.post('/welcome/reorder-buttons', requireLogin, (req, res) => {
+    try {
+      const { buttonIds } = req.body;
+      
+      if (!Array.isArray(buttonIds)) {
+        return res.status(400).json({ success: false, message: 'Invalid button IDs format' });
+      }
+
+      // อัพเดท order ตามลำดับใหม่
+      buttonIds.forEach((id, index) => {
+        const btn = welcomeConfig.welcomeButtons.find(b => b.id === id);
+        if (btn) {
+          btn.order = index;
+        }
+      });
+
+      saveWelcomeConfig();
+      
+      res.json({ success: true, message: 'จัดเรียงปุ่มสำเร็จ' });
+    } catch (error) {
+      console.error('Error reordering buttons:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
   // ลบปุ่ม Welcome
   router.post('/welcome/delete-button', requireLogin, (req, res) => {
     try {
       const { id } = req.body;
       
       welcomeConfig.welcomeButtons = welcomeConfig.welcomeButtons.filter(btn => btn.id !== id);
+      
+      // จัดเรียง order ใหม่
+      welcomeConfig.welcomeButtons
+        .sort((a, b) => (a.order || 0) - (b.order || 0))
+        .forEach((btn, index) => {
+          btn.order = index;
+        });
+      
       saveWelcomeConfig();
       
       res.json({ success: true, message: 'ลบปุ่มสำเร็จ' });
