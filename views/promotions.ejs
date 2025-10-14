@@ -21,11 +21,17 @@
         border-radius: 15px;
         overflow: hidden;
         transition: all 0.3s;
+        cursor: move;
+        position: relative;
     }
 
     .promo-card:hover {
         box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
         transform: translateY(-5px);
+    }
+
+    .promo-card.dragging {
+        opacity: 0.5;
     }
 
     .promo-card img {
@@ -39,17 +45,35 @@
     }
 
     .promo-card-title {
-        font-size: 1.2em;
+        font-size: 1.1em;
         font-weight: bold;
         color: #333;
         margin-bottom: 10px;
+        line-height: 1.4;
     }
 
     .promo-card-url {
-        font-size: 0.85em;
-        color: #666;
-        margin-bottom: 15px;
+        font-size: 0.8em;
+        color: #999;
+        margin-bottom: 10px;
         word-break: break-all;
+    }
+
+    .promo-card-button-preview {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 15px;
+        font-size: 0.85em;
+    }
+
+    .promo-card-button-preview .btn-preview {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 6px;
+        color: white;
+        font-weight: bold;
+        margin-top: 5px;
     }
 
     .promo-card-actions {
@@ -61,6 +85,23 @@
         flex: 1;
         padding: 8px;
         font-size: 0.9em;
+    }
+
+    .order-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.1em;
+        z-index: 1;
     }
 
     .toggle-switch {
@@ -118,6 +159,7 @@
         height: 100%;
         background-color: rgba(0, 0, 0, 0.5);
         animation: fadeIn 0.3s;
+        overflow-y: auto;
     }
 
     @keyframes fadeIn {
@@ -127,12 +169,14 @@
 
     .modal-content {
         background-color: white;
-        margin: 5% auto;
+        margin: 3% auto;
         padding: 0;
         border-radius: 15px;
         width: 90%;
         max-width: 600px;
         animation: slideDown 0.3s;
+        max-height: 90vh;
+        overflow-y: auto;
     }
 
     @keyframes slideDown {
@@ -154,6 +198,9 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
     }
 
     .modal-header h2 {
@@ -198,10 +245,199 @@
         color: #721c24;
     }
 
+    .color-picker-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .color-picker-wrapper input[type="color"] {
+        width: 60px;
+        height: 40px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .color-picker-wrapper input[type="text"] {
+        flex: 1;
+        font-family: 'Courier New', monospace;
+    }
+
+    /* ปรับปรุงส่วน Preview Container */
+    .preview-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 20px;
+        padding: 40px 30px;
+        margin-top: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .preview-phone {
+        background: #f5f5f5;
+        border-radius: 30px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        padding: 25px;
+        margin: 0 auto;
+        max-width: 100%;
+        overflow-x: auto;
+        border: 15px solid #2c3e50;
+        position: relative;
+    }
+
+    /* ปรับ Carousel ให้แสดงเต็มขนาด */
+    .flex-carousel {
+        display: flex;
+        gap: 20px;
+        overflow-x: auto;
+        padding: 15px 5px;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Scrollbar สำหรับ carousel */
+    .flex-carousel::-webkit-scrollbar {
+        height: 10px;
+    }
+
+    .flex-carousel::-webkit-scrollbar-track {
+        background: #e0e0e0;
+        border-radius: 10px;
+    }
+
+    .flex-carousel::-webkit-scrollbar-thumb {
+        background: #667eea;
+        border-radius: 10px;
+    }
+
+    .flex-carousel::-webkit-scrollbar-thumb:hover {
+        background: #5568d3;
+    }
+
+    /* ขนาดจริงของ Flex Bubble (310px ตาม LINE Flex Message Simulator) */
+    .flex-bubble {
+        min-width: 310px;
+        max-width: 310px;
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        flex-shrink: 0;
+        transition: transform 0.3s;
+    }
+
+    .flex-bubble:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    }
+
+    /* รูปภาพ Hero แบบขนาดจริง */
+    .flex-bubble img {
+        width: 100%;
+        height: 310px;
+        object-fit: cover;
+        display: block;
+    }
+
+    /* Body ของ Flex */
+    .flex-bubble-body {
+        padding: 20px;
+        min-height: 80px;
+    }
+
+    .flex-bubble-body > div {
+        line-height: 1.5;
+        word-wrap: break-word;
+    }
+
+    /* Footer ของ Flex */
+    .flex-bubble-footer {
+        padding: 0 20px 20px 20px;
+    }
+
+    /* ปุ่มขนาดจริง */
+    .flex-button {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 16px;
+        transition: all 0.3s;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .flex-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .flex-button:active {
+        transform: translateY(0);
+    }
+
+    /* Empty state สำหรับตัวอย่าง */
+    .preview-empty {
+        text-align: center;
+        padding: 60px 20px;
+        color: #fff;
+    }
+
+    .preview-empty-icon {
+        font-size: 4em;
+        margin-bottom: 20px;
+        opacity: 0.9;
+    }
+
+    .preview-empty h3 {
+        color: #fff;
+        margin-bottom: 10px;
+        font-size: 1.3em;
+    }
+
+    .preview-empty p {
+        color: rgba(255,255,255,0.8);
+        margin-bottom: 20px;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    /* Responsive */
     @media (max-width: 768px) {
         .promo-grid {
             grid-template-columns: 1fr;
         }
+
+        .preview-container {
+            padding: 30px 20px;
+        }
+
+        .preview-phone {
+            padding: 20px;
+            border-width: 10px;
+        }
+
+        .flex-bubble {
+            min-width: 280px;
+            max-width: 280px;
+        }
+
+        .flex-bubble img {
+            height: 280px;
+        }
+    }
+
+    /* เพิ่ม indicator สำหรับ carousel */
+    .carousel-indicator {
+        text-align: center;
+        margin-top: 15px;
+        color: rgb(0 0 0 / 70%);
+        font-size: 0.9em;
     }
 </style>
 
@@ -218,6 +454,24 @@
             <%= enabled ? '✅ เปิดใช้งาน' : '❌ ปิดใช้งาน' %>
         </span>
     </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+        <div style="background: white; padding: 15px; border-radius: 10px; border-left: 5px solid <%= flexBackgroundColor %>;">
+            <strong>🎨 สีพื้นหลัง Flex:</strong><br>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                <div style="width: 35px; height: 35px; background: <%= flexBackgroundColor %>; border-radius: 8px; border: 2px solid #e0e0e0;"></div>
+                <code style="font-size: 0.9em;"><%= flexBackgroundColor %></code>
+            </div>
+        </div>
+
+        <div style="background: white; padding: 15px; border-radius: 10px; border-left: 5px solid <%= flexTextColor %>;">
+            <strong>📝 สีข้อความ Flex:</strong><br>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                <div style="width: 35px; height: 35px; background: <%= flexTextColor %>; border-radius: 8px; border: 2px solid #e0e0e0;"></div>
+                <code style="font-size: 0.9em;"><%= flexTextColor %></code>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Promotions List Section -->
@@ -227,6 +481,10 @@
         <button class="btn btn-success" onclick="openAddModal()">➕ เพิ่มโปรโมชั่น</button>
     </h2>
 
+    <div class="info-box" style="background: #fff3cd; border-left-color: #ffc107;">
+        💡 <strong>คำแนะนำ:</strong> ลากและวางการ์ดเพื่อเปลี่ยนลำดับการแสดงผล
+    </div>
+
     <% if (promotions.length === 0) { %>
         <div class="empty-state">
             <div class="icon">📭</div>
@@ -234,15 +492,47 @@
             <p>คลิกปุ่ม "เพิ่มโปรโมชั่น" เพื่อเริ่มสร้างโปรโมชั่นแรกของคุณ</p>
         </div>
     <% } else { %>
-        <div class="promo-grid">
+        <div class="promo-grid" id="promoGrid">
             <% promotions.forEach(function(promo) { %>
-                <div class="promo-card">
+                <div class="promo-card" draggable="true" data-id="<%= promo.id %>" data-order="<%= promo.order || 0 %>">
+                    <div class="order-badge"><%= promo.order || 0 %></div>
                     <img src="<%= promo.imageUrl %>" alt="<%= promo.title %>" onerror="this.src='https://via.placeholder.com/300x200/667eea/ffffff?text=No+Image'">
                     <div class="promo-card-body">
                         <div class="promo-card-title"><%= promo.title %></div>
                         <div class="promo-card-url">🔗 <%= promo.linkUrl %></div>
+                        
+                        <!-- แสดงสีของการ์ด -->
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 0.85em;">
+                            <strong>🎨 สีการ์ด:</strong>
+                            <div style="display: flex; gap: 10px; margin-top: 8px;">
+                                <div style="flex: 1;">
+                                    <small>พื้นหลัง</small>
+                                    <div style="display: flex; align-items: center; gap: 5px; margin-top: 3px;">
+                                        <div style="width: 25px; height: 25px; background: <%= promo.backgroundColor || '#ffffff' %>; border-radius: 5px; border: 2px solid #e0e0e0;"></div>
+                                        <code style="font-size: 0.8em;"><%= promo.backgroundColor || '#ffffff' %></code>
+                                    </div>
+                                </div>
+                                <div style="flex: 1;">
+                                    <small>ข้อความ</small>
+                                    <div style="display: flex; align-items: center; gap: 5px; margin-top: 3px;">
+                                        <div style="width: 25px; height: 25px; background: <%= promo.textColor || '#333333' %>; border-radius: 5px; border: 2px solid #e0e0e0;"></div>
+                                        <code style="font-size: 0.8em;"><%= promo.textColor || '#333333' %></code>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <% if (promo.button) { %>
+                        <div class="promo-card-button-preview">
+                            <strong>ปุ่ม:</strong> <%= promo.button.type === 'uri' ? '🔗 URL' : '💬 Message' %>
+                            <div class="btn-preview" style="background: <%= promo.button.color || '#667eea' %>;">
+                                <%= promo.button.label || 'ดูรายละเอียด' %>
+                            </div>
+                        </div>
+                        <% } %>
+
                         <div class="promo-card-actions">
-                            <button class="btn btn-primary" onclick="editPromotion('<%= promo.id %>', '<%= promo.title.replace(/'/g, "\\'") %>', '<%= promo.imageUrl %>', '<%= promo.linkUrl %>', <%= promo.enabled %>)">
+                            <button class="btn btn-primary" onclick='editPromotion(<%= JSON.stringify(promo) %>)'>
                                 ✏️ แก้ไข
                             </button>
                             <button class="btn btn-danger" onclick="deletePromotion('<%= promo.id %>')">
@@ -263,6 +553,29 @@
     <% } %>
 </div>
 
+<!-- Preview Section -->
+<div class="section">
+    <h2>
+        👁️ ตัวอย่าง Flex Message (ขนาดจริง)
+        <button class="btn btn-primary" onclick="refreshPreview()">🔄 รีเฟรช</button>
+    </h2>
+
+    <div class="info-box" style="background: #e7f3ff; border-left-color: #2196F3;">
+        💡 <strong>หมายเหตุ:</strong> ตัวอย่างนี้แสดงขนาดจริงของ Flex Message ที่จะปรากฏใน LINE (310x310 พิกเซล)
+    </div>
+
+    <div class="preview-container">
+        <div class="preview-phone" id="previewPhone">
+            <div class="preview-empty">
+                <div class="preview-empty-icon">📱</div>
+                <h3>กำลังโหลดตัวอย่าง...</h3>
+                <p>กรุณารอสักครู่</p>
+                <button class="btn btn-primary" onclick="refreshPreview()" style="margin-top: 15px;">โหลดตัวอย่าง</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Add/Edit Promotion Modal -->
 <div id="promoModal" class="modal">
     <div class="modal-content">
@@ -277,6 +590,7 @@
                 <div class="form-group">
                     <label for="promoTitle">📝 ชื่อโปรโมชั่น</label>
                     <input type="text" id="promoTitle" name="title" placeholder="เช่น: โปรโมชั่นสุดพิเศษ" required>
+                    <small>จะแสดงเป็นข้อความในการ์ด Flex</small>
                 </div>
 
                 <div class="form-group">
@@ -286,12 +600,71 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="promoLinkUrl">🔗 URL ลิงก์</label>
+                    <label for="promoLinkUrl">🔗 URL ลิงก์หลัก</label>
                     <input type="url" id="promoLinkUrl" name="linkUrl" placeholder="https://example.com/promotion" required>
-                    <small>ลิงก์ที่จะเปิดเมื่อคลิกที่โปรโมชั่น</small>
+                    <small>ลิงก์ที่จะเปิดเมื่อคลิกที่รูปภาพ</small>
                 </div>
 
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <hr style="margin: 25px 0; border: none; border-top: 2px solid #e0e0e0;">
+
+                <h3 style="margin-bottom: 20px; color: #667eea;">🎨 สีของการ์ด Flex</h3>
+
+                <div class="form-group">
+                    <label for="cardBackgroundColor">🎨 สีพื้นหลังการ์ด</label>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="cardBackgroundColor" name="backgroundColor" value="#ffffff">
+                        <input type="text" id="cardBackgroundColorText" value="#ffffff" placeholder="#ffffff">
+                    </div>
+                    <small>สีพื้นหลังของการ์ดโปรโมชั่น</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="cardTextColor">📝 สีข้อความในการ์ด</label>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="cardTextColor" name="textColor" value="#333333">
+                        <input type="text" id="cardTextColorText" value="#333333" placeholder="#333333">
+                    </div>
+                    <small>สีของข้อความชื่อโปรโมชั่น</small>
+                </div>
+
+                <hr style="margin: 25px 0; border: none; border-top: 2px solid #e0e0e0;">
+
+                <h3 style="margin-bottom: 20px; color: #667eea;">🔘 การตั้งค่าปุ่ม</h3>
+
+                <div class="form-group">
+                    <label for="buttonLabel">📝 ข้อความบนปุ่ม</label>
+                    <input type="text" id="buttonLabel" name="buttonLabel" placeholder="ดูรายละเอียด" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="buttonType">🔧 ประเภทปุ่ม</label>
+                    <select id="buttonType" name="buttonType" onchange="toggleButtonFields()">
+                        <option value="uri">🔗 เปิด URL</option>
+                        <option value="message">💬 ส่งข้อความ</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="buttonColor">🎨 สีปุ่ม</label>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="buttonColor" name="buttonColor" value="#667eea">
+                        <input type="text" id="buttonColorText" value="#667eea" placeholder="#667eea">
+                    </div>
+                </div>
+
+                <div class="form-group" id="buttonUriField">
+                    <label for="buttonUri">🔗 URL ของปุ่ม</label>
+                    <input type="url" id="buttonUri" name="buttonUri" placeholder="https://example.com/promotion">
+                    <small>URL ที่จะเปิดเมื่อคลิกปุ่ม</small>
+                </div>
+
+                <div class="form-group hidden" id="buttonTextField">
+                    <label for="buttonText">💬 ข้อความที่จะส่ง</label>
+                    <input type="text" id="buttonText" name="buttonText" placeholder="โปรโมชั่น">
+                    <small>ข้อความที่จะส่งกลับมาเมื่อกดปุ่ม</small>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 25px;">
                     <button type="submit" class="btn btn-success" style="flex: 1;">💾 บันทึก</button>
                     <button type="button" class="btn btn-secondary" onclick="closePromoModal()" style="flex: 1;">❌ ยกเลิก</button>
                 </div>
@@ -316,10 +689,30 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="promoEnabled">
+                    <label>
                         <input type="checkbox" id="promoEnabled" name="enabled" <%= enabled ? 'checked' : '' %>>
                         เปิดใช้งานระบบโปรโมชั่น
                     </label>
+                </div>
+
+                <hr style="margin: 20px 0; border: none; border-top: 2px solid #e0e0e0;">
+
+                <h3 style="margin-bottom: 15px; color: #667eea;">🎨 สีของ Flex Message</h3>
+
+                <div class="form-group">
+                    <label for="flexBackgroundColor">🎨 สีพื้นหลัง</label>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="flexBackgroundColor" name="flexBackgroundColor" value="<%= flexBackgroundColor %>">
+                        <input type="text" id="flexBackgroundColorText" value="<%= flexBackgroundColor %>" placeholder="#667eea">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="flexTextColor">📝 สีข้อความ</label>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="flexTextColor" name="flexTextColor" value="<%= flexTextColor %>">
+                        <input type="text" id="flexTextColorText" value="<%= flexTextColor %>" placeholder="#ffffff">
+                    </div>
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
@@ -332,30 +725,80 @@
 </div>
 
 <script>
-    // Store promotions data for JavaScript
+    // Store promotions data
     var promotionsData = <%- JSON.stringify(promotions) %>;
     var isEditMode = false;
 
+    // Sync color pickers
+    ['buttonColor', 'flexBackgroundColor', 'flexTextColor', 'cardBackgroundColor', 'cardTextColor'].forEach(id => {
+        const colorInput = document.getElementById(id);
+        const textInput = document.getElementById(id + 'Text');
+        
+        if (colorInput && textInput) {
+            colorInput.addEventListener('input', function() {
+                textInput.value = this.value;
+            });
+            
+            textInput.addEventListener('input', function() {
+                if (/^#[0-9A-F]{6}$/i.test(this.value)) {
+                    colorInput.value = this.value;
+                }
+            });
+        }
+    });
+
+    // Toggle button fields based on type
+    function toggleButtonFields() {
+        const type = document.getElementById('buttonType').value;
+        const uriField = document.getElementById('buttonUriField');
+        const textField = document.getElementById('buttonTextField');
+        
+        if (type === 'uri') {
+            uriField.classList.remove('hidden');
+            textField.classList.add('hidden');
+            document.getElementById('buttonUri').required = true;
+            document.getElementById('buttonText').required = false;
+        } else {
+            uriField.classList.add('hidden');
+            textField.classList.remove('hidden');
+            document.getElementById('buttonUri').required = false;
+            document.getElementById('buttonText').required = true;
+        }
+    }
+
+    // Promo Form Submit
     document.getElementById('promoForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        var formData = {
+        
+        const formData = {
             id: document.getElementById('promoId').value,
             title: document.getElementById('promoTitle').value,
             imageUrl: document.getElementById('promoImageUrl').value,
             linkUrl: document.getElementById('promoLinkUrl').value,
-            enabled: true
+            enabled: true,
+            backgroundColor: document.getElementById('cardBackgroundColorText').value,
+            textColor: document.getElementById('cardTextColorText').value,
+            buttonLabel: document.getElementById('buttonLabel').value,
+            buttonType: document.getElementById('buttonType').value,
+            buttonColor: document.getElementById('buttonColorText').value,
+            buttonUri: document.getElementById('buttonUri').value,
+            buttonText: document.getElementById('buttonText').value
         };
-        var url = isEditMode ? '/promotions/update' : '/promotions/add';
+        
+        const url = isEditMode ? '/promotions/update' : '/promotions/add';
+        
         try {
-            var response = await fetch(url, {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });
-            var result = await response.json();
+            
+            const result = await response.json();
+            
             if (result.success) {
                 showAlert('success', result.message);
-                setTimeout(function() { location.reload(); }, 1500);
+                setTimeout(() => location.reload(), 1500);
             } else {
                 showAlert('error', result.message);
             }
@@ -364,22 +807,29 @@
         }
     });
 
+    // Settings Form Submit
     document.getElementById('settingsForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        var formData = {
+        
+        const formData = {
             keywords: document.getElementById('promoKeywords').value,
-            enabled: document.getElementById('promoEnabled').checked
+            enabled: document.getElementById('promoEnabled').checked,
+            flexBackgroundColor: document.getElementById('flexBackgroundColorText').value,
+            flexTextColor: document.getElementById('flexTextColorText').value
         };
+        
         try {
-            var response = await fetch('/promotions/settings', {
+            const response = await fetch('/promotions/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });
-            var result = await response.json();
+            
+            const result = await response.json();
+            
             if (result.success) {
                 showAlert('success', result.message);
-                setTimeout(function() { location.reload(); }, 1500);
+                setTimeout(() => location.reload(), 1500);
             } else {
                 showAlert('error', result.message);
             }
@@ -388,21 +838,49 @@
         }
     });
 
+    // Modal Functions
     function openAddModal() {
         isEditMode = false;
         document.getElementById('modalTitle').textContent = '➕ เพิ่มโปรโมชั่นใหม่';
         document.getElementById('promoForm').reset();
         document.getElementById('promoId').value = '';
+        document.getElementById('buttonColorText').value = '#667eea';
+        document.getElementById('buttonColor').value = '#667eea';
+        document.getElementById('cardBackgroundColorText').value = '#ffffff';
+        document.getElementById('cardBackgroundColor').value = '#ffffff';
+        document.getElementById('cardTextColorText').value = '#333333';
+        document.getElementById('cardTextColor').value = '#333333';
+        toggleButtonFields();
         document.getElementById('promoModal').style.display = 'block';
     }
 
-    function editPromotion(id, title, imageUrl, linkUrl, enabled) {
+    function editPromotion(promo) {
         isEditMode = true;
         document.getElementById('modalTitle').textContent = '✏️ แก้ไขโปรโมชั่น';
-        document.getElementById('promoId').value = id;
-        document.getElementById('promoTitle').value = title;
-        document.getElementById('promoImageUrl').value = imageUrl;
-        document.getElementById('promoLinkUrl').value = linkUrl;
+        document.getElementById('promoId').value = promo.id;
+        document.getElementById('promoTitle').value = promo.title;
+        document.getElementById('promoImageUrl').value = promo.imageUrl;
+        document.getElementById('promoLinkUrl').value = promo.linkUrl;
+        
+        // Card colors
+        const bgColor = promo.backgroundColor || '#ffffff';
+        const txtColor = promo.textColor || '#333333';
+        document.getElementById('cardBackgroundColorText').value = bgColor;
+        document.getElementById('cardBackgroundColor').value = bgColor;
+        document.getElementById('cardTextColorText').value = txtColor;
+        document.getElementById('cardTextColor').value = txtColor;
+        
+        // Button settings
+        if (promo.button) {
+            document.getElementById('buttonLabel').value = promo.button.label || 'ดูรายละเอียด';
+            document.getElementById('buttonType').value = promo.button.type || 'uri';
+            document.getElementById('buttonColorText').value = promo.button.color || '#667eea';
+            document.getElementById('buttonColor').value = promo.button.color || '#667eea';
+            document.getElementById('buttonUri').value = promo.button.uri || '';
+            document.getElementById('buttonText').value = promo.button.text || '';
+        }
+        
+        toggleButtonFields();
         document.getElementById('promoModal').style.display = 'block';
     }
 
@@ -418,9 +896,153 @@
         document.getElementById('settingsModal').style.display = 'none';
     }
 
+    // Toggle Promotion
+    async function togglePromotion(id, enabled) {
+        try {
+            const promo = promotionsData.find(p => p.id === id);
+            if (!promo) {
+                showAlert('error', 'ไม่พบข้อมูลโปรโมชั่น');
+                return;
+            }
+            
+            const response = await fetch('/promotions/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: id,
+                    title: promo.title,
+                    imageUrl: promo.imageUrl,
+                    linkUrl: promo.linkUrl,
+                    enabled: enabled,
+                    backgroundColor: promo.backgroundColor || '#ffffff',
+                    textColor: promo.textColor || '#333333',
+                    buttonLabel: promo.button?.label || 'ดูรายละเอียด',
+                    buttonType: promo.button?.type || 'uri',
+                    buttonColor: promo.button?.color || '#667eea',
+                    buttonUri: promo.button?.uri || '',
+                    buttonText: promo.button?.text || ''
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showAlert('success', enabled ? 'เปิดใช้งานโปรโมชั่นแล้ว' : 'ปิดใช้งานโปรโมชั่นแล้ว');
+                setTimeout(() => refreshPreview(), 500);
+            } else {
+                showAlert('error', result.message);
+                setTimeout(() => location.reload(), 1000);
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+            setTimeout(() => location.reload(), 1000);
+        }
+    }
+
+    // Delete Promotion
+    async function deletePromotion(id) {
+        if (!confirm('คุณแน่ใจหรือไม่ที่จะลบโปรโมชั่นนี้?')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/promotions/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showAlert('success', result.message);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', result.message);
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+        }
+    }
+
+    // Preview - แก้ไขให้แสดงสีที่ถูกต้อง
+    async function refreshPreview() {
+        const previewPhone = document.getElementById('previewPhone');
+        previewPhone.innerHTML = '<div class="preview-empty"><div class="preview-empty-icon">⏳</div><h3>กำลังโหลด...</h3><p>กรุณารอสักครู่</p></div>';
+
+        try {
+            const response = await fetch('/promotions/preview');
+            const result = await response.json();
+
+            if (result.success && result.flex) {
+                const carousel = result.flex;
+                let html = '<div class="flex-carousel">';
+
+                if (carousel.contents && carousel.contents.length > 0) {
+                    carousel.contents.forEach(bubble => {
+                        // Get colors from bubble
+                        const bgColor = bubble.body?.backgroundColor || '#ffffff';
+                        const textColor = bubble.body?.contents[0]?.color || '#333333';
+                        const btnColor = bubble.footer?.contents[0]?.color || '#667eea';
+                        
+                        html += `<div class="flex-bubble" style="background: ${bgColor};">`;
+                        
+                        // Hero Image
+                        if (bubble.hero) {
+                            html += `<img src="${bubble.hero.url}" alt="Promotion" onerror="this.src='https://via.placeholder.com/310x310/667eea/ffffff?text=No+Image'">`;
+                        }
+                        
+                        // Body
+                        if (bubble.body) {
+                            html += `<div class="flex-bubble-body" style="background: ${bgColor};">`;
+                            bubble.body.contents.forEach(content => {
+                                if (content.type === 'text') {
+                                    const fontSize = content.size === 'md' ? '16px' : content.size === 'sm' ? '14px' : content.size === 'lg' ? '18px' : '16px';
+                                    const fontWeight = content.weight === 'bold' ? 'bold' : 'normal';
+                                    html += `<div style="color: ${content.color}; font-weight: ${fontWeight}; font-size: ${fontSize}; margin-bottom: 8px;">${content.text}</div>`;
+                                }
+                            });
+                            html += '</div>';
+                        }
+                        
+                        // Footer
+                        if (bubble.footer) {
+                            html += `<div class="flex-bubble-footer" style="background: ${bgColor};">`;
+                            bubble.footer.contents.forEach(content => {
+                                if (content.type === 'button') {
+                                    const actionType = content.action.type === 'uri' ? '🔗' : '💬';
+                                    html += `<button class="flex-button" style="background: ${content.color};" title="${actionType} ${content.action.type}">${content.action.label}</button>`;
+                                }
+                            });
+                            html += '</div>';
+                        }
+                        
+                        html += '</div>';
+                    });
+
+                    html += '</div>';
+                    
+                    // เพิ่ม indicator
+                    const totalPromotions = carousel.contents.length;
+                    html += `<div class="carousel-indicator">📊 แสดง ${totalPromotions} โปรโมชั่น (เลื่อนดูทั้งหมด)</div>`;
+                    
+                    previewPhone.innerHTML = html;
+                } else {
+                    previewPhone.innerHTML = '<div class="preview-empty"><div class="preview-empty-icon">📭</div><h3>ไม่มีโปรโมชั่น</h3><p>ไม่มีโปรโมชั่นที่เปิดใช้งาน</p></div>';
+                }
+            } else {
+                previewPhone.innerHTML = '<div class="preview-empty"><div class="preview-empty-icon">😕</div><h3>ไม่สามารถโหลดได้</h3><p>' + (result.message || 'ไม่มีโปรโมชั่นที่เปิดใช้งาน') + '</p></div>';
+            }
+        } catch (error) {
+            console.error('Preview error:', error);
+            previewPhone.innerHTML = '<div class="preview-empty"><div class="preview-empty-icon">❌</div><h3>เกิดข้อผิดพลาด</h3><p>ไม่สามารถโหลดตัวอย่างได้</p></div>';
+        }
+    }
+
+    // Modal click outside to close
     window.onclick = function(event) {
-        var promoModal = document.getElementById('promoModal');
-        var settingsModal = document.getElementById('settingsModal');
+        const promoModal = document.getElementById('promoModal');
+        const settingsModal = document.getElementById('settingsModal');
         if (event.target == promoModal) {
             closePromoModal();
         }
@@ -429,51 +1051,82 @@
         }
     }
 
-    async function togglePromotion(id, enabled) {
-        try {
-            var promo = promotionsData.find(function(p) { return p.id === id; });
-            if (!promo) {
-                showAlert('error', 'ไม่พบข้อมูลโปรโมชั่น');
-                return;
+    // Auto load preview
+    window.addEventListener('load', () => {
+        setTimeout(refreshPreview, 500);
+    });
+
+    // Drag and Drop for reordering
+    let draggedElement = null;
+
+    const promoGrid = document.getElementById('promoGrid');
+    if (promoGrid) {
+        promoGrid.addEventListener('dragstart', (e) => {
+            if (e.target.classList.contains('promo-card')) {
+                draggedElement = e.target;
+                e.target.classList.add('dragging');
             }
-            var response = await fetch('/promotions/update', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id: id,
-                    title: promo.title,
-                    imageUrl: promo.imageUrl,
-                    linkUrl: promo.linkUrl,
-                    enabled: enabled
-                })
-            });
-            var result = await response.json();
-            if (result.success) {
-                showAlert('success', enabled ? 'เปิดใช้งานโปรโมชั่นแล้ว' : 'ปิดใช้งานโปรโมชั่นแล้ว');
+        });
+
+        promoGrid.addEventListener('dragend', (e) => {
+            if (e.target.classList.contains('promo-card')) {
+                e.target.classList.remove('dragging');
+            }
+        });
+
+        promoGrid.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(promoGrid, e.clientY);
+            if (afterElement == null) {
+                promoGrid.appendChild(draggedElement);
             } else {
-                showAlert('error', result.message);
-                setTimeout(function() { location.reload(); }, 1000);
+                promoGrid.insertBefore(draggedElement, afterElement);
             }
-        } catch (error) {
-            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
-            setTimeout(function() { location.reload(); }, 1000);
-        }
+        });
+
+        promoGrid.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            await saveNewOrder();
+        });
     }
 
-    async function deletePromotion(id) {
-        if (!confirm('คุณแน่ใจหรือไม่ที่จะลบโปรโมชั่นนี้?')) {
-            return;
-        }
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.promo-card:not(.dragging)')];
+
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    async function saveNewOrder() {
+        const cards = document.querySelectorAll('.promo-card');
+        const orders = [];
+
+        cards.forEach((card, index) => {
+            const id = card.getAttribute('data-id');
+            orders.push({ id: id, order: index + 1 });
+            card.querySelector('.order-badge').textContent = index + 1;
+        });
+
         try {
-            var response = await fetch('/promotions/delete', {
+            const response = await fetch('/promotions/reorder', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: id })
+                body: JSON.stringify({ orders: orders })
             });
-            var result = await response.json();
+
+            const result = await response.json();
+
             if (result.success) {
-                showAlert('success', result.message);
-                setTimeout(function() { location.reload(); }, 1500);
+                showAlert('success', 'เปลี่ยนลำดับสำเร็จ');
+                setTimeout(() => refreshPreview(), 500);
             } else {
                 showAlert('error', result.message);
             }

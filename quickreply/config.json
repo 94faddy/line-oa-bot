@@ -23,16 +23,16 @@
       "type": "uri",
       "label": "สมัครสมาชิก",
       "imageUrl": "https://cdn.linkz.ltd/images/line-quickreply/ic-logged-profile.png",
-      "uri": "https://m.top747.com/register",
-      "enabled": true
+      "enabled": true,
+      "uri": "https://m.w99.in/register"
     },
     {
       "id": "btn-2",
       "type": "uri",
       "label": "ทางเข้าเล่น",
       "imageUrl": "https://cdn.linkz.ltd/images/line-quickreply/300x262.png",
-      "uri": "https://m.top747.com/",
-      "enabled": true
+      "enabled": true,
+      "uri": "https://m.w99.in"
     },
     {
       "id": "btn-3",
@@ -41,6 +41,14 @@
       "imageUrl": "https://cdn.linkz.ltd/images/line-quickreply/freegame.png",
       "enabled": true,
       "text": "โบนัสไทม์"
+    },
+    {
+      "id": "btn-1760445621694",
+      "type": "message",
+      "label": "รับเครดิตฟรี",
+      "imageUrl": "https://cdn.linkz.ltd/images/line-quickreply/gift-300x300.png",
+      "enabled": true,
+      "text": "รับเครดิตฟรี"
     }
   ]
 }
