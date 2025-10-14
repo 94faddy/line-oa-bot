@@ -270,6 +270,22 @@
         display: block;
     }
 
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideDown {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
     @media (max-width: 768px) {
         .flex-grid {
             grid-template-columns: 1fr;
@@ -383,7 +399,7 @@
 
         <div class="info-box" style="margin-bottom: 20px;">
             💡 <strong>ข้อความ Quick Reply:</strong> "<%= quickReplyConfig.quickReplySettings.text %>"
-            <button class="btn btn-primary" onclick="editQuickReplyText()" style="margin-left: 10px;">✏️ แก้ไข</button>
+            <button class="btn btn-primary" onclick="openQuickReplyTextModal()" style="margin-left: 10px;">✏️ แก้ไข</button>
         </div>
 
         <% quickReplyConfig.quickReplyButtons.forEach(function(btn) { %>
@@ -572,6 +588,30 @@
     </div>
 </div>
 
+<!-- Quick Reply Text Modal -->
+<div id="qrTextModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2>✏️ แก้ไขข้อความ Quick Reply</h2>
+            <button class="close" onclick="closeQRTextModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="qrTextForm">
+                <div class="form-group">
+                    <label for="qrText">ข้อความ Quick Reply</label>
+                    <input type="text" id="qrText" value="<%= quickReplyConfig.quickReplySettings.text %>" placeholder="เลือกรายการที่ต้องการได้เลยค่ะ" required>
+                    <small>ข้อความที่จะแสดงเหนือปุ่ม Quick Reply</small>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">💾 บันทึก</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeQRTextModal()" style="flex: 1;">❌ ยกเลิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
     let currentFlexId = null;
     let isViewMode = false;
@@ -723,25 +763,36 @@
         }
     }
 
-    function editQuickReplyText() {
-        const newText = prompt('แก้ไขข้อความ Quick Reply:', '<%= quickReplyConfig.quickReplySettings.text %>');
-        if (newText) {
-            fetch('/quickreply/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    enabled: <%= quickReplyConfig.quickReplySettings.enabled %>, 
-                    text: newText,
-                    keywords: '<%= quickReplyConfig.quickReplySettings.keywords.join(", ") %>'
-                })
-            }).then(r => r.json()).then(result => {
-                if (result.success) {
-                    showAlert('success', 'บันทึกสำเร็จ');
-                    setTimeout(() => location.reload(), 1500);
-                }
-            });
-        }
+    // Quick Reply Text Modal
+    function openQuickReplyTextModal() {
+        document.getElementById('qrTextModal').style.display = 'block';
     }
+
+    function closeQRTextModal() {
+        document.getElementById('qrTextModal').style.display = 'none';
+    }
+
+    document.getElementById('qrTextForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const newText = document.getElementById('qrText').value;
+        
+        const response = await fetch('/quickreply/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                enabled: <%= quickReplyConfig.quickReplySettings.enabled %>, 
+                text: newText,
+                keywords: '<%= quickReplyConfig.quickReplySettings.keywords.join(", ") %>'
+            })
+        });
+        const result = await response.json();
+        if (result.success) {
+            showAlert('success', 'บันทึกสำเร็จ');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showAlert('error', result.message);
+        }
+    });
 
     async function toggleButton(id, enabled) {
         const btn = <%- JSON.stringify(quickReplyConfig.quickReplyButtons) %>.find(b => b.id === id);

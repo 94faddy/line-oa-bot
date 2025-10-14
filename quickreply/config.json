@@ -11,7 +11,7 @@
   "flexMessageSettings": {
     "enabled": true,
     "keywords": [
-      "bonustime",
+      "โบนัสไทม์",
       "อัตราชนะ",
       "สถิติเกม"
     ],
@@ -39,8 +39,8 @@
       "type": "message",
       "label": "bonustime",
       "imageUrl": "https://cdn.linkz.ltd/images/line-quickreply/freegame.png",
-      "text": "bonustime",
-      "enabled": true
+      "enabled": true,
+      "text": "โบนัสไทม์"
     }
   ]
 }

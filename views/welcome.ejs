@@ -1,0 +1,740 @@
+<%- include('partials/header', {
+    title: 'Welcome Message',
+    pageIcon: '👋',
+    pageTitle: 'Welcome Message',
+    pageSubtitle: 'จัดการข้อความต้อนรับเพื่อนใหม่',
+    username: username,
+    activePage: 'welcome'
+}) %>
+
+<style>
+    .button-card {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        transition: all 0.3s;
+    }
+
+    .button-card:hover {
+        border-color: #667eea;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .button-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .button-preview {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin: 10px 0;
+    }
+
+    .button-preview .color-box {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        border: 2px solid #e0e0e0;
+    }
+
+    .color-picker-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .color-picker-wrapper input[type="color"] {
+        width: 60px;
+        height: 40px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .color-picker-wrapper input[type="text"] {
+        flex: 1;
+        font-family: 'Courier New', monospace;
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 30px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 30px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .slider {
+        background-color: #28a745;
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(30px);
+    }
+
+    .preview-container {
+        background: #f8f9fa;
+        border: 2px solid #e0e0e0;
+        border-radius: 15px;
+        padding: 20px;
+        margin-top: 20px;
+        min-height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .preview-phone {
+        width: 100%;
+        max-width: 400px;
+        background: white;
+        border-radius: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        padding: 20px;
+        border: 8px solid #333;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        animation: fadeIn 0.3s;
+        overflow-y: auto;
+    }
+
+    .modal-content {
+        background-color: white;
+        margin: 3% auto;
+        padding: 0;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 600px;
+        animation: slideDown 0.3s;
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px 15px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        border: none;
+        padding: 0;
+    }
+
+    .close {
+        color: white;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .close:hover {
+        opacity: 0.8;
+    }
+
+    .modal-body {
+        padding: 30px;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideDown {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+</style>
+
+<!-- Stats -->
+<div class="stats">
+    <div class="stat-card">
+        <div class="icon">👋</div>
+        <h3>Welcome Message</h3>
+        <div class="value"><%= settings.enabled ? 'เปิด' : 'ปิด' %></div>
+    </div>
+
+    <div class="stat-card">
+        <div class="icon">🔘</div>
+        <h3>ปุ่มทั้งหมด</h3>
+        <div class="value"><%= totalButtons %></div>
+    </div>
+
+    <div class="stat-card">
+        <div class="icon">✅</div>
+        <h3>ปุ่มที่เปิดใช้งาน</h3>
+        <div class="value"><%= enabledButtons %></div>
+    </div>
+
+    <div class="stat-card">
+        <div class="icon">📱</div>
+        <h3>แสดงเมื่อ Follow</h3>
+        <div class="value"><%= settings.showOnFollow ? 'เปิด' : 'ปิด' %></div>
+    </div>
+</div>
+
+<!-- Welcome Settings Section -->
+<div class="section">
+    <h2>
+        ⚙️ การตั้งค่า Welcome Message
+        <button class="btn btn-primary" onclick="openSettingsModal()">✏️ แก้ไข</button>
+    </h2>
+
+    <div class="info-box">
+        💡 <strong>สถานะ:</strong> 
+        <%= settings.enabled ? '✅ เปิดใช้งาน' : '❌ ปิดใช้งาน' %>
+        | 
+        <strong>แสดงเมื่อ Follow:</strong> 
+        <%= settings.showOnFollow ? '✅ เปิด' : '❌ ปิด' %>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 10px; margin-top: 20px; border-left: 5px solid <%= settings.backgroundColor %>;">
+        <h3 style="color: <%= settings.backgroundColor %>; margin-bottom: 15px;"><%= settings.title %></h3>
+        <p style="color: #666;"><%= settings.description %></p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+            <div>
+                <strong>🎨 สีพื้นหลัง:</strong><br>
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                    <div style="width: 40px; height: 40px; background: <%= settings.backgroundColor %>; border-radius: 8px; border: 2px solid #e0e0e0;"></div>
+                    <code><%= settings.backgroundColor %></code>
+                </div>
+            </div>
+
+            <div>
+                <strong>📝 สีข้อความ:</strong><br>
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                    <div style="width: 40px; height: 40px; background: <%= settings.textColor %>; border-radius: 8px; border: 2px solid #e0e0e0;"></div>
+                    <code><%= settings.textColor %></code>
+                </div>
+            </div>
+
+            <% if (settings.backgroundImageUrl) { %>
+            <div style="grid-column: 1 / -1;">
+                <strong>🖼️ รูปพื้นหลัง:</strong><br>
+                <img src="<%= settings.backgroundImageUrl %>" alt="Background" style="max-width: 100%; height: 200px; object-fit: cover; border-radius: 10px; margin-top: 10px;" onerror="this.style.display='none'">
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<!-- Buttons Management Section -->
+<div class="section">
+    <h2>
+        🔘 จัดการปุ่ม Welcome
+        <button class="btn btn-success" onclick="openAddButtonModal()">➕ เพิ่มปุ่ม</button>
+    </h2>
+
+    <% if (buttons.length === 0) { %>
+        <div class="empty-state">
+            <div class="icon">📭</div>
+            <h3>ยังไม่มีปุ่ม</h3>
+            <p>คลิกปุ่ม "เพิ่มปุ่ม" เพื่อเริ่มสร้างปุ่มแรกของคุณ</p>
+        </div>
+    <% } else { %>
+        <% buttons.forEach(function(btn) { %>
+            <div class="button-card">
+                <div class="button-card-header">
+                    <h3 style="margin: 0;">🔘 <%= btn.label %></h3>
+                    <label class="toggle-switch">
+                        <input type="checkbox" <%= btn.enabled ? 'checked' : '' %> onchange="toggleButton('<%= btn.id %>', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="button-preview">
+                    <div class="color-box" style="background: <%= btn.color %>;"></div>
+                    <div>
+                        <strong><%= btn.label %></strong><br>
+                        <small style="color: #666;">
+                            <%= btn.type === 'uri' ? '🔗 ' + btn.uri : '💬 ' + btn.text %>
+                        </small>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="btn btn-warning" onclick="editButton('<%= JSON.stringify(btn).replace(/'/g, "\\'") %>')" style="flex: 1;">
+                        ✏️ แก้ไข
+                    </button>
+                    <button class="btn btn-danger" onclick="deleteButton('<%= btn.id %>')" style="flex: 1;">
+                        🗑️ ลบ
+                    </button>
+                </div>
+            </div>
+        <% }); %>
+    <% } %>
+</div>
+
+<!-- Preview Section -->
+<div class="section">
+    <h2>
+        👁️ ดูตัวอย่าง
+        <button class="btn btn-primary" onclick="refreshPreview()">🔄 รีเฟรช</button>
+    </h2>
+
+    <div class="preview-container">
+        <div class="preview-phone" id="previewPhone">
+            <div style="text-align: center; padding: 40px 20px; color: #999;">
+                <div style="font-size: 3em; margin-bottom: 15px;">📱</div>
+                <p>กำลังโหลดตัวอย่าง...</p>
+                <button class="btn btn-primary" onclick="refreshPreview()" style="margin-top: 15px;">โหลดตัวอย่าง</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>⚙️ ตั้งค่า Welcome Message</h2>
+            <button class="close" onclick="closeSettingsModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="settingsForm">
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="settingsEnabled" <%= settings.enabled ? 'checked' : '' %>>
+                        เปิดใช้งาน Welcome Message
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="settingsShowOnFollow" <%= settings.showOnFollow ? 'checked' : '' %>>
+                        แสดงเมื่อมีคนกด Follow
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="settingsTitle">📝 ข้อความหัวข้อ</label>
+                    <input type="text" id="settingsTitle" value="<%= settings.title %>" placeholder="ยินดีต้อนรับ!" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="settingsDescription">📄 ข้อความรายละเอียด</label>
+                    <textarea id="settingsDescription" style="min-height: 100px;"><%= settings.description %></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="settingsBackgroundColor">🎨 สีพื้นหลัง</label>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="settingsBackgroundColor" value="<%= settings.backgroundColor %>">
+                        <input type="text" id="settingsBackgroundColorText" value="<%= settings.backgroundColor %>" placeholder="#667eea">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="settingsTextColor">📝 สีข้อความ</label>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="settingsTextColor" value="<%= settings.textColor %>">
+                        <input type="text" id="settingsTextColorText" value="<%= settings.textColor %>" placeholder="#ffffff">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="settingsBackgroundImage">🖼️ URL รูปพื้นหลัง (ไม่บังคับ)</label>
+                    <input type="url" id="settingsBackgroundImage" value="<%= settings.backgroundImageUrl %>" placeholder="https://...">
+                    <small>ขนาดแนะนำ: 1040x670 พิกเซล (อัตราส่วน 20:13)</small>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">💾 บันทึก</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeSettingsModal()" style="flex: 1;">❌ ยกเลิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Button Modal -->
+<div id="buttonModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="buttonModalTitle">➕ เพิ่มปุ่ม</h2>
+            <button class="close" onclick="closeButtonModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="buttonForm">
+                <input type="hidden" id="buttonId">
+                
+                <div class="form-group">
+                    <label for="buttonType">ประเภทปุ่ม</label>
+                    <select id="buttonType" onchange="toggleButtonFields()">
+                        <option value="uri">เปิด URL</option>
+                        <option value="message">ส่งข้อความ</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="buttonLabel">ข้อความบนปุ่ม</label>
+                    <input type="text" id="buttonLabel" placeholder="🎨 โปรโมชั่น" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="buttonColor">🎨 สีปุ่ม</label>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="buttonColor" value="#667eea">
+                        <input type="text" id="buttonColorText" value="#667eea" placeholder="#667eea">
+                    </div>
+                </div>
+
+                <div class="form-group" id="uriField">
+                    <label for="buttonUri">URL ลิงก์</label>
+                    <input type="url" id="buttonUri" placeholder="https://m.w99.in/promotions">
+                </div>
+
+                <div class="form-group hidden" id="textField">
+                    <label for="buttonText">ข้อความที่จะส่ง</label>
+                    <input type="text" id="buttonText" placeholder="ฟรี">
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">💾 บันทึก</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeButtonModal()" style="flex: 1;">❌ ยกเลิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    let isEditButton = false;
+
+    // Sync color picker with text input
+    document.getElementById('settingsBackgroundColor')?.addEventListener('input', function() {
+        document.getElementById('settingsBackgroundColorText').value = this.value;
+    });
+
+    document.getElementById('settingsBackgroundColorText')?.addEventListener('input', function() {
+        document.getElementById('settingsBackgroundColor').value = this.value;
+    });
+
+    document.getElementById('settingsTextColor')?.addEventListener('input', function() {
+        document.getElementById('settingsTextColorText').value = this.value;
+    });
+
+    document.getElementById('settingsTextColorText')?.addEventListener('input', function() {
+        document.getElementById('settingsTextColor').value = this.value;
+    });
+
+    document.getElementById('buttonColor')?.addEventListener('input', function() {
+        document.getElementById('buttonColorText').value = this.value;
+    });
+
+    document.getElementById('buttonColorText')?.addEventListener('input', function() {
+        document.getElementById('buttonColor').value = this.value;
+    });
+
+    // Settings Form
+    document.getElementById('settingsForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            enabled: document.getElementById('settingsEnabled').checked,
+            showOnFollow: document.getElementById('settingsShowOnFollow').checked,
+            title: document.getElementById('settingsTitle').value,
+            description: document.getElementById('settingsDescription').value,
+            backgroundColor: document.getElementById('settingsBackgroundColorText').value,
+            textColor: document.getElementById('settingsTextColorText').value,
+            backgroundImageUrl: document.getElementById('settingsBackgroundImage').value
+        };
+
+        try {
+            const response = await fetch('/welcome/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('success', result.message);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', result.message);
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+        }
+    });
+
+    // Button Form
+    document.getElementById('buttonForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            id: document.getElementById('buttonId').value,
+            type: document.getElementById('buttonType').value,
+            label: document.getElementById('buttonLabel').value,
+            color: document.getElementById('buttonColorText').value,
+            enabled: true
+        };
+
+        if (formData.type === 'uri') {
+            formData.uri = document.getElementById('buttonUri').value;
+        } else {
+            formData.text = document.getElementById('buttonText').value;
+        }
+
+        const url = isEditButton ? '/welcome/update-button' : '/welcome/add-button';
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('success', result.message);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', result.message);
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+        }
+    });
+
+    // Toggle Button Fields
+    function toggleButtonFields() {
+        const type = document.getElementById('buttonType').value;
+        const uriField = document.getElementById('uriField');
+        const textField = document.getElementById('textField');
+        
+        if (type === 'uri') {
+            uriField.classList.remove('hidden');
+            textField.classList.add('hidden');
+        } else {
+            uriField.classList.add('hidden');
+            textField.classList.remove('hidden');
+        }
+    }
+
+    // Button Management
+    function openAddButtonModal() {
+        isEditButton = false;
+        document.getElementById('buttonModalTitle').textContent = '➕ เพิ่มปุ่ม';
+        document.getElementById('buttonForm').reset();
+        document.getElementById('buttonId').value = '';
+        document.getElementById('buttonColorText').value = '#667eea';
+        document.getElementById('buttonColor').value = '#667eea';
+        toggleButtonFields();
+        document.getElementById('buttonModal').style.display = 'block';
+    }
+
+    function editButton(btnJson) {
+        isEditButton = true;
+        const btn = JSON.parse(btnJson.replace(/\\'/g, "'"));
+        document.getElementById('buttonModalTitle').textContent = '✏️ แก้ไขปุ่ม';
+        document.getElementById('buttonId').value = btn.id;
+        document.getElementById('buttonType').value = btn.type;
+        document.getElementById('buttonLabel').value = btn.label;
+        document.getElementById('buttonColorText').value = btn.color || '#667eea';
+        document.getElementById('buttonColor').value = btn.color || '#667eea';
+        
+        if (btn.type === 'uri') {
+            document.getElementById('buttonUri').value = btn.uri;
+        } else {
+            document.getElementById('buttonText').value = btn.text;
+        }
+        
+        toggleButtonFields();
+        document.getElementById('buttonModal').style.display = 'block';
+    }
+
+    async function toggleButton(id, enabled) {
+        const btn = <%- JSON.stringify(buttons) %>.find(b => b.id === id);
+        
+        try {
+            const response = await fetch('/welcome/update-button', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...btn, enabled })
+            });
+
+            const result = await response.json();
+            showAlert(result.success ? 'success' : 'error', result.message);
+            
+            if (result.success) {
+                setTimeout(() => refreshPreview(), 500);
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+        }
+    }
+
+    async function deleteButton(id) {
+        if (!confirm('ลบปุ่มนี้?')) return;
+        
+        try {
+            const response = await fetch('/welcome/delete-button', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('success', result.message);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', result.message);
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+        }
+    }
+
+    // Preview
+    async function refreshPreview() {
+        const previewPhone = document.getElementById('previewPhone');
+        previewPhone.innerHTML = '<div style="text-align: center; padding: 40px 20px; color: #999;"><div style="font-size: 3em;">⏳</div><p>กำลังโหลด...</p></div>';
+
+        try {
+            const response = await fetch('/welcome/preview');
+            const result = await response.json();
+
+            if (result.success && result.flex) {
+                const flex = result.flex;
+                let html = '';
+
+                // Header
+                if (flex.header) {
+                    const headerBg = flex.header.backgroundColor || '#667eea';
+                    const textColor = flex.header.contents[0]?.color || '#ffffff';
+                    html += `<div style="background: ${headerBg}; color: ${textColor}; padding: 20px; border-radius: 15px 15px 0 0; text-align: center;">`;
+                    html += `<h2 style="margin: 0; font-size: 1.3em;">${flex.header.contents[0]?.text || 'Welcome'}</h2>`;
+                    html += `</div>`;
+                }
+
+                // Hero Image
+                if (flex.hero) {
+                    html += `<img src="${flex.hero.url}" style="width: 100%; height: 150px; object-fit: cover;" onerror="this.style.display='none'">`;
+                }
+
+                // Body
+                if (flex.body) {
+                    html += `<div style="padding: 20px;">`;
+                    
+                    // Description
+                    const desc = flex.body.contents.find(c => c.type === 'text');
+                    if (desc) {
+                        html += `<p style="text-align: center; color: #666; margin-bottom: 20px;">${desc.text}</p>`;
+                    }
+
+                    // Buttons
+                    const buttonBox = flex.body.contents.find(c => c.type === 'box' && c.contents[0]?.type === 'button');
+                    if (buttonBox) {
+                        buttonBox.contents.forEach(btn => {
+                            const color = btn.color || '#667eea';
+                            const label = btn.action?.label || 'Button';
+                            html += `<button style="width: 100%; padding: 12px; margin: 8px 0; background: ${color}; color: white; border: none; border-radius: 8px; font-size: 1em; cursor: pointer;">${label}</button>`;
+                        });
+                    }
+
+                    html += `</div>`;
+                }
+
+                previewPhone.innerHTML = html;
+            } else {
+                previewPhone.innerHTML = '<div style="text-align: center; padding: 40px 20px; color: #999;"><div style="font-size: 3em;">😕</div><p>' + (result.message || 'ไม่สามารถโหลดตัวอย่างได้') + '</p></div>';
+            }
+        } catch (error) {
+            previewPhone.innerHTML = '<div style="text-align: center; padding: 40px 20px; color: #999;"><div style="font-size: 3em;">❌</div><p>เกิดข้อผิดพลาด</p></div>';
+        }
+    }
+
+    // Modal Functions
+    function openSettingsModal() {
+        document.getElementById('settingsModal').style.display = 'block';
+    }
+
+    function closeSettingsModal() {
+        document.getElementById('settingsModal').style.display = 'none';
+    }
+
+    function closeButtonModal() {
+        document.getElementById('buttonModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    }
+
+    // Auto load preview on page load
+    window.addEventListener('load', function() {
+        setTimeout(refreshPreview, 500);
+    });
+</script>
+
+<%- include('partials/footer') %>

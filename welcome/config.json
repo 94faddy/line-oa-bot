@@ -1,0 +1,53 @@
+{
+  "welcomeSettings": {
+    "enabled": true,
+    "showOnFollow": true,
+    "title": "ยินดีต้อนรับสู่ W99! 🎉",
+    "description": "ยินดีให้บริการ 24 ช.ม\nสามารถติดต่อสอบถามแอดมินได้24 ชม",
+    "backgroundColor": "#e3d10d",
+    "textColor": "#141414",
+    "backgroundImageUrl": ""
+  },
+  "welcomeButtons": [
+    {
+      "id": "btn-welcome-1",
+      "type": "message",
+      "label": "🎨 โปรโมชั่น",
+      "enabled": true,
+      "color": "#ed9907",
+      "text": "โปรโมชั่น"
+    },
+    {
+      "id": "btn-welcome-2",
+      "type": "message",
+      "label": "🎁 รับเครดิตฟรี",
+      "enabled": true,
+      "color": "#28a745",
+      "text": "ฟรี"
+    },
+    {
+      "id": "btn-welcome-3",
+      "type": "uri",
+      "label": "📝 สมัครสมาชิก",
+      "enabled": true,
+      "color": "#c509c8",
+      "uri": "https://m.w99.in/register"
+    },
+    {
+      "id": "btn-welcome-4",
+      "type": "message",
+      "label": "🎮 เกมโบนัส",
+      "enabled": true,
+      "color": "#e53010",
+      "text": "โบนัสไทม์"
+    },
+    {
+      "id": "btn-welcome-5",
+      "type": "message",
+      "label": "🎛️ เลือกเมนู",
+      "enabled": true,
+      "color": "#0a37eb",
+      "text": "menu"
+    }
+  ]
+}
