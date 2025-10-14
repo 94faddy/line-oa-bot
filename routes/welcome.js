@@ -21,8 +21,7 @@ if (!fs.existsSync(WELCOME_CONFIG_PATH)) {
       title: "ยินดีต้อนรับสู่ W99! 🎉",
       description: "ขอบคุณที่เป็นเพื่อนกับเรา เลือกเมนูด้านล่างเพื่อเริ่มต้นใช้งาน",
       backgroundColor: "#667eea",
-      textColor: "#ffffff",
-      backgroundImageUrl: ""
+      textColor: "#ffffff"
     },
     welcomeButtons: [
       {
@@ -48,22 +47,6 @@ if (!fs.existsSync(WELCOME_CONFIG_PATH)) {
         uri: "https://m.w99.in/register",
         enabled: true,
         color: "#ffc107"
-      },
-      {
-        id: "btn-welcome-4",
-        type: "message",
-        label: "🎮 เกมโบนัส",
-        text: "bonustime",
-        enabled: true,
-        color: "#17a2b8"
-      },
-      {
-        id: "btn-welcome-5",
-        type: "uri",
-        label: "💰 ฝากถอน",
-        uri: "https://m.w99.in/",
-        enabled: true,
-        color: "#dc3545"
       }
     ]
   };
@@ -81,28 +64,69 @@ function saveWelcomeConfig() {
 // ฟังก์ชันสร้าง Flex Message สำหรับ Welcome
 function createWelcomeFlexMessage() {
   try {
+    // ตรวจสอบว่า config ถูกโหลดมาหรือไม่
+    if (!welcomeConfig || !welcomeConfig.welcomeSettings) {
+      console.error('❌ Welcome config is not loaded properly');
+      return null;
+    }
+
     if (!welcomeConfig.welcomeSettings.enabled) {
+      console.log('ℹ️ Welcome is disabled in config');
       return null;
     }
 
     const settings = welcomeConfig.welcomeSettings;
-    const enabledButtons = welcomeConfig.welcomeButtons.filter(btn => btn.enabled);
+    const enabledButtons = (welcomeConfig.welcomeButtons || []).filter(btn => btn.enabled);
 
     if (enabledButtons.length === 0) {
+      console.log('⚠️ No enabled buttons found');
       return null;
     }
 
-    // สร้าง Button Actions
+    console.log(`📝 Creating Welcome Flex with ${enabledButtons.length} buttons`);
+
+    // สร้าง Button Actions พร้อม validation เข้มงวด
     const buttonContents = enabledButtons.map(btn => {
-      const action = btn.type === 'uri' ? {
-        type: 'uri',
-        label: btn.label,
-        uri: btn.uri
-      } : {
-        type: 'message',
-        label: btn.label,
-        text: btn.text
-      };
+      // ตรวจสอบ label
+      if (!btn.label || typeof btn.label !== 'string' || btn.label.trim() === '') {
+        console.warn(`⚠️ Button ${btn.id} has invalid label, skipping`);
+        return null;
+      }
+
+      let action;
+      if (btn.type === 'uri') {
+        // ตรวจสอบ URI
+        if (!btn.uri || typeof btn.uri !== 'string' || btn.uri.trim() === '') {
+          console.warn(`⚠️ Button ${btn.id} (${btn.label}) has invalid URI, skipping`);
+          return null;
+        }
+        // ตรวจสอบว่า URI เป็น URL ที่ถูกต้อง
+        try {
+          new URL(btn.uri);
+        } catch (e) {
+          console.warn(`⚠️ Button ${btn.id} (${btn.label}) has malformed URI: ${btn.uri}`);
+          return null;
+        }
+        action = {
+          type: 'uri',
+          label: btn.label.trim(),
+          uri: btn.uri.trim()
+        };
+      } else if (btn.type === 'message') {
+        // ตรวจสอบ text
+        if (!btn.text || typeof btn.text !== 'string' || btn.text.trim() === '') {
+          console.warn(`⚠️ Button ${btn.id} (${btn.label}) has invalid text, skipping`);
+          return null;
+        }
+        action = {
+          type: 'message',
+          label: btn.label.trim(),
+          text: btn.text.trim()
+        };
+      } else {
+        console.warn(`⚠️ Button ${btn.id} has invalid type: ${btn.type}`);
+        return null;
+      }
 
       return {
         type: "button",
@@ -111,16 +135,39 @@ function createWelcomeFlexMessage() {
         color: btn.color || "#667eea",
         height: "sm"
       };
-    });
+    }).filter(btn => btn !== null);
 
-    // สร้าง Hero (รูปพื้นหลัง)
-    const hero = settings.backgroundImageUrl ? {
-      type: "image",
-      url: settings.backgroundImageUrl,
-      size: "full",
-      aspectRatio: "20:13",
-      aspectMode: "cover"
-    } : null;
+    // ตรวจสอบว่ามีปุ่มที่ valid หรือไม่
+    if (buttonContents.length === 0) {
+      console.error('❌ No valid buttons found after filtering');
+      return null;
+    }
+
+    console.log(`✅ Created ${buttonContents.length} valid buttons`);
+
+    // สร้าง Body Contents
+    const bodyContents = [
+      {
+        type: "text",
+        text: settings.description || "ยินดีต้อนรับสู่บริการของเรา",
+        color: "#666666",
+        size: "sm",
+        wrap: true,
+        align: "center",
+        margin: "md"
+      },
+      {
+        type: "separator",
+        margin: "lg"
+      },
+      {
+        type: "box",
+        layout: "vertical",
+        contents: buttonContents,
+        spacing: "sm",
+        margin: "lg"
+      }
+    ];
 
     // สร้าง Flex Message
     const flexMessage = {
@@ -132,57 +179,61 @@ function createWelcomeFlexMessage() {
         contents: [
           {
             type: "text",
-            text: settings.title,
-            color: settings.textColor,
+            text: settings.title || "ยินดีต้อนรับ!",
+            color: settings.textColor || "#ffffff",
             size: "xl",
             weight: "bold",
             align: "center"
           }
         ],
-        backgroundColor: settings.backgroundColor,
+        backgroundColor: settings.backgroundColor || "#667eea",
         paddingAll: "20px"
       },
       body: {
         type: "box",
         layout: "vertical",
-        contents: [
-          {
-            type: "text",
-            text: settings.description,
-            color: "#666666",
-            size: "sm",
-            wrap: true,
-            align: "center",
-            margin: "md"
-          },
-          {
-            type: "separator",
-            margin: "lg"
-          },
-          {
-            type: "box",
-            layout: "vertical",
-            contents: buttonContents,
-            spacing: "sm",
-            margin: "lg"
-          }
-        ],
+        contents: bodyContents,
         paddingAll: "20px"
       }
     };
 
-    // เพิ่ม Hero ถ้ามี
-    if (hero) {
-      flexMessage.hero = hero;
+    // เพิ่ม Hero Image ถ้ามี
+    if (settings.backgroundImageUrl && 
+        typeof settings.backgroundImageUrl === 'string' && 
+        settings.backgroundImageUrl.trim() !== '') {
+      try {
+        new URL(settings.backgroundImageUrl);
+        flexMessage.hero = {
+          type: "image",
+          url: settings.backgroundImageUrl.trim(),
+          size: "full",
+          aspectRatio: "20:13",
+          aspectMode: "cover"
+        };
+        console.log('✅ Added hero image:', settings.backgroundImageUrl);
+      } catch (e) {
+        console.warn('⚠️ Invalid background image URL, skipping hero');
+      }
     }
 
-    return {
+    console.log('✅ Welcome Flex Message created successfully');
+    
+    const finalMessage = {
       type: "flex",
-      altText: settings.title,
+      altText: settings.title || "ยินดีต้อนรับ!",
       contents: flexMessage
     };
+
+    // Validate ขั้นสุดท้าย
+    if (!finalMessage.type || !finalMessage.altText || !finalMessage.contents) {
+      console.error('❌ Final message validation failed');
+      return null;
+    }
+
+    return finalMessage;
   } catch (error) {
-    console.error('Error creating welcome flex message:', error);
+    console.error('❌ Error creating welcome flex message:', error);
+    console.error('Error stack:', error.stack);
     return null;
   }
 }
@@ -208,16 +259,35 @@ function setupWelcomeRoutes(requireLogin) {
       
       welcomeConfig.welcomeSettings.enabled = enabled === 'true' || enabled === true;
       welcomeConfig.welcomeSettings.showOnFollow = showOnFollow === 'true' || showOnFollow === true;
-      welcomeConfig.welcomeSettings.title = title || welcomeConfig.welcomeSettings.title;
-      welcomeConfig.welcomeSettings.description = description || welcomeConfig.welcomeSettings.description;
-      welcomeConfig.welcomeSettings.backgroundColor = backgroundColor || '#667eea';
-      welcomeConfig.welcomeSettings.textColor = textColor || '#ffffff';
-      welcomeConfig.welcomeSettings.backgroundImageUrl = backgroundImageUrl || '';
+      welcomeConfig.welcomeSettings.title = (title && title.trim()) || welcomeConfig.welcomeSettings.title;
+      welcomeConfig.welcomeSettings.description = (description && description.trim()) || welcomeConfig.welcomeSettings.description;
+      welcomeConfig.welcomeSettings.backgroundColor = (backgroundColor && backgroundColor.trim()) || '#667eea';
+      welcomeConfig.welcomeSettings.textColor = (textColor && textColor.trim()) || '#ffffff';
+      
+      // จัดการ backgroundImageUrl
+      if (backgroundImageUrl && backgroundImageUrl.trim() !== '') {
+        try {
+          new URL(backgroundImageUrl.trim());
+          welcomeConfig.welcomeSettings.backgroundImageUrl = backgroundImageUrl.trim();
+        } catch (e) {
+          console.warn('Invalid background image URL provided, ignoring');
+          delete welcomeConfig.welcomeSettings.backgroundImageUrl;
+        }
+      } else {
+        delete welcomeConfig.welcomeSettings.backgroundImageUrl;
+      }
       
       saveWelcomeConfig();
       
+      console.log('✅ Welcome settings updated:', {
+        enabled: welcomeConfig.welcomeSettings.enabled,
+        showOnFollow: welcomeConfig.welcomeSettings.showOnFollow,
+        hasBackgroundImage: !!welcomeConfig.welcomeSettings.backgroundImageUrl
+      });
+      
       res.json({ success: true, message: 'บันทึกการตั้งค่าสำเร็จ' });
     } catch (error) {
+      console.error('Error updating welcome settings:', error);
       res.status(500).json({ success: false, message: error.message });
     }
   });
@@ -227,18 +297,30 @@ function setupWelcomeRoutes(requireLogin) {
     try {
       const { type, label, uri, text, color } = req.body;
       
+      if (!label || label.trim() === '') {
+        return res.status(400).json({ success: false, message: 'กรุณากรอก Label' });
+      }
+
+      if (type === 'uri' && (!uri || uri.trim() === '')) {
+        return res.status(400).json({ success: false, message: 'กรุณากรอก URI สำหรับปุ่มประเภท Link' });
+      }
+
+      if (type === 'message' && (!text || text.trim() === '')) {
+        return res.status(400).json({ success: false, message: 'กรุณากรอก Text สำหรับปุ่มประเภท Message' });
+      }
+
       const newButton = {
         id: `btn-welcome-${Date.now()}`,
         type: type,
-        label: label,
+        label: label.trim(),
         enabled: true,
-        color: color || '#667eea'
+        color: (color && color.trim()) || '#667eea'
       };
 
       if (type === 'uri') {
-        newButton.uri = uri;
+        newButton.uri = uri.trim();
       } else if (type === 'message') {
-        newButton.text = text;
+        newButton.text = text.trim();
       }
 
       welcomeConfig.welcomeButtons.push(newButton);
@@ -261,18 +343,30 @@ function setupWelcomeRoutes(requireLogin) {
         return res.status(404).json({ success: false, message: 'ไม่พบปุ่ม' });
       }
 
+      if (!label || label.trim() === '') {
+        return res.status(400).json({ success: false, message: 'กรุณากรอก Label' });
+      }
+
+      if (type === 'uri' && (!uri || uri.trim() === '')) {
+        return res.status(400).json({ success: false, message: 'กรุณากรอก URI' });
+      }
+
+      if (type === 'message' && (!text || text.trim() === '')) {
+        return res.status(400).json({ success: false, message: 'กรุณากรอก Text' });
+      }
+
       welcomeConfig.welcomeButtons[index] = {
         id: id,
         type: type,
-        label: label,
+        label: label.trim(),
         enabled: enabled === 'true' || enabled === true,
-        color: color || '#667eea'
+        color: (color && color.trim()) || '#667eea'
       };
 
       if (type === 'uri') {
-        welcomeConfig.welcomeButtons[index].uri = uri;
+        welcomeConfig.welcomeButtons[index].uri = uri.trim();
       } else if (type === 'message') {
-        welcomeConfig.welcomeButtons[index].text = text;
+        welcomeConfig.welcomeButtons[index].text = text.trim();
       }
 
       saveWelcomeConfig();
@@ -305,9 +399,10 @@ function setupWelcomeRoutes(requireLogin) {
       if (flexMessage) {
         res.json({ success: true, flex: flexMessage.contents });
       } else {
-        res.json({ success: false, message: 'Welcome Message ถูกปิดการใช้งาน' });
+        res.json({ success: false, message: 'ไม่สามารถสร้าง Welcome Message ได้ กรุณาตรวจสอบการตั้งค่า' });
       }
     } catch (error) {
+      console.error('Error in preview:', error);
       res.status(500).json({ success: false, message: error.message });
     }
   });

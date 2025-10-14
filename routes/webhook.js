@@ -72,6 +72,58 @@ function findClientBySignature(signature, body) {
   return null;
 }
 
+// ฟังก์ชัน safe reply - ตรวจสอบก่อนส่ง
+async function safeReplyMessage(lineClient, replyToken, messages, channelName) {
+  try {
+    // Validate messages
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      console.error(`❌ [${channelName}] Invalid messages array`);
+      return false;
+    }
+
+    // ตรวจสอบแต่ละ message
+    const validMessages = messages.filter(msg => {
+      if (!msg || typeof msg !== 'object') {
+        console.warn(`⚠️ [${channelName}] Invalid message object`);
+        return false;
+      }
+      if (!msg.type) {
+        console.warn(`⚠️ [${channelName}] Message missing type`);
+        return false;
+      }
+      if (msg.type === 'text' && (!msg.text || msg.text.trim() === '')) {
+        console.warn(`⚠️ [${channelName}] Text message has empty text`);
+        return false;
+      }
+      if (msg.type === 'flex' && !msg.contents) {
+        console.warn(`⚠️ [${channelName}] Flex message missing contents`);
+        return false;
+      }
+      return true;
+    });
+
+    if (validMessages.length === 0) {
+      console.error(`❌ [${channelName}] No valid messages to send`);
+      return false;
+    }
+
+    // ส่งข้อความ
+    await lineClient.replyMessage({
+      replyToken: replyToken,
+      messages: validMessages
+    });
+
+    console.log(`✅ [${channelName}] Message sent successfully`);
+    return true;
+  } catch (error) {
+    console.error(`❌ [${channelName}] Error in safeReplyMessage:`, error.message);
+    if (error.body) {
+      console.error(`Error body:`, error.body);
+    }
+    return false;
+  }
+}
+
 // Setup Webhook Route
 function setupWebhookRoute(
   appConfig, 
@@ -169,6 +221,17 @@ async function handleEvent(
   if (event.type === 'follow') {
     console.log(`👋 [${channelConfig.name}] New follower: ${event.source.userId}`);
     
+    // ตรวจสอบ Global Settings
+    if (!welcomeConfig.welcomeSettings.enabled) {
+      console.log(`ℹ️ [${channelConfig.name}] Welcome feature is GLOBALLY DISABLED`);
+      return null;
+    }
+
+    if (!welcomeConfig.welcomeSettings.showOnFollow) {
+      console.log(`ℹ️ [${channelConfig.name}] Welcome showOnFollow is DISABLED`);
+      return null;
+    }
+    
     // ตรวจสอบว่า Channel นี้เปิดใช้งาน Welcome Feature หรือไม่
     const features = channelConfig.features || {};
     
@@ -177,23 +240,35 @@ async function handleEvent(
       return null;
     }
     
-    // ส่ง Welcome Message ถ้าเปิดใช้งานทั้งใน Global Config และ Channel Feature
-    if (welcomeConfig.welcomeSettings.enabled && welcomeConfig.welcomeSettings.showOnFollow) {
-      const welcomeMessage = createWelcomeFlexMessage();
-      
-      if (welcomeMessage) {
-        try {
-          await lineClient.pushMessage({
-            to: event.source.userId,
-            messages: [welcomeMessage]
-          });
-          console.log(`✅ [${channelConfig.name}] Welcome message sent to new follower`);
-        } catch (error) {
-          console.error(`❌ [${channelConfig.name}] Error sending welcome message:`, error);
-        }
-      }
+    // สร้าง Welcome Message
+    console.log(`🎉 [${channelConfig.name}] Creating Welcome Message...`);
+    const welcomeMessage = createWelcomeFlexMessage();
+    
+    if (!welcomeMessage) {
+      console.log(`⚠️ [${channelConfig.name}] Welcome message is NULL - check config`);
+      return null;
+    }
+
+    // Validate welcome message structure
+    if (!welcomeMessage.type || !welcomeMessage.contents || !welcomeMessage.altText) {
+      console.error(`❌ [${channelConfig.name}] Welcome message has invalid structure`);
+      return null;
+    }
+    
+    console.log(`📤 [${channelConfig.name}] Sending Welcome Message...`);
+    
+    // ส่ง Welcome Message
+    const success = await safeReplyMessage(
+      lineClient,
+      event.replyToken,
+      [welcomeMessage],
+      channelConfig.name
+    );
+
+    if (success) {
+      console.log(`✅ [${channelConfig.name}] Welcome message sent to ${event.source.userId}`);
     } else {
-      console.log(`ℹ️ [${channelConfig.name}] Welcome message is disabled in global settings`);
+      console.error(`❌ [${channelConfig.name}] Failed to send welcome message`);
     }
     
     return null;
@@ -227,7 +302,7 @@ async function handleEvent(
   console.log(`🔧 [${channelConfig.name}] Features:`, features);
   
   // ============================================
-  // 1. ตรวจสอบคีย์เวิร์ดโปรโมชั่นก่อน (ถ้าเปิดใช้งาน)
+  // 1. ตรวจสอบคีย์เวิร์ดโปรโมชั่นก่อน
   // ============================================
   if (features.promotions && containsPromotionKeyword(messageText)) {
     console.log(`🎨 [${channelConfig.name}] Promotion keyword detected!`);
@@ -235,51 +310,63 @@ async function handleEvent(
     const flexMessage = createPromotionFlexMessage();
     
     if (flexMessage) {
-      await lineClient.replyMessage({
-        replyToken: event.replyToken,
-        messages: [flexMessage]
-      });
-      console.log(`✅ [${channelConfig.name}] Promotions sent to ${userId}`);
+      await safeReplyMessage(
+        lineClient,
+        event.replyToken,
+        [flexMessage],
+        channelConfig.name
+      );
     } else {
-      await lineClient.replyMessage({
-        replyToken: event.replyToken,
-        messages: [{
+      await safeReplyMessage(
+        lineClient,
+        event.replyToken,
+        [{
           type: 'text',
           text: 'ขออภัยค่ะ ขณะนี้ยังไม่มีโปรโมชั่นพิเศษ 😊'
-        }]
-      });
+        }],
+        channelConfig.name
+      );
     }
     
     return null;
   }
   
   // ============================================
-  // 2. ตรวจสอบคีย์เวิร์ดกิจกรรมแชร์ (ถ้าเปิดใช้งาน)
+  // 2. ตรวจสอบคีย์เวิร์ดกิจกรรมแชร์
   // ============================================
   if (features.activities && containsKeyword(messageText, appConfig.botSettings.keywords)) {
     console.log(`🎁 [${channelConfig.name}] Activity keyword detected!`);
     
     if (canSendMessage(userId, userMessageHistory, getCooldownPeriod)) {
-      await lineClient.replyMessage({
-        replyToken: event.replyToken,
-        messages: [{
+      await safeReplyMessage(
+        lineClient,
+        event.replyToken,
+        [{
           type: 'text',
           text: appConfig.botSettings.activityMessage
-        }]
-      });
+        }],
+        channelConfig.name
+      );
       
       recordMessageSent(userId, userMessageHistory);
       console.log(`✅ [${channelConfig.name}] Activity sent to ${userId}`);
     } else {
-      const cooldownMsg = getCooldownMessage(userId, appConfig.botSettings.cooldownMessage, userMessageHistory, getCooldownPeriod);
+      const cooldownMsg = getCooldownMessage(
+        userId, 
+        appConfig.botSettings.cooldownMessage, 
+        userMessageHistory, 
+        getCooldownPeriod
+      );
       
-      await lineClient.replyMessage({
-        replyToken: event.replyToken,
-        messages: [{
+      await safeReplyMessage(
+        lineClient,
+        event.replyToken,
+        [{
           type: 'text',
           text: cooldownMsg
-        }]
-      });
+        }],
+        channelConfig.name
+      );
       
       const remaining = getRemainingTime(userId, userMessageHistory, getCooldownPeriod);
       const timeLeft = formatTime(remaining);
@@ -290,7 +377,7 @@ async function handleEvent(
   }
   
   // ============================================
-  // 3. ตรวจสอบคีย์เวิร์ด Flex Message (ถ้าเปิดใช้งาน)
+  // 3. ตรวจสอบคีย์เวิร์ด Flex Message
   // ============================================
   if (features.flexMessages && containsFlexKeyword(messageText)) {
     console.log(`💬 [${channelConfig.name}] Flex Message keyword detected!`);
@@ -299,13 +386,15 @@ async function handleEvent(
       const randomFlex = getRandomFlex();
       
       if (!randomFlex) {
-        await lineClient.replyMessage({
-          replyToken: event.replyToken,
-          messages: [{
+        await safeReplyMessage(
+          lineClient,
+          event.replyToken,
+          [{
             type: 'text',
             text: 'ขออภัยค่ะ ขณะนี้ยังไม่มี Flex Message'
-          }]
-        });
+          }],
+          channelConfig.name
+        );
         return null;
       }
 
@@ -325,28 +414,32 @@ async function handleEvent(
         }
       }
       
-      await lineClient.replyMessage({
-        replyToken: event.replyToken,
-        messages: messages
-      });
+      await safeReplyMessage(
+        lineClient,
+        event.replyToken,
+        messages,
+        channelConfig.name
+      );
       
-      console.log(`✅ [${channelConfig.name}] Flex Message ${quickReplyConfig.flexMessageSettings.sendWithQuickReply ? '+ Quick Reply' : ''} sent to ${userId}`);
+      console.log(`✅ [${channelConfig.name}] Flex Message sent`);
     } catch (error) {
       console.error(`❌ [${channelConfig.name}] Error sending Flex Message:`, error);
-      await lineClient.replyMessage({
-        replyToken: event.replyToken,
-        messages: [{
+      await safeReplyMessage(
+        lineClient,
+        event.replyToken,
+        [{
           type: 'text',
           text: 'ขออภัยค่ะ เกิดข้อผิดพลาดในการส่งข้อมูล'
-        }]
-      });
+        }],
+        channelConfig.name
+      );
     }
     
     return null;
   }
   
   // ============================================
-  // 4. ตรวจสอบคีย์เวิร์ด Quick Reply Menu (ถ้าเปิดใช้งาน Flex Messages)
+  // 4. ตรวจสอบคีย์เวิร์ด Quick Reply Menu
   // ============================================
   if (features.flexMessages && containsQuickReplyKeyword(messageText)) {
     console.log(`🔘 [${channelConfig.name}] Quick Reply keyword detected!`);
@@ -354,19 +447,22 @@ async function handleEvent(
     const quickReply = getQuickReplyMenu();
     
     if (quickReply) {
-      await lineClient.replyMessage({
-        replyToken: event.replyToken,
-        messages: [quickReply]
-      });
-      console.log(`✅ [${channelConfig.name}] Quick Reply Menu sent to ${userId}`);
+      await safeReplyMessage(
+        lineClient,
+        event.replyToken,
+        [quickReply],
+        channelConfig.name
+      );
     } else {
-      await lineClient.replyMessage({
-        replyToken: event.replyToken,
-        messages: [{
+      await safeReplyMessage(
+        lineClient,
+        event.replyToken,
+        [{
           type: 'text',
           text: 'ขออภัยค่ะ Quick Reply Menu ถูกปิดการใช้งาน'
-        }]
-      });
+        }],
+        channelConfig.name
+      );
     }
     
     return null;
