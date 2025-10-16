@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= settings.pageTitle %></title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: <%= settings.backgroundColor %>;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .page-title {
+            text-align: center;
+            color: white;
+            font-size: 2em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: fadeInDown 0.5s;
+        }
+
+        .banner-image {
+            max-width: 100%;
+            width: 600px;
+            margin: 0 auto 30px auto;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: fadeInUp 0.6s;
+            display: block;
+        }
+
+        .share-instruction {
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            animation: fadeInUp 0.5s;
+            line-height: 1.8;
+            white-space: pre-line;
+        }
+
+        .share-button {
+            display: block;
+            width: 90%;
+            max-width: 400px;
+            margin: 0 auto 30px auto;
+            padding: 20px 30px;
+            background: <%= settings.buttonBackgroundColor %>;
+            color: <%= settings.buttonTextColor %>;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.4em;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+            animation: pulse 2s infinite;
+        }
+
+        .share-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+        }
+
+        .share-button:active {
+            transform: translateY(0);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: <%= settings.modalBackgroundColor %>;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .modal-title {
+            color: white;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            font-size: 2em;
+            cursor: pointer;
+            padding: 0;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            color: white;
+            line-height: 1.8;
+            font-size: 1.1em;
+        }
+
+        .success-message {
+            text-align: center;
+            color: white;
+            padding: 25px;
+            background: rgba(40, 167, 69, 0.3);
+            border: 2px solid #28a745;
+            border-radius: 15px;
+            margin-top: 20px;
+            display: none;
+            font-size: 1.2em;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .success-message.active {
+            display: block;
+            animation: slideDown 0.3s;
+        }
+
+        .info-box {
+            background: rgba(255,255,255,0.1);
+            border-left: 4px solid #4ECDC4;
+            padding: 15px 20px;
+            margin: 20px auto;
+            border-radius: 10px;
+            color: white;
+            max-width: 600px;
+            backdrop-filter: blur(10px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 1.5em;
+            }
+
+            .banner-image {
+                width: 100%;
+                max-width: 400px;
+            }
+
+            .share-instruction {
+                font-size: 1em;
+                padding: 15px;
+            }
+
+            .share-button {
+                font-size: 1.2em;
+                padding: 15px 25px;
+            }
+
+            .modal-content {
+                padding: 25px;
+            }
+        }
+
+        <%= settings.customCSS %>
+    </style>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="page-title"><%= settings.pageTitle %></h1>
+        
+        <% if (settings.bannerImageUrl) { %>
+        <img src="<%= settings.bannerImageUrl %>" alt="<%= settings.pageTitle %>" class="banner-image" onerror="this.style.display='none'">
+        <% } %>
+        
+        <div class="share-instruction">
+            <%= settings.shareText %>
+        </div>
+
+        <button class="share-button" onclick="shareToLine()">
+            📤 แชร์ไปยัง LINE
+        </button>
+
+        <div class="info-box">
+            💡 <strong>หมายเหตุ:</strong> กดปุ่มแชร์เพื่อส่งต่อให้เพื่อนหรือกลุ่ม LINE
+        </div>
+
+        <div id="successMessage" class="success-message">
+            ✅ แชร์สำเร็จ! ขอบคุณที่ร่วมกิจกรรม
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">ℹ️ ข้อมูล</div>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 15px;">
+                    <strong>กรุณาเปิดหน้านี้ผ่าน LINE แอพเพื่อใช้งานฟีเจอร์แชร์</strong>
+                </p>
+                <p style="font-size: 0.95em; color: rgba(255,255,255,0.8);">
+                    ✦ เปิดลิงก์นี้ใน LINE Chat<br>
+                    ✦ หรือคัดลอก URL และส่งให้ตัวเองใน LINE
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const flexMessages = <%- flexMessagesJson %>;
+        let liffInitialized = false;
+
+        console.log('🚀 LIFF Share Page Loaded');
+        console.log('📊 Flex Messages Count:', flexMessages.length);
+
+        // Initialize LIFF
+        async function initializeLiff() {
+            const liffId = '<%= settings.liffId %>';
+            
+            if (!liffId) {
+                console.error('❌ LIFF ID not configured');
+                return false;
+            }
+
+            try {
+                console.log('🔄 Initializing LIFF with ID:', liffId);
+                await liff.init({ liffId: liffId });
+                liffInitialized = true;
+                console.log('✅ LIFF initialized successfully');
+                console.log('📱 Is in LINE Client:', liff.isInClient());
+                console.log('🔐 Is Logged In:', liff.isLoggedIn());
+                
+                // Auto Login if not logged in
+                if (!liff.isLoggedIn()) {
+                    console.log('🔓 Not logged in, redirecting to LINE login...');
+                    liff.login();
+                    return false;
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('❌ LIFF initialization failed:', error);
+                return false;
+            }
+        }
+
+        // Share to LINE
+        async function shareToLine() {
+            console.log('🔘 Share button clicked');
+
+            if (!liffInitialized) {
+                console.log('⏳ LIFF not initialized, initializing now...');
+                const initialized = await initializeLiff();
+                if (!initialized) {
+                    console.error('❌ Failed to initialize LIFF');
+                    return; // Will redirect to login
+                }
+            }
+
+            // Check login status again
+            if (!liff.isLoggedIn()) {
+                console.log('🔓 Not logged in, redirecting to LINE login...');
+                liff.login();
+                return;
+            }
+
+            // ✅ ลบการเช็ค isInClient() เพราะ LIFF v2 ใช้งานได้ทั้ง in-app และ external browser
+            // LIFF ShareTargetPicker ทำงานได้แม้เปิดผ่าน External Browser
+
+            if (flexMessages.length === 0) {
+                console.error('❌ No flex messages available');
+                alert('ไม่พบข้อมูล Flex Message กรุณาติดต่อผู้ดูแลระบบ');
+                return;
+            }
+
+            try {
+                console.log('📤 Preparing to share...');
+
+                // Create Flex Carousel Message
+                const flexMessage = {
+                    type: 'flex',
+                    altText: '<%= settings.pageTitle %>',
+                    contents: {
+                        type: 'carousel',
+                        contents: flexMessages
+                    }
+                };
+
+                console.log('✅ Flex message prepared');
+                console.log('📦 Flex structure:', {
+                    type: flexMessage.type,
+                    contentsType: flexMessage.contents.type,
+                    bubbleCount: flexMessage.contents.contents.length
+                });
+
+                // Share via LIFF ShareTargetPicker
+                console.log('🚀 Calling shareTargetPicker...');
+                const result = await liff.shareTargetPicker([flexMessage]);
+                
+                if (result) {
+                    console.log('✅ Shared successfully');
+                    showSuccess();
+                } else {
+                    console.log('ℹ️ Share cancelled by user');
+                }
+            } catch (error) {
+                console.error('❌ Share failed:', error);
+                console.error('Error details:', {
+                    code: error.code,
+                    message: error.message,
+                    stack: error.stack
+                });
+                
+                // แสดง error message ที่เป็นมิตรกับผู้ใช้
+                if (error.code === 'INVALID_ARGUMENT') {
+                    alert('❌ ข้อมูล Flex Message ไม่ถูกต้อง\nกรุณาติดต่อผู้ดูแลระบบ');
+                } else if (error.code === 'FORBIDDEN') {
+                    alert('⚠️ กรุณาอนุญาตสิทธิ์การแชร์ในการตั้งค่า LINE');
+                } else if (error.message && error.message.includes('shareTargetPicker')) {
+                    showModal();
+                } else {
+                    alert('เกิดข้อผิดพลาดในการแชร์\n' + error.message);
+                }
+            }
+        }
+
+        function showModal() {
+            console.log('📢 Showing modal');
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function closeModal() {
+            console.log('🔒 Closing modal');
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        function showSuccess() {
+            console.log('🎉 Showing success message');
+            const successMsg = document.getElementById('successMessage');
+            successMsg.classList.add('active');
+            setTimeout(() => {
+                successMsg.classList.remove('active');
+            }, 5000);
+        }
+
+        // Close modal on outside click
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Auto initialize LIFF on page load
+        window.addEventListener('load', function() {
+            console.log('🌐 Page loaded, auto-initializing LIFF...');
+            initializeLiff();
+        });
+    </script>
+</body>
+</html>

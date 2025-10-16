@@ -1,0 +1,1469 @@
+<%- include('partials/header', {
+    title: 'LINE LIFF Share',
+    pageIcon: '📤',
+    pageTitle: 'LINE LIFF Share',
+    pageSubtitle: 'จัดการหน้าแชร์ LINE LIFF',
+    username: username,
+    activePage: 'liff'
+}) %>
+
+<style>
+    .flex-card {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        transition: all 0.3s;
+        cursor: move;
+        position: relative;
+    }
+
+    .flex-card:hover {
+        border-color: #667eea;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .flex-card.dragging {
+        opacity: 0.5;
+        transform: scale(0.95);
+    }
+
+    .flex-card.drag-over {
+        border-color: #28a745;
+        border-style: dashed;
+        background: #f0fff4;
+    }
+
+    .drag-handle {
+        cursor: grab;
+        padding: 5px 10px;
+        color: #999;
+        font-size: 1.2em;
+        user-select: none;
+    }
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .order-badge {
+        background: #667eea;
+        color: white;
+        padding: 3px 10px;
+        border-radius: 15px;
+        font-size: 0.85em;
+        font-weight: bold;
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 24px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .slider {
+        background-color: #28a745;
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+
+    .color-picker-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .color-picker-wrapper input[type="color"] {
+        width: 60px;
+        height: 40px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .color-box {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        border: 2px solid #e0e0e0;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        animation: fadeIn 0.3s;
+        overflow-y: auto;
+    }
+
+    .modal-content {
+        background-color: white;
+        margin: 3% auto;
+        padding: 0;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 800px;
+        animation: slideDown 0.3s;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px 15px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        border: none;
+        padding: 0;
+    }
+
+    .close {
+        color: white;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .close:hover {
+        opacity: 0.8;
+    }
+
+    .modal-body {
+        padding: 30px;
+    }
+
+    .url-box {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 5px solid #667eea;
+        margin: 15px 0;
+        word-break: break-all;
+        font-family: 'Courier New', monospace;
+    }
+
+    .feature-item, .button-item {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        border-left: 4px solid #667eea;
+    }
+
+    .color-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    #previewContainer {
+        display: flex;
+        gap: 20px;
+        overflow-x: auto;
+        padding: 30px;
+        min-height: 600px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 15px;
+        position: relative;
+    }
+
+    #previewContainer::-webkit-scrollbar {
+        height: 12px;
+    }
+
+    #previewContainer::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.1);
+        border-radius: 10px;
+    }
+
+    #previewContainer::-webkit-scrollbar-thumb {
+        background: #667eea;
+        border-radius: 10px;
+        transition: background 0.3s;
+    }
+
+    #previewContainer::-webkit-scrollbar-thumb:hover {
+        background: #764ba2;
+    }
+
+    .preview-bubble {
+        min-width: 350px;
+        max-width: 350px;
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        transition: all 0.3s;
+        flex-shrink: 0;
+    }
+
+    .preview-bubble:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideDown {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    details {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+    }
+    
+    details[open] {
+        background: #f8f9fa;
+    }
+    
+    summary {
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+    }
+    
+    summary::-webkit-details-marker {
+        display: none;
+    }
+    
+    summary::before {
+        content: '▶';
+        transition: transform 0.3s;
+    }
+    
+    details[open] summary::before {
+        transform: rotate(90deg);
+    }
+
+    @media (max-width: 768px) {
+        #previewContainer {
+            padding: 15px;
+            gap: 15px;
+        }
+        
+        .preview-bubble {
+            min-width: 300px;
+            max-width: 300px;
+        }
+
+        .url-box code {
+            font-size: 0.85em !important;
+        }
+        
+        .url-box button,
+        .url-box a {
+            min-width: 100% !important;
+        }
+    }
+</style>
+
+<!-- Stats -->
+<div class="stats">
+    <div class="stat-card">
+        <div class="icon">📤</div>
+        <h3>LIFF Status</h3>
+        <div class="value"><%= settings.enabled ? '✅ เปิด' : '❌ ปิด' %></div>
+    </div>
+
+    <div class="stat-card">
+        <div class="icon">📊</div>
+        <h3>Flex ทั้งหมด</h3>
+        <div class="value"><%= totalMessages %></div>
+    </div>
+
+    <div class="stat-card">
+        <div class="icon">✅</div>
+        <h3>Flex ที่เปิดใช้งาน</h3>
+        <div class="value"><%= enabledMessages %></div>
+    </div>
+
+    <div class="stat-card">
+        <div class="icon">🔗</div>
+        <h3>LIFF ID</h3>
+        <div class="value" style="font-size: 0.8em;"><%= settings.liffId || 'ไม่ได้ตั้งค่า' %></div>
+    </div>
+</div>
+
+<!-- LIFF Settings -->
+<div class="section">
+    <h2>
+        ⚙️ การตั้งค่า LIFF
+        <button class="btn btn-primary" onclick="openSettingsModal()">✏️ แก้ไข</button>
+    </h2>
+
+    <div class="info-box">
+        💡 <strong>สถานะ:</strong> 
+        <%= settings.enabled ? '✅ เปิดใช้งาน' : '❌ ปิดใช้งาน' %>
+        <% if (settings.liffId) { %>
+        | <strong>LIFF ID:</strong> <code><%= settings.liffId %></code>
+        <% } %>
+    </div>
+
+    <% if (settings.enabled && settings.liffId && settings.bannerImageUrl) { %>
+    <div style="background: white; padding: 20px; border-radius: 10px; margin-top: 20px; border-left: 5px solid #667eea;">
+        <h3 style="color: #667eea; margin-bottom: 15px;">🖼️ รูปแบนเนอร์</h3>
+        <img src="<%= settings.bannerImageUrl %>" alt="Banner" style="max-width: 100%; max-height: 300px; border-radius: 10px; display: block; margin: 0 auto;" onerror="this.src='https://via.placeholder.com/600x600/667eea/ffffff?text=Banner+Image'">
+        <p style="margin-top: 10px; text-align: center; color: #666; font-size: 0.9em;">
+            <code><%= settings.bannerImageUrl %></code>
+        </p>
+    </div>
+    <% } %>    
+
+    <% if (settings.enabled && settings.liffId) { %>
+    <!-- LINE LIFF URL สำหรับแชร์ -->
+    <div class="url-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-left: 5px solid #FFD700; animation: slideIn 0.5s ease-out;">
+        <strong style="color: white; font-size: 1.1em;">🔗 LINE LIFF URL สำหรับแชร์กิจกรรม:</strong>
+        <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin: 15px 0; border: 2px dashed rgba(255,255,255,0.3);">
+            <code style="color: #FFD700; font-size: 1.1em; word-break: break-all; display: block; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px;">
+                <%= lineLiffUrl %>
+            </code>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn btn-success" onclick="copyLineLiffUrl()" style="flex: 1; min-width: 200px;">
+                📋 คัดลอก LINE LIFF URL
+            </button>
+            <a href="<%= lineLiffUrl %>" target="_blank" class="btn btn-primary" style="flex: 1; min-width: 200px; text-align: center; text-decoration: none; display: inline-block;">
+                🚀 เปิด LINE LIFF
+            </a>
+        </div>
+        <p style="color: rgba(255,255,255,0.9); margin-top: 15px; font-size: 0.95em; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px;">
+            ℹ️ <strong>วิธีใช้งาน:</strong> คัดลอก URL นี้ไปแชร์ใน LINE หรือคลิก "เปิด LINE LIFF" เพื่อดูตัวอย่างหน้าแชร์
+        </p>
+    </div>
+
+    <!-- Endpoint URL สำหรับทดสอบ -->
+    <div class="url-box" style="background: #f8f9fa; border-left: 5px solid #28a745;">
+        <details>
+            <summary style="color: #667eea; font-weight: bold; padding: 5px 0;">
+                🔧 URL Endpoint สำหรับทดสอบ (คลิกเพื่อดู)
+            </summary>
+            <div style="margin-top: 15px;">
+                <strong style="color: #666;">📍 Endpoint URL:</strong>
+                <div style="background: #e9ecef; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                    <code style="color: #495057; font-size: 0.9em; word-break: break-all;"><%= endpointLiffUrl %></code>
+                </div>
+                <button class="btn btn-secondary" onclick="copyEndpointUrl()" style="margin-right: 10px;">
+                    📋 คัดลอก Endpoint URL
+                </button>
+                <a href="<%= endpointLiffUrl %>" target="_blank" class="btn btn-info">
+                    👁️ เปิดดู
+                </a>
+                <p style="color: #666; margin-top: 10px; font-size: 0.9em;">
+                    ⚠️ URL นี้ใช้สำหรับทดสอบเท่านั้น สำหรับแชร์กิจกรรมให้ใช้ LINE LIFF URL ด้านบน
+                </p>
+            </div>
+        </details>
+    </div>
+    <% } %>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;">
+        <div style="background: white; padding: 15px; border-radius: 10px; border-left: 5px solid <%= settings.backgroundColor %>;">
+            <strong>🎨 สีพื้นหลัง:</strong>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                <div style="width: 40px; height: 40px; background: <%= settings.backgroundColor %>; border-radius: 8px; border: 2px solid #e0e0e0;"></div>
+                <code><%= settings.backgroundColor %></code>
+            </div>
+        </div>
+
+        <div style="background: white; padding: 15px; border-radius: 10px; border-left: 5px solid <%= settings.modalBackgroundColor %>;">
+            <strong>🎭 สีพื้นหลัง Modal:</strong>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                <div style="width: 40px; height: 40px; background: <%= settings.modalBackgroundColor %>; border-radius: 8px; border: 2px solid #e0e0e0;"></div>
+                <code><%= settings.modalBackgroundColor %></code>
+            </div>
+        </div>
+
+        <div style="background: white; padding: 15px; border-radius: 10px; border-left: 5px solid #FF6B6B;">
+            <strong>🔘 สีปุ่ม:</strong>
+            <div style="margin-top: 10px;">
+                <div style="width: 100%; height: 40px; background: <%= settings.buttonBackgroundColor %>; border-radius: 8px; border: 2px solid #e0e0e0;"></div>
+                <code style="font-size: 0.8em; margin-top: 5px; display: block;"><%= settings.buttonBackgroundColor %></code>
+            </div>
+        </div>
+
+        <div style="background: white; padding: 15px; border-radius: 10px; border-left: 5px solid <%= settings.buttonTextColor %>;">
+            <strong>🔤 สีข้อความปุ่ม:</strong>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                <div style="width: 40px; height: 40px; background: <%= settings.buttonTextColor %>; border-radius: 8px; border: 2px solid #e0e0e0;"></div>
+                <code><%= settings.buttonTextColor %></code>
+            </div>
+        </div>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 10px; margin-top: 20px; border-left: 5px solid #667eea;">
+        <h3 style="color: #667eea; margin-bottom: 15px;">📄 ข้อมูลหน้า LIFF</h3>
+        <p><strong>📖 หัวข้อหน้า:</strong> <%= settings.pageTitle %></p>
+        <p><strong>💬 ข้อความแชร์:</strong> <%= settings.shareText %></p>
+    </div>
+
+    <% if (settings.customCSS) { %>
+    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-top: 20px;">
+        <h4 style="margin-bottom: 10px;">🎨 Custom CSS</h4>
+        <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 8px; overflow-x: auto;"><%= settings.customCSS %></pre>
+    </div>
+    <% } %>
+</div>
+
+<!-- Flex Messages Management -->
+<div class="section">
+    <h2>
+        📊 จัดการ Flex Messages
+        <button class="btn btn-success" onclick="openAddFlexModal()">➕ เพิ่ม Flex</button>
+    </h2>
+
+    <div class="info-box" style="background: #e3f2fd; border-left: 4px solid #2196f3;">
+        💡 <strong>เคล็ดลับ:</strong> ลาก Flex เพื่อเรียงลำดับ (Flex ที่อยู่บนจะแสดงก่อน)
+    </div>
+
+    <% if (flexMessages.length === 0) { %>
+        <div class="empty-state">
+            <div class="icon">🔭</div>
+            <h3>ยังไม่มี Flex Message</h3>
+            <p>คลิกปุ่ม "เพิ่ม Flex" เพื่อเริ่มสร้าง Flex แรกของคุณ</p>
+        </div>
+    <% } else { %>
+        <div id="flexContainer">
+            <% flexMessages.forEach(function(flex, index) { %>
+                <div class="flex-card" draggable="true" data-id="<%= flex.id %>" data-order="<%= flex.order || index %>">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="drag-handle">⋮⋮</span>
+                            <span class="order-badge">#<%= index + 1 %></span>
+                            <h3 style="margin: 0;">📊 <%= flex.title %></h3>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" <%= flex.enabled ? 'checked' : '' %> onchange="toggleFlex('<%= flex.id %>', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 200px 1fr; gap: 20px;">
+                        <div>
+                            <img src="<%= flex.imageUrl %>" alt="<%= flex.title %>" 
+                                 style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; border: 2px solid #e0e0e0;"
+                                 onerror="this.src='https://via.placeholder.com/200x200/667eea/ffffff?text=No+Image'">
+                        </div>
+
+                        <div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>📖 Subtitle:</strong> <%= flex.subtitle %>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>💬 Description:</strong> <%= flex.description %>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0;">
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <span style="font-size: 0.85em;">Header:</span>
+                                    <div class="color-box" style="background: <%= flex.headerBackgroundColor %>;"></div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <span style="font-size: 0.85em;">Body:</span>
+                                    <div class="color-box" style="background: <%= flex.bodyBackgroundColor %>;"></div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <span style="font-size: 0.85em;">Footer:</span>
+                                    <div class="color-box" style="background: <%= flex.footerBackgroundColor %>;"></div>
+                                </div>
+                            </div>
+
+                            <% if (flex.features && flex.features.length > 0) { %>
+                            <div style="margin-bottom: 10px;">
+                                <strong>✨ Features:</strong>
+                                <ul style="margin: 5px 0; padding-left: 20px;">
+                                    <% flex.features.forEach(function(feature) { %>
+                                        <li style="font-size: 0.9em;"><%= feature.icon %> <%= feature.text %></li>
+                                    <% }); %>
+                                </ul>
+                            </div>
+                            <% } %>
+
+                            <% if (flex.buttons && flex.buttons.length > 0) { %>
+                            <div style="margin-bottom: 10px;">
+                                <strong>🔘 Buttons:</strong> <%= flex.buttons.filter(b => b.enabled).length %> ปุ่ม
+                            </div>
+                            <% } %>
+
+                            <% if (flex.rating && flex.rating.enabled) { %>
+                            <div>
+                                <strong>⭐ Rating:</strong> <%= '⭐'.repeat(flex.rating.stars) %> <%= flex.rating.text %>
+                            </div>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 15px;">
+                        <button class="btn btn-warning" onclick="editFlex('<%= flex.id %>')">
+                            ✏️ แก้ไข
+                        </button>
+                        <button class="btn btn-primary" onclick="viewFlexDetails('<%= flex.id %>')">
+                            👁️ ดูรายละเอียด
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteFlex('<%= flex.id %>')">
+                            🗑️ ลบ
+                        </button>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+    <% } %>
+</div>
+
+<!-- Preview Section -->
+<div class="section">
+    <h2>
+        👁️ ดูตัวอย่าง Flex Carousel (แบบเต็มขนาด)
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" onclick="refreshPreview()">🔄 รีเฟรช</button>
+            <% if (settings.enabled && settings.liffId) { %>
+            <a href="<%= lineLiffUrl %>" target="_blank" class="btn btn-success">
+                🔗 เปิด LIFF Share
+            </a>
+            <% } %>
+        </div>
+    </h2>
+
+    <% if (!settings.enabled) { %>
+        <div class="info-box" style="background: #fff3cd; border-left: 4px solid #ffc107; color: #856404;">
+            ⚠️ <strong>LIFF ปิดใช้งาน:</strong> กรุณาเปิดใช้งาน LIFF ในการตั้งค่าเพื่อดูตัวอย่าง
+        </div>
+    <% } else if (!settings.liffId) { %>
+        <div class="info-box" style="background: #fff3cd; border-left: 4px solid #ffc107; color: #856404;">
+            ⚠️ <strong>LIFF ID ไม่ได้ตั้งค่า:</strong> กรุณาตั้งค่า LIFF ID ในการตั้งค่า
+        </div>
+    <% } else if (enabledMessages === 0) { %>
+        <div class="info-box" style="background: #f8d7da; border-left: 4px solid #dc3545; color: #721c24;">
+            ❌ <strong>ไม่มี Flex ที่เปิดใช้งาน:</strong> กรุณาเปิดใช้งาน Flex Message อย่างน้อย 1 รายการ
+        </div>
+    <% } %>
+
+    <div style="background: #f8f9fa; border: 2px solid #e0e0e0; border-radius: 15px; padding: 20px; min-height: 400px;">
+        <div id="previewContainer" style="display: flex; gap: 20px; overflow-x: auto; padding: 20px;">
+            <div style="text-align: center; width: 100%; padding: 40px; color: #999;">
+                <div style="font-size: 3em; margin-bottom: 15px;">📱</div>
+                <p>กำลังโหลดตัวอย่าง...</p>
+                <button class="btn btn-primary" onclick="refreshPreview()" style="margin-top: 15px;">โหลดตัวอย่าง</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-box" style="margin-top: 15px;">
+        💡 <strong>หมายเหตุ:</strong> ตัวอย่างแสดงขนาดจริง 350px ตามมาตรฐาน LINE Flex Message - สามารถเลื่อนดูทั้งหมดได้
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>⚙️ ตั้งค่า LIFF</h2>
+            <button class="close" onclick="closeSettingsModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="settingsForm">
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="settingsEnabled" <%= settings.enabled ? 'checked' : '' %>>
+                        เปิดใช้งาน LIFF Share
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="settingsLiffId">🔗 LIFF ID</label>
+                    <input type="text" id="settingsLiffId" value="<%= settings.liffId %>" placeholder="2007779664-0Z8rZY8M">
+                    <small>LIFF ID จาก LINE Developers Console</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="settingsPageTitle">📖 หัวข้อหน้า (Page Title)</label>
+                    <input type="text" id="settingsPageTitle" value="<%= settings.pageTitle %>" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="settingsShareText">💬 ข้อความแชร์</label>
+                    <textarea id="settingsShareText" style="min-height: 80px;"><%= settings.shareText %></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="settingsBannerImageUrl">🖼️ URL รูปแบนเนอร์</label>
+                    <input type="url" id="settingsBannerImageUrl" value="<%= settings.bannerImageUrl || '' %>" placeholder="https://img2.pic.in.th/pic/...">
+                    <small>รูปภาพที่แสดงในหน้า LIFF Share (แนะนำขนาด 1040x1040 หรือ 600x600)</small>
+                </div>                
+
+                <h3 style="margin: 25px 0 15px 0; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+                    🎨 การตั้งค่าสี
+                </h3>
+
+                <div class="color-grid">
+                    <div class="form-group">
+                        <label for="settingsBackgroundColor">🎨 สีพื้นหลังหน้า</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="settingsBackgroundColor" value="<%= settings.backgroundColor %>">
+                            <input type="text" id="settingsBackgroundColorText" value="<%= settings.backgroundColor %>">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="settingsModalBackgroundColor">🎭 สีพื้นหลัง Modal</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="settingsModalBackgroundColor" value="<%= settings.modalBackgroundColor %>">
+                            <input type="text" id="settingsModalBackgroundColorText" value="<%= settings.modalBackgroundColor %>">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="settingsButtonTextColor">🔤 สีข้อความปุ่ม</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="settingsButtonTextColor" value="<%= settings.buttonTextColor %>">
+                            <input type="text" id="settingsButtonTextColorText" value="<%= settings.buttonTextColor %>">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="settingsButtonBackgroundColor">🔘 สีปุ่ม (CSS Background)</label>
+                    <input type="text" id="settingsButtonBackgroundColor" value="<%= settings.buttonBackgroundColor %>" placeholder="linear-gradient(45deg, #FF6B6B, #FF8E8E)">
+                    <small>รองรับ CSS gradient, solid color, หรือ rgba</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="settingsCustomCSS">🎨 Custom CSS (ไม่บังคับ)</label>
+                    <textarea id="settingsCustomCSS" style="min-height: 150px; font-family: 'Courier New', monospace;"><%= settings.customCSS || '' %></textarea>
+                    <small>เพิ่ม CSS สำหรับปรับแต่งหน้า LIFF Share</small>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">💾 บันทึก</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeSettingsModal()" style="flex: 1;">❌ ยกเลิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Flex Modal -->
+<div id="flexModal" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+        <div class="modal-header">
+            <h2 id="flexModalTitle">➕ เพิ่ม Flex Message</h2>
+            <button class="close" onclick="closeFlexModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="flexForm">
+                <input type="hidden" id="flexId">
+                
+                <h3 style="color: #667eea; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+                    🖼️ รูปภาพและข้อความ
+                </h3>
+
+                <div class="form-group">
+                    <label for="flexImageUrl">🖼️ URL รูปภาพ</label>
+                    <input type="url" id="flexImageUrl" placeholder="https://..." required>
+                    <small>ขนาดแนะนำ: 1040x1040 พิกเซล (อัตราส่วน 1:1)</small>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label for="flexTitle">📖 Title</label>
+                        <input type="text" id="flexTitle" placeholder="🎰 DOBBY99 🎰" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="flexSubtitle">📄 Subtitle</label>
+                        <input type="text" id="flexSubtitle" placeholder="เครดิตฟรี 200 บาท" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="flexDescription">💬 Description</label>
+                        <input type="text" id="flexDescription" placeholder="🎁 รับทันที ไม่ต้องฝาก 🎁" required>
+                    </div>
+                </div>
+
+                <h3 style="color: #667eea; margin: 25px 0 15px 0; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+                    🎨 สีพื้นหลัง
+                </h3>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                    <div class="form-group">
+                        <label for="flexHeaderBg">Header Background</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="flexHeaderBg" value="#1A1A2E">
+                            <input type="text" id="flexHeaderBgText" value="#1A1A2E">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="flexBodyBg">Body Background</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="flexBodyBg" value="#1A1A2E">
+                            <input type="text" id="flexBodyBgText" value="#1A1A2E">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="flexFooterBg">Footer Background</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="flexFooterBg" value="#16213E">
+                            <input type="text" id="flexFooterBgText" value="#16213E">
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="color: #667eea; margin: 25px 0 15px 0; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+                    🎨 สีข้อความ
+                </h3>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                    <div class="form-group">
+                        <label for="flexTitleColor">Title Color</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="flexTitleColor" value="#FFD700">
+                            <input type="text" id="flexTitleColorText" value="#FFD700">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="flexSubtitleColor">Subtitle Color</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="flexSubtitleColor" value="#FF6B6B">
+                            <input type="text" id="flexSubtitleColorText" value="#FF6B6B">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="flexDescriptionColor">Description Color</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="flexDescriptionColor" value="#4ECDC4">
+                            <input type="text" id="flexDescriptionColorText" value="#4ECDC4">
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="color: #667eea; margin: 25px 0 15px 0; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+                    ⭐ Rating (ไม่บังคับ)
+                </h3>
+
+                <div style="display: grid; grid-template-columns: 100px 100px 200px 1fr; gap: 15px; align-items: end;">
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="flexRatingEnabled" checked>
+                            เปิดใช้งาน
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="flexRatingStars">⭐ จำนวน</label>
+                        <input type="number" id="flexRatingStars" min="1" max="5" value="5">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="flexRatingText">🔤 ข้อความ</label>
+                        <input type="text" id="flexRatingText" value="4.8/5">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="flexRatingColor">🎨 สี</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="flexRatingColor" value="#FFD700">
+                            <input type="text" id="flexRatingColorText" value="#FFD700">
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="color: #667eea; margin: 25px 0 15px 0; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+                    ✨ Features
+                    <button type="button" class="btn btn-success" onclick="addFeature()" style="float: right; padding: 5px 15px; font-size: 0.9em;">➕ เพิ่ม</button>
+                </h3>
+
+                <div id="featuresContainer"></div>
+
+                <h3 style="color: #667eea; margin: 25px 0 15px 0; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+                    🔘 Buttons
+                    <button type="button" class="btn btn-success" onclick="addButton()" style="float: right; padding: 5px 15px; font-size: 0.9em;">➕ เพิ่ม</button>
+                </h3>
+
+                <div id="buttonsContainer"></div>
+
+                <div style="display: flex; gap: 10px; margin-top: 30px;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">💾 บันทึก</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeFlexModal()" style="flex: 1;">❌ ยกเลิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Details Modal -->
+<div id="detailsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>👁️ รายละเอียด Flex Message</h2>
+            <button class="close" onclick="closeDetailsModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="detailsContent"></div>
+    </div>
+</div>
+
+<script>
+    let flexMessages = <%- JSON.stringify(flexMessages) %>;
+    let draggedElement = null;
+    let isEditFlex = false;
+    let currentFlexId = null;
+    let featureCounter = 0;
+    let buttonCounter = 0;
+
+    // Color Picker Sync
+    ['settingsBackgroundColor', 'settingsModalBackgroundColor', 'settingsButtonTextColor'].forEach(id => {
+        const colorInput = document.getElementById(id);
+        const textInput = document.getElementById(id + 'Text');
+        if (colorInput && textInput) {
+            colorInput.addEventListener('input', function() { textInput.value = this.value; });
+            textInput.addEventListener('input', function() { try { colorInput.value = this.value; } catch (e) {} });
+        }
+    });
+
+    ['flexHeaderBg', 'flexBodyBg', 'flexFooterBg', 'flexTitleColor', 'flexSubtitleColor', 'flexDescriptionColor', 'flexRatingColor'].forEach(id => {
+        const colorInput = document.getElementById(id);
+        const textInput = document.getElementById(id + 'Text');
+        if (colorInput && textInput) {
+            colorInput.addEventListener('input', function() { textInput.value = this.value; });
+            textInput.addEventListener('input', function() { try { colorInput.value = this.value; } catch (e) {} });
+        }
+    });
+
+    // Settings Form Submit
+    document.getElementById('settingsForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = {
+            enabled: document.getElementById('settingsEnabled').checked,
+            liffId: document.getElementById('settingsLiffId').value,
+            pageTitle: document.getElementById('settingsPageTitle').value,
+            shareText: document.getElementById('settingsShareText').value,
+            bannerImageUrl: document.getElementById('settingsBannerImageUrl').value,
+            backgroundColor: document.getElementById('settingsBackgroundColorText').value,
+            modalBackgroundColor: document.getElementById('settingsModalBackgroundColorText').value,
+            buttonBackgroundColor: document.getElementById('settingsButtonBackgroundColor').value,
+            buttonTextColor: document.getElementById('settingsButtonTextColorText').value,
+            customCSS: document.getElementById('settingsCustomCSS').value
+        };
+
+        try {
+            const response = await fetch('/liff/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            const result = await response.json();
+            if (result.success) {
+                showAlert('success', result.message);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('error', result.message);
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+        }
+    });
+
+    // Drag and Drop Functions
+    function initDragAndDrop() {
+        const container = document.getElementById('flexContainer');
+        if (!container) return;
+        container.querySelectorAll('.flex-card').forEach(card => {
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+            card.addEventListener('dragover', handleDragOver);
+            card.addEventListener('drop', handleDrop);
+            card.addEventListener('dragenter', handleDragEnter);
+            card.addEventListener('dragleave', handleDragLeave);
+        });
+    }
+
+    function handleDragStart(e) { draggedElement = this; this.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
+    function handleDragEnd(e) { this.classList.remove('dragging'); document.querySelectorAll('.flex-card').forEach(card => card.classList.remove('drag-over')); draggedElement = null; }
+    function handleDragOver(e) { if (e.preventDefault) e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; }
+    function handleDragEnter(e) { if (this !== draggedElement) this.classList.add('drag-over'); }
+    function handleDragLeave(e) { this.classList.remove('drag-over'); }
+    function handleDrop(e) {
+        if (e.stopPropagation) e.stopPropagation();
+        this.classList.remove('drag-over');
+        if (draggedElement !== this) {
+            const container = document.getElementById('flexContainer');
+            const allCards = [...container.querySelectorAll('.flex-card')];
+            const draggedIndex = allCards.indexOf(draggedElement);
+            const targetIndex = allCards.indexOf(this);
+            if (draggedIndex < targetIndex) {
+                this.parentNode.insertBefore(draggedElement, this.nextSibling);
+            } else {
+                this.parentNode.insertBefore(draggedElement, this);
+            }
+            saveNewOrder();
+        }
+        return false;
+    }
+
+    async function saveNewOrder() {
+        const cards = document.getElementById('flexContainer').querySelectorAll('.flex-card');
+        const flexIds = Array.from(cards).map(card => card.getAttribute('data-id'));
+        try {
+            const response = await fetch('/liff/reorder-flex', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ flexIds }) });
+            const result = await response.json();
+            if (result.success) {
+                cards.forEach((card, index) => { const badge = card.querySelector('.order-badge'); if (badge) badge.textContent = `#${index + 1}`; });
+                showAlert('success', '✅ จัดเรียงลำดับสำเร็จ');
+                setTimeout(() => refreshPreview(), 500);
+            } else { showAlert('error', result.message); location.reload(); }
+        } catch (error) { showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message); location.reload(); }
+    }
+
+    async function toggleFlex(id, enabled) {
+        try {
+            const response = await fetch('/liff/toggle-flex', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, enabled }) });
+            const result = await response.json();
+            showAlert(result.success ? 'success' : 'error', result.message);
+            if (result.success) setTimeout(() => refreshPreview(), 500);
+        } catch (error) { showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message); }
+    }
+
+    async function deleteFlex(id) {
+        if (!confirm('ลบ Flex Message นี้?')) return;
+        try {
+            const response = await fetch('/liff/delete-flex', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+            const result = await response.json();
+            if (result.success) { showAlert('success', result.message); setTimeout(() => location.reload(), 1500); } else { showAlert('error', result.message); }
+        } catch (error) { showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message); }
+    }
+
+    // ฟังก์ชันคัดลอก LINE LIFF URL
+    function copyLineLiffUrl() {
+        const url = '<%= lineLiffUrl %>';
+        navigator.clipboard.writeText(url).then(() => {
+            showAlert('success', '✅ คัดลอก LINE LIFF URL สำเร็จ!');
+            setTimeout(() => {
+                showAlert('info', '💡 นำ URL นี้ไปแชร์ใน LINE เพื่อให้ผู้ใช้เข้าร่วมกิจกรรม');
+            }, 1500);
+        }).catch(err => {
+            console.error('Copy failed:', err);
+            showAlert('error', '❌ ไม่สามารถคัดลอกได้ กรุณาคัดลอกด้วยตนเอง');
+        });
+    }
+
+    // ฟังก์ชันคัดลอก Endpoint URL
+    function copyEndpointUrl() {
+        const url = '<%= endpointLiffUrl %>';
+        navigator.clipboard.writeText(url).then(() => {
+            showAlert('success', '✅ คัดลอก Endpoint URL สำเร็จ!');
+        }).catch(err => {
+            console.error('Copy failed:', err);
+            showAlert('error', '❌ ไม่สามารถคัดลอกได้');
+        });
+    }
+
+    // ฟังก์ชันคัดลอก LIFF URL เดิม (backward compatibility)
+    function copyLiffUrl() {
+        copyLineLiffUrl();
+    }
+
+    // Preview Function
+    async function refreshPreview() {
+        const previewContainer = document.getElementById('previewContainer');
+        previewContainer.innerHTML = '<div style="text-align: center; width: 100%; padding: 40px; color: #999;"><div style="font-size: 3em; animation: spin 1s linear infinite;">⏳</div><p>กำลังโหลด...</p></div>';
+        
+        try {
+            console.log('🔄 Refreshing preview...');
+            const response = await fetch('/liff/preview');
+            const result = await response.json();
+            
+            console.log('📊 Preview result:', result);
+            
+            if (result.success && result.flex && result.flex.contents) {
+                const bubbles = result.flex.contents;
+                console.log(`✅ Loaded ${bubbles.length} flex bubble(s)`);
+                
+                let html = '<div style="display: flex; gap: 20px; overflow-x: auto; padding: 10px;">';
+                
+                bubbles.forEach((bubble, index) => {
+                    console.log(`📦 Rendering bubble #${index + 1}`);
+                    
+                    html += '<div class="preview-bubble">';
+                    
+                    // Image Section
+                    if (bubble.body && bubble.body.contents && bubble.body.contents[0] && bubble.body.contents[0].type === 'image') {
+                        const imageUrl = bubble.body.contents[0].url;
+                        html += `<div style="position: relative; width: 100%; height: 350px; overflow: hidden;">`;
+                        html += `<img src="${imageUrl}" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.src='https://via.placeholder.com/350x350/667eea/ffffff?text=No+Image'">`;
+                        html += '</div>';
+                    }
+                    
+                    // Header Section
+                    if (bubble.body && bubble.body.contents && bubble.body.contents[1]) {
+                        const header = bubble.body.contents[1];
+                        html += `<div style="background: ${header.backgroundColor || '#1A1A2E'}; padding: 20px; text-align: center;">`;
+                        
+                        header.contents.forEach(textContent => {
+                            let fontSize = '1em';
+                            if (textContent.size === 'xl') fontSize = '1.5em';
+                            else if (textContent.size === 'lg') fontSize = '1.2em';
+                            else if (textContent.size === 'md') fontSize = '1em';
+                            else if (textContent.size === 'sm') fontSize = '0.9em';
+                            else if (textContent.size === 'xs') fontSize = '0.8em';
+                            
+                            const fontWeight = textContent.weight === 'bold' ? 'bold' : 'normal';
+                            const marginTop = textContent.margin === 'sm' ? '8px' : textContent.margin === 'md' ? '12px' : textContent.margin === 'xs' ? '4px' : '0';
+                            
+                            html += `<div style="color: ${textContent.color || '#ffffff'}; font-size: ${fontSize}; font-weight: ${fontWeight}; margin-top: ${marginTop}; line-height: 1.4;">${textContent.text || ''}</div>`;
+                        });
+                        
+                        html += '</div>';
+                    }
+                    
+                    // Footer Section
+                    if (bubble.footer && bubble.footer.contents) {
+                        html += `<div style="background: ${bubble.footer.backgroundColor || '#16213E'}; padding: 20px;">`;
+                        
+                        bubble.footer.contents.forEach(content => {
+                            // Rating
+                            if (content.type === 'box' && content.layout === 'horizontal' && content.contents) {
+                                const hasStars = content.contents.some(c => c.text === '⭐');
+                                if (hasStars) {
+                                    html += '<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px;">';
+                                    content.contents.forEach(item => {
+                                        if (item.text === '⭐') {
+                                            html += `<span style="color: ${item.color || '#FFD700'}; font-size: 1.3em;">${item.text}</span>`;
+                                        } else if (item.align === 'end') {
+                                            html += `<span style="color: ${item.color || '#ffffff'}; font-size: 1em; font-weight: bold; margin-left: auto;">${item.text}</span>`;
+                                        }
+                                    });
+                                    html += '</div>';
+                                }
+                            }
+                            
+                            // Features List
+                            if (content.type === 'box' && content.layout === 'vertical' && content.contents) {
+                                const hasFeatures = content.contents.some(c => c.type === 'box' && c.layout === 'horizontal');
+                                if (hasFeatures) {
+                                    content.contents.forEach(featureBox => {
+                                        if (featureBox.type === 'box' && featureBox.layout === 'horizontal') {
+                                            html += '<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px;">';
+                                            featureBox.contents.forEach(item => {
+                                                if (item.flex === 0) {
+                                                    html += `<span style="color: ${item.color || '#4ECDC4'}; font-size: 1.1em; min-width: 24px;">${item.text}</span>`;
+                                                } else {
+                                                    html += `<span style="color: ${item.color || '#ffffff'}; font-size: 0.9em; flex: 1; line-height: 1.4;">${item.text}</span>`;
+                                                }
+                                            });
+                                            html += '</div>';
+                                        }
+                                    });
+                                }
+                            }
+                            
+                            // Buttons
+                            if (content.type === 'box' && content.layout === 'vertical' && content.contents) {
+                                const hasButtons = content.contents.some(c => c.type === 'button');
+                                if (hasButtons) {
+                                    html += '<div style="margin-top: 15px;">';
+                                    content.contents.forEach((btn, btnIndex) => {
+                                        if (btn.type === 'button') {
+                                            const marginTop = btnIndex > 0 ? '12px' : '0';
+                                            html += `<button style="width: 100%; padding: 14px 20px; margin-top: ${marginTop}; background: ${btn.color || '#FF6B6B'}; color: white; border: none; border-radius: 25px; cursor: pointer; font-size: 1em; font-weight: bold; transition: all 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.2);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 15px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.2)';">${btn.action?.label || 'คลิกที่นี่'}</button>`;
+                                        }
+                                    });
+                                    html += '</div>';
+                                }
+                            }
+                        });
+                        
+                        html += '</div>';
+                    }
+                    
+                    html += '</div>';
+                });
+                
+                html += '</div>';
+                previewContainer.innerHTML = html;
+                
+                showAlert('success', `โหลดตัวอย่าง ${bubbles.length} Flex สำเร็จ`);
+                console.log('✅ Preview rendered successfully');
+            } else {
+                previewContainer.innerHTML = `
+                    <div style="text-align: center; width: 100%; padding: 60px 20px; color: #999;">
+                        <div style="font-size: 4em; margin-bottom: 20px;">😕</div>
+                        <h3 style="color: #666; margin-bottom: 10px;">ไม่พบ Flex Message</h3>
+                        <p>${result.message || 'กรุณาเพิ่มและเปิดใช้งาน Flex Message อย่างน้อย 1 รายการ'}</p>
+                    </div>
+                `;
+                console.warn('⚠️ No flex messages found');
+            }
+        } catch (error) {
+            console.error('❌ Error loading preview:', error);
+            previewContainer.innerHTML = `
+                <div style="text-align: center; width: 100%; padding: 60px 20px; color: #999;">
+                    <div style="font-size: 4em; margin-bottom: 20px;">❌</div>
+                    <h3 style="color: #dc3545; margin-bottom: 10px;">เกิดข้อผิดพลาด</h3>
+                    <p>ไม่สามารถโหลดตัวอย่างได้: ${error.message}</p>
+                </div>
+            `;
+            showAlert('error', 'ไม่สามารถโหลดตัวอย่างได้');
+        }
+    }
+
+    function openAddFlexModal() {
+        isEditFlex = false; 
+        currentFlexId = null;
+        document.getElementById('flexModalTitle').textContent = '➕ เพิ่ม Flex Message';
+        document.getElementById('flexForm').reset();
+        document.getElementById('flexId').value = '';
+        document.getElementById('featuresContainer').innerHTML = '';
+        document.getElementById('buttonsContainer').innerHTML = '';
+        featureCounter = 0; 
+        buttonCounter = 0;
+        addFeature(); 
+        addButton();
+        document.getElementById('flexModal').style.display = 'block';
+    }
+
+    function editFlex(id) {
+        isEditFlex = true; 
+        currentFlexId = id;
+        const flex = flexMessages.find(f => f.id === id);
+        if (!flex) { 
+            showAlert('error', 'ไม่พบ Flex Message'); 
+            return; 
+        }
+        
+        document.getElementById('flexModalTitle').textContent = '✏️ แก้ไข Flex Message';
+        document.getElementById('flexId').value = flex.id;
+        document.getElementById('flexImageUrl').value = flex.imageUrl;
+        document.getElementById('flexTitle').value = flex.title;
+        document.getElementById('flexSubtitle').value = flex.subtitle;
+        document.getElementById('flexDescription').value = flex.description;
+        
+        document.getElementById('flexHeaderBgText').value = flex.headerBackgroundColor; 
+        document.getElementById('flexHeaderBg').value = flex.headerBackgroundColor;
+        document.getElementById('flexBodyBgText').value = flex.bodyBackgroundColor; 
+        document.getElementById('flexBodyBg').value = flex.bodyBackgroundColor;
+        document.getElementById('flexFooterBgText').value = flex.footerBackgroundColor; 
+        document.getElementById('flexFooterBg').value = flex.footerBackgroundColor;
+        
+        document.getElementById('flexTitleColorText').value = flex.titleColor; 
+        document.getElementById('flexTitleColor').value = flex.titleColor;
+        document.getElementById('flexSubtitleColorText').value = flex.subtitleColor; 
+        document.getElementById('flexSubtitleColor').value = flex.subtitleColor;
+        document.getElementById('flexDescriptionColorText').value = flex.descriptionColor; 
+        document.getElementById('flexDescriptionColor').value = flex.descriptionColor;
+        
+        if (flex.rating) {
+            document.getElementById('flexRatingEnabled').checked = flex.rating.enabled;
+            document.getElementById('flexRatingStars').value = flex.rating.stars;
+            document.getElementById('flexRatingText').value = flex.rating.text;
+            document.getElementById('flexRatingColorText').value = flex.rating.color; 
+            document.getElementById('flexRatingColor').value = flex.rating.color;
+        }
+        
+        document.getElementById('featuresContainer').innerHTML = ''; 
+        featureCounter = 0;
+        if (flex.features && flex.features.length > 0) {
+            flex.features.forEach(feature => addFeature(feature));
+        } else {
+            addFeature();
+        }
+        
+        document.getElementById('buttonsContainer').innerHTML = ''; 
+        buttonCounter = 0;
+        if (flex.buttons && flex.buttons.length > 0) {
+            flex.buttons.forEach(button => addButton(button));
+        } else {
+            addButton();
+        }
+        
+        document.getElementById('flexModal').style.display = 'block';
+    }
+
+    function addFeature(data = null) {
+        const id = featureCounter++;
+        document.getElementById('featuresContainer').insertAdjacentHTML('beforeend', `
+            <div class="feature-item" id="feature-${id}">
+                <div style="display: grid; grid-template-columns: 80px 1fr 150px 50px; gap: 10px; align-items: center;">
+                    <input type="text" placeholder="💎" value="${data ? data.icon : '💎'}" style="text-align: center; font-size: 1.5em;" data-feature-icon="${id}">
+                    <input type="text" placeholder="ข้อความ" value="${data ? data.text : ''}" data-feature-text="${id}" required>
+                    <div class="color-picker-wrapper"><input type="color" value="${data ? data.color : '#4ECDC4'}" data-feature-color="${id}"></div>
+                    <button type="button" class="btn btn-danger" onclick="removeFeature(${id})" style="padding: 10px;">🗑️</button>
+                </div>
+            </div>
+        `);
+    }
+    
+    function removeFeature(id) { 
+        document.getElementById(`feature-${id}`)?.remove(); 
+    }
+
+    function addButton(data = null) {
+        const id = buttonCounter++;
+        document.getElementById('buttonsContainer').insertAdjacentHTML('beforeend', `
+            <div class="button-item" id="button-${id}">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 150px 80px 50px; gap: 10px; align-items: center;">
+                    <input type="text" placeholder="Label" value="${data ? data.label : ''}" data-button-label="${id}" required>
+                    <input type="url" placeholder="https://..." value="${data ? data.uri : ''}" data-button-uri="${id}" required>
+                    <div class="color-picker-wrapper"><input type="color" value="${data ? data.color : '#FF6B6B'}" data-button-color="${id}"></div>
+                    <label style="display: flex; align-items: center; gap: 5px; margin: 0;"><input type="checkbox" ${data && data.enabled ? 'checked' : 'checked'} data-button-enabled="${id}"><span style="font-size: 0.85em;">เปิด</span></label>
+                    <button type="button" class="btn btn-danger" onclick="removeButton(${id})" style="padding: 10px;">🗑️</button>
+                </div>
+            </div>
+        `);
+    }
+    
+    function removeButton(id) { 
+        document.getElementById(`button-${id}`)?.remove(); 
+    }
+
+    function collectFeatures() {
+        const features = [];
+        document.getElementById('featuresContainer').querySelectorAll('.feature-item').forEach(item => {
+            const id = item.id.split('-')[1];
+            const icon = item.querySelector(`[data-feature-icon="${id}"]`).value;
+            const text = item.querySelector(`[data-feature-text="${id}"]`).value;
+            const color = item.querySelector(`[data-feature-color="${id}"]`).value;
+            if (text.trim()) features.push({ icon, text, color });
+        });
+        return features;
+    }
+
+    function collectButtons() {
+        const buttons = []; 
+        let order = 0;
+        document.getElementById('buttonsContainer').querySelectorAll('.button-item').forEach(item => {
+            const id = item.id.split('-')[1];
+            const label = item.querySelector(`[data-button-label="${id}"]`).value;
+            const uri = item.querySelector(`[data-button-uri="${id}"]`).value;
+            const color = item.querySelector(`[data-button-color="${id}"]`).value;
+            const enabled = item.querySelector(`[data-button-enabled="${id}"]`).checked;
+            if (label.trim() && uri.trim()) {
+                buttons.push({ 
+                    id: `btn-${Date.now()}-${order}`, 
+                    type: 'uri', 
+                    label, 
+                    uri, 
+                    color, 
+                    enabled, 
+                    order: order++ 
+                });
+            }
+        });
+        return buttons;
+    }
+
+    document.getElementById('flexForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = {
+            id: document.getElementById('flexId').value || undefined,
+            imageUrl: document.getElementById('flexImageUrl').value,
+            title: document.getElementById('flexTitle').value,
+            subtitle: document.getElementById('flexSubtitle').value,
+            description: document.getElementById('flexDescription').value,
+            headerBackgroundColor: document.getElementById('flexHeaderBgText').value,
+            bodyBackgroundColor: document.getElementById('flexBodyBgText').value,
+            footerBackgroundColor: document.getElementById('flexFooterBgText').value,
+            titleColor: document.getElementById('flexTitleColorText').value,
+            subtitleColor: document.getElementById('flexSubtitleColorText').value,
+            descriptionColor: document.getElementById('flexDescriptionColorText').value,
+            rating: { 
+                enabled: document.getElementById('flexRatingEnabled').checked, 
+                stars: parseInt(document.getElementById('flexRatingStars').value), 
+                text: document.getElementById('flexRatingText').value, 
+                color: document.getElementById('flexRatingColorText').value 
+            },
+            features: collectFeatures(),
+            buttons: collectButtons()
+        };
+        
+        try {
+            const response = await fetch(isEditFlex ? '/liff/update-flex' : '/liff/add-flex', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(formData) 
+            });
+            const result = await response.json();
+            if (result.success) { 
+                showAlert('success', result.message); 
+                setTimeout(() => location.reload(), 1500); 
+            } else { 
+                showAlert('error', result.message); 
+            }
+        } catch (error) { 
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message); 
+        }
+    });
+
+    function viewFlexDetails(id) {
+        const flex = flexMessages.find(f => f.id === id);
+        if (!flex) { 
+            showAlert('error', 'ไม่พบ Flex Message'); 
+            return; 
+        }
+        
+        let html = `<div style="text-align: center; margin-bottom: 20px;">
+            <img src="${flex.imageUrl}" alt="${flex.title}" 
+                 style="max-width: 100%; max-height: 300px; border-radius: 10px; border: 2px solid #e0e0e0;" 
+                 onerror="this.src='https://via.placeholder.com/400x400/667eea/ffffff?text=No+Image'">
+            <h3 style="margin-top: 15px;">${flex.title}</h3>
+            <p style="color: #666;">${flex.subtitle}</p>
+        </div>
+        <div class="info-box">
+            <strong>💬 Description:</strong><br>${flex.description}
+        </div>`;
+        
+        if (flex.features && flex.features.length > 0) {
+            html += `<h4 style="margin: 20px 0 10px 0; color: #667eea;">✨ Features</h4>
+                     <ul style="list-style: none; padding: 0;">`;
+            flex.features.forEach(f => {
+                html += `<li style="padding: 8px; background: #f8f9fa; margin: 5px 0; border-radius: 5px;">
+                    ${f.icon} ${f.text}
+                </li>`;
+            });
+            html += `</ul>`;
+        }
+        
+        if (flex.buttons && flex.buttons.length > 0) {
+            html += `<h4 style="margin: 20px 0 10px 0; color: #667eea;">🔘 Buttons</h4>`;
+            flex.buttons.forEach(b => {
+                html += `<div style="background: #f8f9fa; padding: 10px; margin: 5px 0; border-radius: 5px; border-left: 4px solid ${b.color};">
+                    <strong>${b.label}</strong> ${b.enabled ? '✅' : '❌'}<br>
+                    <small style="color: #666;">${b.uri}</small>
+                </div>`;
+            });
+        }
+        
+        if (flex.rating && flex.rating.enabled) {
+            html += `<h4 style="margin: 20px 0 10px 0; color: #667eea;">⭐ Rating</h4>
+                     <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                         <div style="font-size: 1.5em;">${'⭐'.repeat(flex.rating.stars)}</div>
+                         <div style="margin-top: 5px; font-weight: bold; color: ${flex.rating.color};">
+                             ${flex.rating.text}
+                         </div>
+                     </div>`;
+        }
+        
+        html += `<button class="btn btn-secondary" onclick="closeDetailsModal()" style="width: 100%; margin-top: 20px;">
+            ✖️ ปิด
+        </button>`;
+        
+        document.getElementById('detailsContent').innerHTML = html;
+        document.getElementById('detailsModal').style.display = 'block';
+    }
+
+    function openSettingsModal() { 
+        document.getElementById('settingsModal').style.display = 'block'; 
+    }
+    
+    function closeSettingsModal() { 
+        document.getElementById('settingsModal').style.display = 'none'; 
+    }
+    
+    function closeFlexModal() { 
+        document.getElementById('flexModal').style.display = 'none'; 
+    }
+    
+    function closeDetailsModal() { 
+        document.getElementById('detailsModal').style.display = 'none'; 
+    }
+    
+    window.onclick = function(event) { 
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none'; 
+        }
+    }
+    
+    window.addEventListener('load', function() { 
+        initDragAndDrop(); 
+        console.log('🚀 LIFF Management Page Loaded');
+        console.log('📊 Total Flex Messages:', flexMessages.length);
+        setTimeout(refreshPreview, 500); 
+    });
+</script>
+
+<%- include('partials/footer') %>

@@ -56,7 +56,6 @@ let needsSave = false;
 if (appConfig.lineChannels) {
   appConfig.lineChannels.forEach(channel => {
     if (!channel.features) {
-      // ถ้าไม่มี features เลย ให้สร้างใหม่
       channel.features = {
         welcome: true,
         activities: true,
@@ -66,7 +65,6 @@ if (appConfig.lineChannels) {
       needsSave = true;
       console.log(`✅ เพิ่ม features ให้กับ channel: ${channel.name}`);
     } else if (channel.features.welcome === undefined) {
-      // ถ้ามี features แต่ไม่มี welcome ให้เพิ่ม welcome เข้าไป
       channel.features.welcome = true;
       needsSave = true;
       console.log(`✅ เพิ่ม welcome feature ให้กับ channel: ${channel.name}`);
@@ -86,7 +84,7 @@ function saveConfig() {
 
 // LINE Bot Configuration (ใช้ global เพื่อให้ routes อื่นเข้าถึงได้)
 global.lineChannels = appConfig.lineChannels || [];
-global.lineClients = new Map(); // เก็บ client แยกตาม channel ID
+global.lineClients = new Map();
 global.isLineConfigured = false;
 
 // สร้าง LINE clients สำหรับทุก channel ที่เปิดใช้งาน
@@ -166,6 +164,10 @@ const {
   createWelcomeFlexMessage, 
   welcomeConfig 
 } = require('./routes/welcome');
+const { 
+  setupLiffRoutes,
+  liffConfig
+} = require('./routes/liff');
 const { setupWebhookRoute } = require('./routes/webhook');
 
 // ใช้งาน Routes
@@ -175,6 +177,7 @@ app.use('/', setupWelcomeRoutes(requireLogin));
 app.use('/', setupActivitiesRoutes(requireLogin, appConfig, userMessageHistory, getCooldownPeriod, saveConfig));
 app.use('/', setupPromotionsRoutes(requireLogin));
 app.use('/', setupFlexRoutes(requireLogin));
+app.use('/', setupLiffRoutes(requireLogin));
 app.use('/', setupSettingsRoutes(requireLogin, appConfig, saveConfig, userMessageHistory, initializeLineClients));
 app.use('/', setupWebhookRoute(
   appConfig, 
@@ -202,7 +205,8 @@ app.get('/health', (req, res) => {
     flexEnabled: quickReplyConfig.flexMessageSettings.enabled,
     quickReplyEnabled: quickReplyConfig.quickReplySettings.enabled,
     welcomeEnabled: welcomeConfig.welcomeSettings.enabled,
-    version: '2.5'
+    liffEnabled: liffConfig.liffSettings.enabled,
+    version: '3.0'
   });
 });
 
@@ -212,7 +216,7 @@ const DOMAIN = process.env.DOMAIN;
 
 app.listen(PORT, () => {
   console.log('='.repeat(70));
-  console.log('🚀 LINE OA Bot Server Started! (Version 2.5 - Welcome Message)');
+  console.log('🚀 LINE OA Bot Server Started! (Version 3.0 - LIFF Share)');
   console.log('='.repeat(70));
   console.log(`📡 Server running on port ${PORT}`);
 
@@ -220,8 +224,10 @@ app.listen(PORT, () => {
   if (DOMAIN) {
     const protocol = DOMAIN.includes('localhost') ? 'http' : 'https';
     console.log(`🔗 Webhook URL: ${protocol}://${DOMAIN}/webhook`);
+    console.log(`📤 LIFF Share URL: ${protocol}://${DOMAIN}/liff/share`);
   } else {
     console.log(`🔗 Webhook URL: http://localhost:${PORT}/webhook`);
+    console.log(`📤 LIFF Share URL: http://localhost:${PORT}/liff/share`);
     console.log(`⚠️  แนะนำ: ตั้งค่า DOMAIN ใน .env สำหรับ Production`);
   }
 
@@ -232,12 +238,14 @@ app.listen(PORT, () => {
   console.log(`🎁 Activities:     http://localhost:${PORT}/activities`);
   console.log(`🎨 Promotions:     http://localhost:${PORT}/promotions`);
   console.log(`💬 Flex Messages:  http://localhost:${PORT}/flex-messages`);
+  console.log(`📤 LIFF Share:     http://localhost:${PORT}/liff`);
   console.log(`⚙️  Settings:       http://localhost:${PORT}/settings`);
   console.log('='.repeat(70));
   console.log(`🤖 LINE Channels:  ${global.lineClients.size} configured`);
   console.log(`👋 Welcome Message: ${welcomeConfig.welcomeSettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
   console.log(`💬 Flex Messages:  ${quickReplyConfig.flexMessageSettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
   console.log(`🔘 Quick Reply:    ${quickReplyConfig.quickReplySettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
+  console.log(`📤 LIFF Share:     ${liffConfig.liffSettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
   console.log('='.repeat(70));
   
   if (global.lineClients.size === 0) {
@@ -265,10 +273,19 @@ app.listen(PORT, () => {
   console.log('   ✅ โปรโมชั่น: สร้าง Flex Messages สวยงาม');
   console.log('   ✅ Flex Messages: สุ่มส่ง Flex + จัดการผ่าน Dashboard');
   console.log('   ✅ Quick Reply: จัดการปุ่มและคีย์เวิร์ดได้เต็มรูปแบบ');
+  console.log('   ✅ LIFF Share: หน้าแชร์ LINE LIFF พร้อม Carousel');
   
   console.log('\n🔑 Keywords:');
   console.log(`   🎁 Activity: ${appConfig.botSettings.keywords.join(', ')}`);
   console.log(`   🎨 Promotion: ${promotionsConfig.promotionSettings.keywords.join(', ')}`);
   console.log(`   💬 Flex: ${quickReplyConfig.flexMessageSettings.keywords.join(', ')}`);
-  console.log(`   🔘 Quick Reply: ${quickReplyConfig.quickReplySettings.keywords.join(', ')}\n`);
+  console.log(`   🔘 Quick Reply: ${quickReplyConfig.quickReplySettings.keywords.join(', ')}`);
+  
+  if (liffConfig.liffSettings.enabled && liffConfig.liffSettings.liffId) {
+    console.log(`\n📤 LIFF Info:`);
+    console.log(`   LIFF ID: ${liffConfig.liffSettings.liffId}`);
+    console.log(`   Flex Messages: ${liffConfig.flexMessages.filter(f => f.enabled).length} enabled`);
+  }
+  
+  console.log('\n');
 });
