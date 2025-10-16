@@ -20,9 +20,10 @@
         border: 2px solid #e0e0e0;
         border-radius: 15px;
         overflow: hidden;
-        transition: all 0.3s;
+        transition: all 0.3s ease;
         cursor: move;
         position: relative;
+        user-select: none;
     }
 
     .promo-card:hover {
@@ -31,13 +32,26 @@
     }
 
     .promo-card.dragging {
-        opacity: 0.5;
+        opacity: 0.4;
+        cursor: grabbing;
+        transform: scale(0.95);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .promo-card.drag-over {
+        border: 3px dashed #667eea;
+        background: rgba(102, 126, 234, 0.05);
+    }
+
+    .promo-card:active {
+        cursor: grabbing;
     }
 
     .promo-card img {
         width: 100%;
         height: 200px;
         object-fit: cover;
+        pointer-events: none;
     }
 
     .promo-card-body {
@@ -102,6 +116,7 @@
         font-weight: bold;
         font-size: 1.1em;
         z-index: 1;
+        pointer-events: none;
     }
 
     .toggle-switch {
@@ -264,7 +279,6 @@
         font-family: 'Courier New', monospace;
     }
 
-    /* ปรับปรุงส่วน Preview Container */
     .preview-container {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border: none;
@@ -286,7 +300,6 @@
         position: relative;
     }
 
-    /* ปรับ Carousel ให้แสดงเต็มขนาด */
     .flex-carousel {
         display: flex;
         gap: 20px;
@@ -296,7 +309,6 @@
         -webkit-overflow-scrolling: touch;
     }
 
-    /* Scrollbar สำหรับ carousel */
     .flex-carousel::-webkit-scrollbar {
         height: 10px;
     }
@@ -315,7 +327,6 @@
         background: #5568d3;
     }
 
-    /* ขนาดจริงของ Flex Bubble (310px ตาม LINE Flex Message Simulator) */
     .flex-bubble {
         min-width: 310px;
         max-width: 310px;
@@ -332,7 +343,6 @@
         box-shadow: 0 8px 25px rgba(0,0,0,0.2);
     }
 
-    /* รูปภาพ Hero แบบขนาดจริง */
     .flex-bubble img {
         width: 100%;
         height: 310px;
@@ -340,7 +350,6 @@
         display: block;
     }
 
-    /* Body ของ Flex */
     .flex-bubble-body {
         padding: 20px;
         min-height: 80px;
@@ -351,12 +360,10 @@
         word-wrap: break-word;
     }
 
-    /* Footer ของ Flex */
     .flex-bubble-footer {
         padding: 0 20px 20px 20px;
     }
 
-    /* ปุ่มขนาดจริง */
     .flex-button {
         width: 100%;
         padding: 12px;
@@ -379,7 +386,6 @@
         transform: translateY(0);
     }
 
-    /* Empty state สำหรับตัวอย่าง */
     .preview-empty {
         text-align: center;
         padding: 60px 20px;
@@ -407,7 +413,13 @@
         display: none;
     }
 
-    /* Responsive */
+    .carousel-indicator {
+        text-align: center;
+        margin-top: 15px;
+        color: rgb(0 0 0 / 70%);
+        font-size: 0.9em;
+    }
+
     @media (max-width: 768px) {
         .promo-grid {
             grid-template-columns: 1fr;
@@ -430,14 +442,6 @@
         .flex-bubble img {
             height: 280px;
         }
-    }
-
-    /* เพิ่ม indicator สำหรับ carousel */
-    .carousel-indicator {
-        text-align: center;
-        margin-top: 15px;
-        color: rgb(0 0 0 / 70%);
-        font-size: 0.9em;
     }
 </style>
 
@@ -465,7 +469,7 @@
         </div>
 
         <div style="background: white; padding: 15px; border-radius: 10px; border-left: 5px solid <%= flexTextColor %>;">
-            <strong>📝 สีข้อความ Flex:</strong><br>
+            <strong>🔤 สีข้อความ Flex:</strong><br>
             <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
                 <div style="width: 35px; height: 35px; background: <%= flexTextColor %>; border-radius: 8px; border: 2px solid #e0e0e0;"></div>
                 <code style="font-size: 0.9em;"><%= flexTextColor %></code>
@@ -487,7 +491,7 @@
 
     <% if (promotions.length === 0) { %>
         <div class="empty-state">
-            <div class="icon">📭</div>
+            <div class="icon">🔭</div>
             <h3>ยังไม่มีโปรโมชั่น</h3>
             <p>คลิกปุ่ม "เพิ่มโปรโมชั่น" เพื่อเริ่มสร้างโปรโมชั่นแรกของคุณ</p>
         </div>
@@ -501,7 +505,6 @@
                         <div class="promo-card-title"><%= promo.title %></div>
                         <div class="promo-card-url">🔗 <%= promo.linkUrl %></div>
                         
-                        <!-- แสดงสีของการ์ด -->
                         <div style="background: #f8f9fa; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 0.85em;">
                             <strong>🎨 สีการ์ด:</strong>
                             <div style="display: flex; gap: 10px; margin-top: 8px;">
@@ -619,7 +622,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="cardTextColor">📝 สีข้อความในการ์ด</label>
+                    <label for="cardTextColor">🔤 สีข้อความในการ์ด</label>
                     <div class="color-picker-wrapper">
                         <input type="color" id="cardTextColor" name="textColor" value="#333333">
                         <input type="text" id="cardTextColorText" value="#333333" placeholder="#333333">
@@ -632,7 +635,7 @@
                 <h3 style="margin-bottom: 20px; color: #667eea;">🔘 การตั้งค่าปุ่ม</h3>
 
                 <div class="form-group">
-                    <label for="buttonLabel">📝 ข้อความบนปุ่ม</label>
+                    <label for="buttonLabel">🔤 ข้อความบนปุ่ม</label>
                     <input type="text" id="buttonLabel" name="buttonLabel" placeholder="ดูรายละเอียด" required>
                 </div>
 
@@ -708,7 +711,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="flexTextColor">📝 สีข้อความ</label>
+                    <label for="flexTextColor">🔤 สีข้อความ</label>
                     <div class="color-picker-wrapper">
                         <input type="color" id="flexTextColor" name="flexTextColor" value="<%= flexTextColor %>">
                         <input type="text" id="flexTextColorText" value="<%= flexTextColor %>" placeholder="#ffffff">
@@ -862,7 +865,6 @@
         document.getElementById('promoImageUrl').value = promo.imageUrl;
         document.getElementById('promoLinkUrl').value = promo.linkUrl;
         
-        // Card colors
         const bgColor = promo.backgroundColor || '#ffffff';
         const txtColor = promo.textColor || '#333333';
         document.getElementById('cardBackgroundColorText').value = bgColor;
@@ -870,7 +872,6 @@
         document.getElementById('cardTextColorText').value = txtColor;
         document.getElementById('cardTextColor').value = txtColor;
         
-        // Button settings
         if (promo.button) {
             document.getElementById('buttonLabel').value = promo.button.label || 'ดูรายละเอียด';
             document.getElementById('buttonType').value = promo.button.type || 'uri';
@@ -965,7 +966,7 @@
         }
     }
 
-    // Preview - แก้ไขให้แสดงสีที่ถูกต้อง
+    // Preview
     async function refreshPreview() {
         const previewPhone = document.getElementById('previewPhone');
         previewPhone.innerHTML = '<div class="preview-empty"><div class="preview-empty-icon">⏳</div><h3>กำลังโหลด...</h3><p>กรุณารอสักครู่</p></div>';
@@ -980,19 +981,16 @@
 
                 if (carousel.contents && carousel.contents.length > 0) {
                     carousel.contents.forEach(bubble => {
-                        // Get colors from bubble
                         const bgColor = bubble.body?.backgroundColor || '#ffffff';
                         const textColor = bubble.body?.contents[0]?.color || '#333333';
                         const btnColor = bubble.footer?.contents[0]?.color || '#667eea';
                         
                         html += `<div class="flex-bubble" style="background: ${bgColor};">`;
                         
-                        // Hero Image
                         if (bubble.hero) {
                             html += `<img src="${bubble.hero.url}" alt="Promotion" onerror="this.src='https://via.placeholder.com/310x310/667eea/ffffff?text=No+Image'">`;
                         }
                         
-                        // Body
                         if (bubble.body) {
                             html += `<div class="flex-bubble-body" style="background: ${bgColor};">`;
                             bubble.body.contents.forEach(content => {
@@ -1005,7 +1003,6 @@
                             html += '</div>';
                         }
                         
-                        // Footer
                         if (bubble.footer) {
                             html += `<div class="flex-bubble-footer" style="background: ${bgColor};">`;
                             bubble.footer.contents.forEach(content => {
@@ -1022,13 +1019,12 @@
 
                     html += '</div>';
                     
-                    // เพิ่ม indicator
                     const totalPromotions = carousel.contents.length;
                     html += `<div class="carousel-indicator">📊 แสดง ${totalPromotions} โปรโมชั่น (เลื่อนดูทั้งหมด)</div>`;
                     
                     previewPhone.innerHTML = html;
                 } else {
-                    previewPhone.innerHTML = '<div class="preview-empty"><div class="preview-empty-icon">📭</div><h3>ไม่มีโปรโมชั่น</h3><p>ไม่มีโปรโมชั่นที่เปิดใช้งาน</p></div>';
+                    previewPhone.innerHTML = '<div class="preview-empty"><div class="preview-empty-icon">🔭</div><h3>ไม่มีโปรโมชั่น</h3><p>ไม่มีโปรโมชั่นที่เปิดใช้งาน</p></div>';
                 }
             } else {
                 previewPhone.innerHTML = '<div class="preview-empty"><div class="preview-empty-icon">😕</div><h3>ไม่สามารถโหลดได้</h3><p>' + (result.message || 'ไม่มีโปรโมชั่นที่เปิดใช้งาน') + '</p></div>';
@@ -1056,46 +1052,141 @@
         setTimeout(refreshPreview, 500);
     });
 
-    // Drag and Drop for reordering
+    // ✨✨✨ DRAG AND DROP FUNCTIONALITY - FIXED VERSION ✨✨✨
     let draggedElement = null;
+    let sourceIndex = null;
 
     const promoGrid = document.getElementById('promoGrid');
     if (promoGrid) {
+        // Dragstart event
         promoGrid.addEventListener('dragstart', (e) => {
             if (e.target.classList.contains('promo-card')) {
                 draggedElement = e.target;
+                sourceIndex = Array.from(promoGrid.children).indexOf(draggedElement);
                 e.target.classList.add('dragging');
+                
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', e.target.innerHTML);
+                
+                console.log('✅ Drag started:', { id: draggedElement.dataset.id, sourceIndex });
             }
         });
 
+        // Dragend event
         promoGrid.addEventListener('dragend', (e) => {
             if (e.target.classList.contains('promo-card')) {
                 e.target.classList.remove('dragging');
+                
+                document.querySelectorAll('.promo-card').forEach(card => {
+                    card.classList.remove('drag-over');
+                });
+                
+                console.log('✅ Drag ended');
             }
         });
 
+        // Dragover event
         promoGrid.addEventListener('dragover', (e) => {
             e.preventDefault();
-            const afterElement = getDragAfterElement(promoGrid, e.clientY);
-            if (afterElement == null) {
-                promoGrid.appendChild(draggedElement);
-            } else {
-                promoGrid.insertBefore(draggedElement, afterElement);
+            e.dataTransfer.dropEffect = 'move';
+            
+            // ✅ CRITICAL FIX: Validate draggedElement
+            if (!draggedElement || !(draggedElement instanceof HTMLElement)) {
+                console.warn('⚠️ Invalid draggedElement');
+                return;
+            }
+            
+            const afterElement = getDragAfterElement(promoGrid, e.clientX, e.clientY);
+            const currentCards = [...promoGrid.querySelectorAll('.promo-card:not(.dragging)')];
+            
+            currentCards.forEach(card => {
+                card.classList.remove('drag-over');
+            });
+            
+            // ✅ CRITICAL FIX: Only insertBefore if afterElement is valid
+            try {
+                if (afterElement == null) {
+                    if (promoGrid.lastElementChild !== draggedElement) {
+                        promoGrid.appendChild(draggedElement);
+                    }
+                } else {
+                    // ✅ Extra validation before insertBefore
+                    if (afterElement instanceof HTMLElement && 
+                        afterElement !== draggedElement && 
+                        afterElement !== draggedElement.nextSibling) {
+                        promoGrid.insertBefore(draggedElement, afterElement);
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error in dragover:', error);
             }
         });
 
+        // Drop event
         promoGrid.addEventListener('drop', async (e) => {
             e.preventDefault();
-            await saveNewOrder();
+            e.stopPropagation();
+            
+            if (!draggedElement) {
+                console.warn('⚠️ No draggedElement on drop');
+                return;
+            }
+            
+            document.querySelectorAll('.promo-card').forEach(card => {
+                card.classList.remove('dragging', 'drag-over');
+            });
+            
+            const newIndex = Array.from(promoGrid.children).indexOf(draggedElement);
+            console.log('📍 Drop position:', { sourceIndex, newIndex });
+            
+            if (sourceIndex !== null && sourceIndex !== newIndex) {
+                await saveNewOrder();
+            } else {
+                console.log('ℹ️ No order change detected');
+            }
+            
+            draggedElement = null;
+            sourceIndex = null;
+        });
+
+        // Dragenter event
+        promoGrid.addEventListener('dragenter', (e) => {
+            if (e.target.classList.contains('promo-card') && e.target !== draggedElement) {
+                e.target.classList.add('drag-over');
+            }
+        });
+
+        // Dragleave event
+        promoGrid.addEventListener('dragleave', (e) => {
+            if (e.target.classList.contains('promo-card')) {
+                e.target.classList.remove('drag-over');
+            }
         });
     }
 
-    function getDragAfterElement(container, y) {
+    // ✨ Get drag after element
+    function getDragAfterElement(container, x, y) {
         const draggableElements = [...container.querySelectorAll('.promo-card:not(.dragging)')];
+        
+        if (draggableElements.length === 0) {
+            return null;
+        }
 
         return draggableElements.reduce((closest, child) => {
             const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
+            
+            const centerX = box.left + box.width / 2;
+            const centerY = box.top + box.height / 2;
+            
+            const offsetX = x - centerX;
+            const offsetY = y - centerY;
+            
+            let offset;
+            if (Math.abs(offsetY) > box.height / 4) {
+                offset = offsetY;
+            } else {
+                offset = offsetX;
+            }
 
             if (offset < 0 && offset > closest.offset) {
                 return { offset: offset, element: child };
@@ -1105,15 +1196,36 @@
         }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
 
+    // ✨ Save new order
     async function saveNewOrder() {
         const cards = document.querySelectorAll('.promo-card');
+        
+        if (!cards || cards.length === 0) {
+            console.warn('⚠️ No promotion cards found');
+            return;
+        }
+        
         const orders = [];
 
         cards.forEach((card, index) => {
             const id = card.getAttribute('data-id');
-            orders.push({ id: id, order: index + 1 });
-            card.querySelector('.order-badge').textContent = index + 1;
+            if (id) {
+                const newOrder = index + 1;
+                orders.push({ id: id, order: newOrder });
+                
+                const badge = card.querySelector('.order-badge');
+                if (badge) {
+                    badge.textContent = newOrder;
+                }
+            }
         });
+
+        if (orders.length === 0) {
+            console.warn('⚠️ No valid orders to save');
+            return;
+        }
+
+        console.log('💾 Saving new order:', orders);
 
         try {
             const response = await fetch('/promotions/reorder', {
@@ -1126,12 +1238,23 @@
 
             if (result.success) {
                 showAlert('success', 'เปลี่ยนลำดับสำเร็จ');
+                
+                promotionsData.forEach(promo => {
+                    const order = orders.find(o => o.id === promo.id);
+                    if (order) {
+                        promo.order = order.order;
+                    }
+                });
+                
                 setTimeout(() => refreshPreview(), 500);
             } else {
                 showAlert('error', result.message);
+                setTimeout(() => location.reload(), 1500);
             }
         } catch (error) {
+            console.error('❌ Reorder error:', error);
             showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+            setTimeout(() => location.reload(), 1500);
         }
     }
 </script>

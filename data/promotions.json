@@ -35,7 +35,7 @@
       "imageUrl": "https://img5.pic.in.th/file/secure-sv1/50-1000cdb06b0e0099de9.md.png",
       "linkUrl": "https://m.w99.in/promotions",
       "enabled": true,
-      "order": 4,
+      "order": 2,
       "backgroundColor": "#ffffff",
       "textColor": "#000000",
       "button": {
@@ -52,7 +52,7 @@
       "imageUrl": "https://img2.pic.in.th/pic/100perfbaa0d73d141f613.md.png",
       "linkUrl": "https://m.w99.in/promotions",
       "enabled": true,
-      "order": 2,
+      "order": 3,
       "backgroundColor": "#ffffff",
       "textColor": "#000000",
       "button": {
@@ -69,7 +69,7 @@
       "imageUrl": "https://img2.pic.in.th/pic/100-400.md.png",
       "linkUrl": "https://m.w99.in/promotions",
       "enabled": true,
-      "order": 3,
+      "order": 4,
       "backgroundColor": "#ffffff",
       "textColor": "#000000",
       "button": {
