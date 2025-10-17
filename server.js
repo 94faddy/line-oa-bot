@@ -14,6 +14,7 @@ const configPath = path.join(__dirname, 'data', 'config.json');
 if (!fs.existsSync(configPath)) {
   const defaultConfig = {
     lineChannels: [],
+    activities: [],
     botSettings: {
       activityMessage: "กิจกรรมรับรางวัลฟรี 100\nแชร์โพสลงกลุ่มจำนวน 6 กลุ่ม Facebook เฉพาะ สล็อต การพนันเท่านั้น (ห้ามซ้ำ)\n🔷 https://9iot.cc/w99\nกดติดตาม 🎯 กดถูกใจ ด้วยนะคะ\n💞ทำเสร็จแล้วแคปหลักฐานกิจกรรมให้น้องแอดด้วยนะคะ\n(หากส่งกิจกรรมไม่ครบและเกินระยะเวลาทำกิจกรรม 4 ชั่วโมงขอตัดสิทธินะคะ)",
       cooldownMessage: "คุณได้รับกิจกรรมไปแล้วค่ะ กรุณารอ {timeLeft} ก่อนขอรับกิจกรรมอีกครั้งนะคะ 😊",
@@ -27,7 +28,11 @@ if (!fs.existsSync(configPath)) {
 
 let appConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
-// Migration: แปลง config เก่าเป็นแบบใหม่
+// =====================================================
+// MIGRATION SCRIPTS
+// =====================================================
+
+// Migration 1: แปลง config เก่าเป็นแบบใหม่
 if (appConfig.lineConfig && !appConfig.lineChannels) {
   console.log('🔄 กำลัง migrate config เป็นรูปแบบใหม่...');
   const oldChannel = {
@@ -51,7 +56,7 @@ if (appConfig.lineConfig && !appConfig.lineChannels) {
   console.log('✅ Migration สำเร็จ');
 }
 
-// Migration: เพิ่ม features ให้กับ channels เก่าที่ยังไม่มี
+// Migration 2: เพิ่ม features ให้กับ channels เก่า
 let needsSave = false;
 if (appConfig.lineChannels) {
   appConfig.lineChannels.forEach(channel => {
@@ -74,15 +79,112 @@ if (appConfig.lineChannels) {
   if (needsSave) {
     fs.writeFileSync(configPath, JSON.stringify(appConfig, null, 2), 'utf8');
     console.log('✅ Migration features สำเร็จ');
+    needsSave = false;
   }
 }
+
+// Migration 3: สร้าง activities array ถ้ายังไม่มี
+if (!appConfig.activities) {
+  console.log('🔄 กำลังสร้าง activities array...');
+  appConfig.activities = [];
+  
+  if (appConfig.botSettings && appConfig.botSettings.activityMessage) {
+    const defaultActivity = {
+      id: 'activity-' + Date.now(),
+      name: 'กิจกรรมหลัก',
+      enabled: true,
+      useCooldown: true,
+      allowSharedKeywords: true,
+      message: appConfig.botSettings.activityMessage,
+      cooldownMessage: appConfig.botSettings.cooldownMessage || "คุณได้รับกิจกรรมไปแล้วค่ะ กรุณารอ {timeLeft} ก่อนขอรับกิจกรรมอีกครั้งนะคะ 😊",
+      keywords: appConfig.botSettings.keywords || ["ฟรี", "free"],
+      cooldownHours: appConfig.botSettings.cooldownHours || 2,
+      channels: appConfig.lineChannels ? appConfig.lineChannels.map(ch => ch.id) : [],
+      createdAt: new Date().toISOString()
+    };
+    appConfig.activities.push(defaultActivity);
+    console.log('✅ สร้างกิจกรรมเริ่มต้นจาก botSettings');
+  }
+  
+  fs.writeFileSync(configPath, JSON.stringify(appConfig, null, 2), 'utf8');
+  console.log('✅ Migration activities สำเร็จ');
+}
+
+// Migration 4: เพิ่ม useCooldown ให้กับกิจกรรมที่ไม่มี
+if (appConfig.activities) {
+  appConfig.activities.forEach(activity => {
+    if (activity.useCooldown === undefined) {
+      activity.useCooldown = true;
+      needsSave = true;
+      console.log(`✅ เพิ่ม useCooldown ให้กับกิจกรรม: ${activity.name}`);
+    }
+  });
+  
+  if (needsSave) {
+    fs.writeFileSync(configPath, JSON.stringify(appConfig, null, 2), 'utf8');
+    console.log('✅ Migration useCooldown สำเร็จ');
+    needsSave = false;
+  }
+}
+
+// Migration 5: เพิ่ม allowSharedKeywords ให้กับกิจกรรมที่ไม่มี
+if (appConfig.activities) {
+  appConfig.activities.forEach(activity => {
+    if (activity.allowSharedKeywords === undefined) {
+      activity.allowSharedKeywords = true;
+      needsSave = true;
+      console.log(`✅ เพิ่ม allowSharedKeywords ให้กับกิจกรรม: ${activity.name}`);
+    }
+  });
+  
+  if (needsSave) {
+    fs.writeFileSync(configPath, JSON.stringify(appConfig, null, 2), 'utf8');
+    console.log('✅ Migration allowSharedKeywords สำเร็จ');
+    needsSave = false;
+  }
+}
+
+// Migration 6: แปลง message เป็น messageBoxes (NEW!)
+if (appConfig.activities) {
+  appConfig.activities.forEach(activity => {
+    // ถ้ามี message แบบเก่าแต่ไม่มี messageBoxes
+    if (activity.message && !activity.messageBoxes) {
+      activity.messageBoxes = [
+        {
+          type: 'text',
+          content: activity.message,
+          altText: ''
+        }
+      ];
+      // เก็บ message เดิมไว้สำหรับ backward compatibility
+      needsSave = true;
+      console.log(`✅ แปลง message เป็น messageBoxes สำหรับกิจกรรม: ${activity.name}`);
+    }
+    // ถ้าไม่มีทั้ง message และ messageBoxes ให้สร้าง messageBoxes เปล่า
+    else if (!activity.message && !activity.messageBoxes) {
+      activity.messageBoxes = [];
+      needsSave = true;
+      console.log(`⚠️ สร้าง messageBoxes เปล่าสำหรับกิจกรรม: ${activity.name}`);
+    }
+  });
+  
+  if (needsSave) {
+    fs.writeFileSync(configPath, JSON.stringify(appConfig, null, 2), 'utf8');
+    console.log('✅ Migration messageBoxes สำเร็จ');
+    needsSave = false;
+  }
+}
+
+// =====================================================
+// END MIGRATION SCRIPTS
+// =====================================================
 
 // ฟังก์ชันบันทึก config
 function saveConfig() {
   fs.writeFileSync(configPath, JSON.stringify(appConfig, null, 2), 'utf8');
 }
 
-// LINE Bot Configuration (ใช้ global เพื่อให้ routes อื่นเข้าถึงได้)
+// LINE Bot Configuration
 global.lineChannels = appConfig.lineChannels || [];
 global.lineClients = new Map();
 global.isLineConfigured = false;
@@ -121,11 +223,6 @@ console.log(`📱 Configured ${configuredChannels} LINE channel(s)`);
 
 // เก็บประวัติการส่งข้อความของแต่ละ User
 const userMessageHistory = new Map();
-
-// ฟังก์ชันคำนวณระยะเวลา Cooldown
-function getCooldownPeriod() {
-  return appConfig.botSettings.cooldownHours * 60 * 60 * 1000;
-}
 
 // ตั้งค่า Express
 app.set('view engine', 'ejs');
@@ -172,9 +269,9 @@ const { setupWebhookRoute } = require('./routes/webhook');
 
 // ใช้งาน Routes
 app.use('/', authRouter);
-app.use('/', setupDashboardRoute(requireLogin, appConfig, userMessageHistory, getCooldownPeriod, promotionsConfig));
+app.use('/', setupDashboardRoute(requireLogin, appConfig, userMessageHistory, promotionsConfig));
 app.use('/', setupWelcomeRoutes(requireLogin));
-app.use('/', setupActivitiesRoutes(requireLogin, appConfig, userMessageHistory, getCooldownPeriod, saveConfig));
+app.use('/', setupActivitiesRoutes(requireLogin, appConfig, userMessageHistory, saveConfig));
 app.use('/', setupPromotionsRoutes(requireLogin));
 app.use('/', setupFlexRoutes(requireLogin));
 app.use('/', setupLiffRoutes(requireLogin));
@@ -182,7 +279,6 @@ app.use('/', setupSettingsRoutes(requireLogin, appConfig, saveConfig, userMessag
 app.use('/', setupWebhookRoute(
   appConfig, 
   userMessageHistory, 
-  getCooldownPeriod, 
   containsPromotionKeyword, 
   createPromotionFlexMessage, 
   getRandomFlex, 
@@ -196,17 +292,30 @@ app.use('/', setupWebhookRoute(
 
 // Health Check
 app.get('/health', (req, res) => {
+  const cooldownActivities = appConfig.activities ? appConfig.activities.filter(a => a.useCooldown !== false).length : 0;
+  const noCooldownActivities = appConfig.activities ? appConfig.activities.filter(a => a.useCooldown === false).length : 0;
+  const sharedKeywordsActivities = appConfig.activities ? appConfig.activities.filter(a => a.allowSharedKeywords !== false).length : 0;
+  const noSharedKeywordsActivities = appConfig.activities ? appConfig.activities.filter(a => a.allowSharedKeywords === false).length : 0;
+  const messageBoxesActivities = appConfig.activities ? appConfig.activities.filter(a => a.messageBoxes && a.messageBoxes.length > 0).length : 0;
+  
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
     activeUsers: userMessageHistory.size,
     lineConfigured: global.isLineConfigured,
     configuredChannels: global.lineClients.size,
+    totalActivities: appConfig.activities ? appConfig.activities.length : 0,
+    enabledActivities: appConfig.activities ? appConfig.activities.filter(a => a.enabled).length : 0,
+    cooldownActivities: cooldownActivities,
+    noCooldownActivities: noCooldownActivities,
+    sharedKeywordsActivities: sharedKeywordsActivities,
+    noSharedKeywordsActivities: noSharedKeywordsActivities,
+    messageBoxesActivities: messageBoxesActivities,
     flexEnabled: quickReplyConfig.flexMessageSettings.enabled,
     quickReplyEnabled: quickReplyConfig.quickReplySettings.enabled,
     welcomeEnabled: welcomeConfig.welcomeSettings.enabled,
     liffEnabled: liffConfig.liffSettings.enabled,
-    version: '3.0'
+    version: '4.0'
   });
 });
 
@@ -216,7 +325,7 @@ const DOMAIN = process.env.DOMAIN;
 
 app.listen(PORT, () => {
   console.log('='.repeat(70));
-  console.log('🚀 LINE OA Bot Server Started! (Version 3.0 - LIFF Share)');
+  console.log('🚀 LINE OA Bot Server Started! (Version 4.0 - Multi Message Types)');
   console.log('='.repeat(70));
   console.log(`📡 Server running on port ${PORT}`);
 
@@ -242,6 +351,20 @@ app.listen(PORT, () => {
   console.log(`⚙️  Settings:       http://localhost:${PORT}/settings`);
   console.log('='.repeat(70));
   console.log(`🤖 LINE Channels:  ${global.lineClients.size} configured`);
+  console.log(`🎁 Activities:     ${appConfig.activities ? appConfig.activities.length : 0} total, ${appConfig.activities ? appConfig.activities.filter(a => a.enabled).length : 0} enabled`);
+  
+  const cooldownCount = appConfig.activities ? appConfig.activities.filter(a => a.useCooldown !== false).length : 0;
+  const noCooldownCount = appConfig.activities ? appConfig.activities.filter(a => a.useCooldown === false).length : 0;
+  const sharedCount = appConfig.activities ? appConfig.activities.filter(a => a.allowSharedKeywords !== false).length : 0;
+  const noSharedCount = appConfig.activities ? appConfig.activities.filter(a => a.allowSharedKeywords === false).length : 0;
+  const messageBoxesCount = appConfig.activities ? appConfig.activities.filter(a => a.messageBoxes && a.messageBoxes.length > 0).length : 0;
+  
+  console.log(`   ⏱️  With Cooldown: ${cooldownCount}`);
+  console.log(`   🚀 No Cooldown: ${noCooldownCount}`);
+  console.log(`   🔗 Shared Keywords Allowed: ${sharedCount}`);
+  console.log(`   🔒 Shared Keywords Blocked: ${noSharedCount}`);
+  console.log(`   📦 Using MessageBoxes: ${messageBoxesCount}`);
+  
   console.log(`👋 Welcome Message: ${welcomeConfig.welcomeSettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
   console.log(`💬 Flex Messages:  ${quickReplyConfig.flexMessageSettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
   console.log(`🔘 Quick Reply:    ${quickReplyConfig.quickReplySettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
@@ -265,27 +388,38 @@ app.listen(PORT, () => {
     });
   }
   
+  if (appConfig.activities && appConfig.activities.length > 0) {
+    console.log('\n🎁 Configured Activities:');
+    appConfig.activities.forEach(activity => {
+      if (activity.enabled) {
+        const cooldownStatus = activity.useCooldown !== false ? `⏱️  ${activity.cooldownHours}h` : '🚀 No limit';
+        const sharedStatus = activity.allowSharedKeywords !== false ? '🔗 Shared✅' : '🔒 Shared❌';
+        const messageType = activity.messageBoxes ? `📦 ${activity.messageBoxes.length} boxes` : '📝 Text';
+        const channelNames = activity.channels ? activity.channels.map(cid => {
+          const ch = appConfig.lineChannels.find(c => c.id === cid);
+          return ch ? ch.name : 'Unknown';
+        }).join(', ') : 'None';
+        console.log(`   ✅ ${activity.name} [${cooldownStatus}, ${sharedStatus}, ${messageType}]`);
+        console.log(`      Keywords: ${activity.keywords.join(', ')}`);
+        console.log(`      Channels: ${channelNames}`);
+      }
+    });
+  }
+  
   console.log('\n💡 Features:');
   console.log('   ✅ Multi-Channel: รองรับหลาย LINE OA');
+  console.log('   ✅ Multi-Activities: รองรับหลายกิจกรรม แยก keyword, cooldown, channels');
+  console.log('   ✅ Multi-Message Types: ส่งข้อความ, รูปภาพ, Flex Message ได้หลายรูปแบบ');
+  console.log('   ✅ Message Ordering: เรียงลำดับการส่งข้อความได้');
+  console.log('   ✅ Cooldown Toggle: เปิด/ปิด Cooldown แยกแต่ละกิจกรรม');
+  console.log('   ✅ Shared Keywords: อนุญาต/ไม่อนุญาตคีย์เวิร์ดซ้ำระหว่างกิจกรรม');
   console.log('   ✅ Feature Control: เลือกฟีเจอร์แยกตาม Channel');
   console.log('   ✅ Welcome Message: ทักทายเพื่อนใหม่อัตโนมัติ');
-  console.log('   ✅ กิจกรรมแชร์: จัดการข้อความและ Cooldown');
+  console.log('   ✅ กิจกรรมแชร์: จัดการข้อความและ Cooldown แยกแต่ละกิจกรรม');
   console.log('   ✅ โปรโมชั่น: สร้าง Flex Messages สวยงาม');
   console.log('   ✅ Flex Messages: สุ่มส่ง Flex + จัดการผ่าน Dashboard');
   console.log('   ✅ Quick Reply: จัดการปุ่มและคีย์เวิร์ดได้เต็มรูปแบบ');
   console.log('   ✅ LIFF Share: หน้าแชร์ LINE LIFF พร้อม Carousel');
-  
-  console.log('\n🔑 Keywords:');
-  console.log(`   🎁 Activity: ${appConfig.botSettings.keywords.join(', ')}`);
-  console.log(`   🎨 Promotion: ${promotionsConfig.promotionSettings.keywords.join(', ')}`);
-  console.log(`   💬 Flex: ${quickReplyConfig.flexMessageSettings.keywords.join(', ')}`);
-  console.log(`   🔘 Quick Reply: ${quickReplyConfig.quickReplySettings.keywords.join(', ')}`);
-  
-  if (liffConfig.liffSettings.enabled && liffConfig.liffSettings.liffId) {
-    console.log(`\n📤 LIFF Info:`);
-    console.log(`   LIFF ID: ${liffConfig.liffSettings.liffId}`);
-    console.log(`   Flex Messages: ${liffConfig.flexMessages.filter(f => f.enabled).length} enabled`);
-  }
   
   console.log('\n');
 });

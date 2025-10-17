@@ -11,29 +11,70 @@ function containsKeyword(text, keywords) {
   );
 }
 
+// ฟังก์ชันหากิจกรรมทั้งหมดที่ตรงกับคีย์เวิร์ดและ channel
+function findMatchingActivities(messageText, channelId, activities) {
+  if (!activities || activities.length === 0) return [];
+  
+  const enabledActivities = activities.filter(activity => 
+    activity.enabled && 
+    activity.channels && 
+    activity.channels.includes(channelId)
+  );
+
+  let matchedActivities = enabledActivities.filter(activity => 
+    containsKeyword(messageText, activity.keywords)
+  );
+
+  if (matchedActivities.length > 1) {
+    matchedActivities = matchedActivities.filter(activity => {
+      return activity.allowSharedKeywords !== false;
+    });
+  }
+
+  return matchedActivities.sort((a, b) => 
+    new Date(a.createdAt) - new Date(b.createdAt)
+  );
+}
+
 // ฟังก์ชันตรวจสอบว่าสามารถส่งข้อความได้หรือไม่
-function canSendMessage(userId, userMessageHistory, getCooldownPeriod) {
-  const lastSentTime = userMessageHistory.get(userId);
+function canSendMessage(userId, activityId, userMessageHistory, activities) {
+  const activity = activities.find(a => a.id === activityId);
+  if (!activity) return false;
+  
+  if (activity.useCooldown === false) {
+    return true;
+  }
+  
+  const key = `${userId}_${activityId}`;
+  const lastSentTime = userMessageHistory.get(key);
   if (!lastSentTime) return true;
   
   const currentTime = Date.now();
   const timeDiff = currentTime - lastSentTime;
-  return timeDiff >= getCooldownPeriod();
+  const cooldownPeriod = activity.cooldownHours * 60 * 60 * 1000;
+  
+  return timeDiff >= cooldownPeriod;
 }
 
 // ฟังก์ชันบันทึกเวลาที่ส่งข้อความ
-function recordMessageSent(userId, userMessageHistory) {
-  userMessageHistory.set(userId, Date.now());
+function recordMessageSent(userId, activityId, userMessageHistory) {
+  const key = `${userId}_${activityId}`;
+  userMessageHistory.set(key, Date.now());
 }
 
 // ฟังก์ชันคำนวณเวลาที่เหลือ
-function getRemainingTime(userId, userMessageHistory, getCooldownPeriod) {
-  const lastSentTime = userMessageHistory.get(userId);
+function getRemainingTime(userId, activityId, userMessageHistory, activities) {
+  const key = `${userId}_${activityId}`;
+  const lastSentTime = userMessageHistory.get(key);
   if (!lastSentTime) return 0;
+  
+  const activity = activities.find(a => a.id === activityId);
+  if (!activity) return 0;
   
   const currentTime = Date.now();
   const timeDiff = currentTime - lastSentTime;
-  const remaining = getCooldownPeriod() - timeDiff;
+  const cooldownPeriod = activity.cooldownHours * 60 * 60 * 1000;
+  const remaining = cooldownPeriod - timeDiff;
   
   return remaining > 0 ? remaining : 0;
 }
@@ -46,8 +87,8 @@ function formatTime(milliseconds) {
 }
 
 // ฟังก์ชันสร้างข้อความ Cooldown พร้อม placeholder
-function getCooldownMessage(userId, cooldownMessageTemplate, userMessageHistory, getCooldownPeriod) {
-  const remaining = getRemainingTime(userId, userMessageHistory, getCooldownPeriod);
+function getCooldownMessage(userId, activityId, cooldownMessageTemplate, userMessageHistory, activities) {
+  const remaining = getRemainingTime(userId, activityId, userMessageHistory, activities);
   const timeLeft = formatTime(remaining);
   const template = cooldownMessageTemplate || "คุณได้รับกิจกรรมไปแล้วค่ะ กรุณารอ {timeLeft} ก่อนขอรับกิจกรรมอีกครั้งนะคะ 😊";
   return template.replace('{timeLeft}', timeLeft);
@@ -72,16 +113,58 @@ function findClientBySignature(signature, body) {
   return null;
 }
 
-// ฟังก์ชัน safe reply - ตรวจสอบก่อนส่ง
+// ฟังก์ชันแปลง messageBoxes เป็น LINE messages
+function convertMessageBoxesToLineMessages(messageBoxes, channelName) {
+  const lineMessages = [];
+  
+  for (const box of messageBoxes) {
+    try {
+      if (box.type === 'text') {
+        lineMessages.push({
+          type: 'text',
+          text: box.content.trim()
+        });
+      } 
+      else if (box.type === 'image') {
+        const imageUrl = box.content.trim();
+        lineMessages.push({
+          type: 'image',
+          originalContentUrl: imageUrl,
+          previewImageUrl: imageUrl
+        });
+      } 
+      else if (box.type === 'flex') {
+        try {
+          const flexJson = JSON.parse(box.content);
+          lineMessages.push({
+            type: 'flex',
+            altText: box.altText || 'Flex Message',
+            contents: flexJson
+          });
+        } catch (e) {
+          console.error(`❌ [${channelName}] Invalid Flex JSON in box:`, e.message);
+          lineMessages.push({
+            type: 'text',
+            text: '⚠️ ข้อความนี้มีข้อผิดพลาด กรุณาติดต่อแอดมิน'
+          });
+        }
+      }
+    } catch (error) {
+      console.error(`❌ [${channelName}] Error converting message box:`, error);
+    }
+  }
+  
+  return lineMessages;
+}
+
+// ฟังก์ชัน safe reply
 async function safeReplyMessage(lineClient, replyToken, messages, channelName) {
   try {
-    // Validate messages
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       console.error(`❌ [${channelName}] Invalid messages array`);
       return false;
     }
 
-    // ตรวจสอบแต่ละ message
     const validMessages = messages.filter(msg => {
       if (!msg || typeof msg !== 'object') {
         console.warn(`⚠️ [${channelName}] Invalid message object`);
@@ -99,6 +182,10 @@ async function safeReplyMessage(lineClient, replyToken, messages, channelName) {
         console.warn(`⚠️ [${channelName}] Flex message missing contents`);
         return false;
       }
+      if (msg.type === 'image' && (!msg.originalContentUrl || !msg.previewImageUrl)) {
+        console.warn(`⚠️ [${channelName}] Image message missing URLs`);
+        return false;
+      }
       return true;
     });
 
@@ -107,13 +194,17 @@ async function safeReplyMessage(lineClient, replyToken, messages, channelName) {
       return false;
     }
 
-    // ส่งข้อความ
+    if (validMessages.length > 5) {
+      console.warn(`⚠️ [${channelName}] Too many messages (${validMessages.length}), sending only first 5`);
+      validMessages.splice(5);
+    }
+
     await lineClient.replyMessage({
       replyToken: replyToken,
       messages: validMessages
     });
 
-    console.log(`✅ [${channelName}] Message sent successfully`);
+    console.log(`✅ [${channelName}] ${validMessages.length} message(s) sent successfully`);
     return true;
   } catch (error) {
     console.error(`❌ [${channelName}] Error in safeReplyMessage:`, error.message);
@@ -128,7 +219,6 @@ async function safeReplyMessage(lineClient, replyToken, messages, channelName) {
 function setupWebhookRoute(
   appConfig, 
   userMessageHistory, 
-  getCooldownPeriod, 
   containsPromotionKeyword, 
   createPromotionFlexMessage, 
   getRandomFlex, 
@@ -142,20 +232,17 @@ function setupWebhookRoute(
   
   router.post('/webhook', express.json(), async (req, res) => {
     try {
-      // ตรวจสอบว่ามี LINE Channel ที่เปิดใช้งานหรือไม่
       if (global.lineClients.size === 0) {
         console.log('⚠️ Webhook received but no LINE channels are configured');
         return res.status(200).send('No channels configured');
       }
 
-      // ตรวจสอบ signature
       const signature = req.get('x-line-signature');
       if (!signature) {
         console.log('❌ No signature provided');
         return res.status(401).send('No signature');
       }
 
-      // หา LINE Client ที่ตรงกับ signature
       const body = JSON.stringify(req.body);
       const clientData = findClientBySignature(signature, body);
 
@@ -172,9 +259,9 @@ function setupWebhookRoute(
           event, 
           clientData.client,
           clientData.config,
+          clientData.channelId,
           appConfig, 
           userMessageHistory, 
-          getCooldownPeriod, 
           containsPromotionKeyword, 
           createPromotionFlexMessage, 
           getRandomFlex, 
@@ -202,9 +289,9 @@ async function handleEvent(
   event, 
   lineClient,
   channelConfig,
+  channelId,
   appConfig, 
   userMessageHistory, 
-  getCooldownPeriod, 
   containsPromotionKeyword, 
   createPromotionFlexMessage, 
   getRandomFlex, 
@@ -216,12 +303,11 @@ async function handleEvent(
   welcomeConfig
 ) {
   // ============================================
-  // ตรวจสอบ Event Type: Follow Event (เพื่อนใหม่)
+  // Follow Event
   // ============================================
   if (event.type === 'follow') {
     console.log(`👋 [${channelConfig.name}] New follower: ${event.source.userId}`);
     
-    // ตรวจสอบ Global Settings
     if (!welcomeConfig.welcomeSettings.enabled) {
       console.log(`ℹ️ [${channelConfig.name}] Welcome feature is GLOBALLY DISABLED`);
       return null;
@@ -232,7 +318,6 @@ async function handleEvent(
       return null;
     }
     
-    // ตรวจสอบว่า Channel นี้เปิดใช้งาน Welcome Feature หรือไม่
     const features = channelConfig.features || {};
     
     if (!features.welcome) {
@@ -240,7 +325,6 @@ async function handleEvent(
       return null;
     }
     
-    // สร้าง Welcome Message
     console.log(`🎉 [${channelConfig.name}] Creating Welcome Message...`);
     const welcomeMessage = createWelcomeFlexMessage();
     
@@ -249,7 +333,6 @@ async function handleEvent(
       return null;
     }
 
-    // Validate welcome message structure
     if (!welcomeMessage.type || !welcomeMessage.contents || !welcomeMessage.altText) {
       console.error(`❌ [${channelConfig.name}] Welcome message has invalid structure`);
       return null;
@@ -257,7 +340,6 @@ async function handleEvent(
     
     console.log(`📤 [${channelConfig.name}] Sending Welcome Message...`);
     
-    // ส่ง Welcome Message
     const success = await safeReplyMessage(
       lineClient,
       event.replyToken,
@@ -275,7 +357,7 @@ async function handleEvent(
   }
 
   // ============================================
-  // ตรวจสอบ Event Type: Message Event
+  // Message Event
   // ============================================
   if (event.type !== 'message' || event.message.type !== 'text') {
     return null;
@@ -291,7 +373,6 @@ async function handleEvent(
   
   console.log(`📩 [${channelConfig.name}] Received message from ${userId}: ${messageText}`);
   
-  // ตรวจสอบ Features ที่เปิดใช้งานของ Channel นี้
   const features = channelConfig.features || {
     welcome: true,
     activities: true,
@@ -302,7 +383,7 @@ async function handleEvent(
   console.log(`🔧 [${channelConfig.name}] Features:`, features);
   
   // ============================================
-  // 1. ตรวจสอบคีย์เวิร์ดโปรโมชั่นก่อน
+  // 1. ตรวจสอบคีย์เวิร์ดโปรโมชั่น
   // ============================================
   if (features.promotions && containsPromotionKeyword(messageText)) {
     console.log(`🎨 [${channelConfig.name}] Promotion keyword detected!`);
@@ -332,52 +413,83 @@ async function handleEvent(
   }
   
   // ============================================
-  // 2. ตรวจสอบคีย์เวิร์ดกิจกรรมแชร์
+  // 2. ตรวจสอบคีย์เวิร์ดกิจกรรม (รองรับ messageBoxes)
   // ============================================
-  if (features.activities && containsKeyword(messageText, appConfig.botSettings.keywords)) {
-    console.log(`🎁 [${channelConfig.name}] Activity keyword detected!`);
-    
-    if (canSendMessage(userId, userMessageHistory, getCooldownPeriod)) {
-      await safeReplyMessage(
-        lineClient,
-        event.replyToken,
-        [{
-          type: 'text',
-          text: appConfig.botSettings.activityMessage
-        }],
-        channelConfig.name
-      );
-      
-      recordMessageSent(userId, userMessageHistory);
-      console.log(`✅ [${channelConfig.name}] Activity sent to ${userId}`);
-    } else {
-      const cooldownMsg = getCooldownMessage(
-        userId, 
-        appConfig.botSettings.cooldownMessage, 
-        userMessageHistory, 
-        getCooldownPeriod
-      );
-      
-      await safeReplyMessage(
-        lineClient,
-        event.replyToken,
-        [{
-          type: 'text',
-          text: cooldownMsg
-        }],
-        channelConfig.name
-      );
-      
-      const remaining = getRemainingTime(userId, userMessageHistory, getCooldownPeriod);
-      const timeLeft = formatTime(remaining);
-      console.log(`⏳ [${channelConfig.name}] Cooldown active for ${userId}, ${timeLeft} remaining`);
+  if (features.activities) {
+    if (!appConfig.activities) {
+      appConfig.activities = [];
     }
+
+    const matchedActivities = findMatchingActivities(messageText, channelId, appConfig.activities);
     
-    return null;
+    if (matchedActivities.length > 0) {
+      console.log(`🎁 [${channelConfig.name}] ${matchedActivities.length} activity(ies) matched!`);
+      
+      const messagesToSend = [];
+      
+      for (const activity of matchedActivities) {
+        const sharedStatus = activity.allowSharedKeywords !== false ? 'Shared✅' : 'Shared❌';
+        console.log(`   📌 Processing activity: ${activity.name} (Cooldown: ${activity.useCooldown !== false}, ${sharedStatus})`);
+        
+        if (canSendMessage(userId, activity.id, userMessageHistory, appConfig.activities)) {
+          // แปลง messageBoxes เป็น LINE messages
+          if (activity.messageBoxes && Array.isArray(activity.messageBoxes)) {
+            const convertedMessages = convertMessageBoxesToLineMessages(activity.messageBoxes, channelConfig.name);
+            messagesToSend.push(...convertedMessages);
+            console.log(`   ✅ Converted ${convertedMessages.length} message(s) from messageBoxes`);
+          } 
+          // Backward compatibility: ถ้ายังมี message แบบเก่า
+          else if (activity.message) {
+            messagesToSend.push({
+              type: 'text',
+              text: activity.message
+            });
+            console.log(`   ℹ️ Using legacy message format`);
+          }
+          
+          if (activity.useCooldown !== false) {
+            recordMessageSent(userId, activity.id, userMessageHistory);
+            console.log(`   ✅ Activity "${activity.name}" will be sent (Cooldown: ${activity.cooldownHours}h)`);
+          } else {
+            console.log(`   ✅ Activity "${activity.name}" will be sent (No Cooldown)`);
+          }
+        } else {
+          const cooldownMsg = getCooldownMessage(
+            userId, 
+            activity.id,
+            activity.cooldownMessage, 
+            userMessageHistory,
+            appConfig.activities
+          );
+          
+          messagesToSend.push({
+            type: 'text',
+            text: cooldownMsg
+          });
+          
+          const remaining = getRemainingTime(userId, activity.id, userMessageHistory, appConfig.activities);
+          const timeLeft = formatTime(remaining);
+          console.log(`   ⏳ Cooldown active for activity "${activity.name}", ${timeLeft} remaining`);
+        }
+      }
+      
+      if (messagesToSend.length > 0) {
+        await safeReplyMessage(
+          lineClient,
+          event.replyToken,
+          messagesToSend,
+          channelConfig.name
+        );
+        
+        console.log(`✅ [${channelConfig.name}] Sent ${messagesToSend.length} message(s) to ${userId}`);
+      }
+      
+      return null;
+    }
   }
   
   // ============================================
-  // 3. ตรวจสอบคีย์เวิร์ด Flex Message
+  // 3. Flex Message keyword
   // ============================================
   if (features.flexMessages && containsFlexKeyword(messageText)) {
     console.log(`💬 [${channelConfig.name}] Flex Message keyword detected!`);
@@ -406,7 +518,6 @@ async function handleEvent(
         }
       ];
 
-      // ส่ง Quick Reply พร้อมกับ Flex ถ้าตั้งค่าไว้
       if (quickReplyConfig.flexMessageSettings.sendWithQuickReply) {
         const quickReply = getQuickReplyMenu();
         if (quickReply) {
@@ -439,7 +550,7 @@ async function handleEvent(
   }
   
   // ============================================
-  // 4. ตรวจสอบคีย์เวิร์ด Quick Reply Menu
+  // 4. Quick Reply keyword
   // ============================================
   if (features.flexMessages && containsQuickReplyKeyword(messageText)) {
     console.log(`🔘 [${channelConfig.name}] Quick Reply keyword detected!`);
@@ -468,9 +579,6 @@ async function handleEvent(
     return null;
   }
   
-  // ============================================
-  // ถ้าไม่ตรงเงื่อนไขใดๆ
-  // ============================================
   console.log(`ℹ️ [${channelConfig.name}] No matching keyword for message: ${messageText}`);
   return null;
 }

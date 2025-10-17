@@ -13,6 +13,7 @@
         <div class="icon">👥</div>
         <h3>ผู้ใช้งานทั้งหมด</h3>
         <div class="value"><%= totalUsers %></div>
+        <small style="color: #666;">จาก userMessageHistory</small>
     </div>
 
     <div class="stat-card">
@@ -25,15 +26,15 @@
     <div class="stat-card">
         <div class="icon">🎁</div>
         <h3>กิจกรรมแชร์</h3>
-        <div class="value"><%= activityKeywords %></div>
-        <small style="color: #666;">คีย์เวิร์ด</small>
+        <div class="value"><%= enabledActivities %>/<%= totalActivities %></div>
+        <small style="color: #666;">เปิดใช้งาน/ทั้งหมด</small>
     </div>
 
     <div class="stat-card">
-        <div class="icon">🎨</div>
-        <h3>โปรโมชั่น</h3>
-        <div class="value"><%= totalPromotions %></div>
-        <small style="color: #666;">รายการ</small>
+        <div class="icon">📦</div>
+        <h3>Message Boxes</h3>
+        <div class="value"><%= totalMessageBoxes || 0 %></div>
+        <small style="color: #666;">ข้อความทั้งหมด</small>
     </div>
 </div>
 
@@ -46,7 +47,7 @@
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 15px; text-align: center; transition: transform 0.3s; cursor: pointer;">
                 <div style="font-size: 3em; margin-bottom: 10px;">🎁</div>
                 <h3 style="margin-bottom: 10px;">จัดการกิจกรรมแชร์</h3>
-                <p style="opacity: 0.9; font-size: 0.9em;">แก้ไขข้อความและคีย์เวิร์ด</p>
+                <p style="opacity: 0.9; font-size: 0.9em;"><%= totalActivities %> กิจกรรม</p>
             </div>
         </a>
 
@@ -54,7 +55,7 @@
             <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; border-radius: 15px; text-align: center; transition: transform 0.3s; cursor: pointer;">
                 <div style="font-size: 3em; margin-bottom: 10px;">🎨</div>
                 <h3 style="margin-bottom: 10px;">จัดการโปรโมชั่น</h3>
-                <p style="opacity: 0.9; font-size: 0.9em;">เพิ่ม/แก้ไข Flex Messages</p>
+                <p style="opacity: 0.9; font-size: 0.9em;"><%= totalPromotions %> Flex Messages</p>
             </div>
         </a>
 
@@ -62,7 +63,7 @@
             <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 30px; border-radius: 15px; text-align: center; transition: transform 0.3s; cursor: pointer;">
                 <div style="font-size: 3em; margin-bottom: 10px;">⚙️</div>
                 <h3 style="margin-bottom: 10px;">ตั้งค่าระบบ</h3>
-                <p style="opacity: 0.9; font-size: 0.9em;">LINE API และการตั้งค่าอื่นๆ</p>
+                <p style="opacity: 0.9; font-size: 0.9em;"><%= totalChannels %> Channels</p>
             </div>
         </a>
 
@@ -70,11 +71,50 @@
             <div style="font-size: 3em; margin-bottom: 10px;">📊</div>
             <h3 style="margin-bottom: 10px;">สถานะระบบ</h3>
             <p style="opacity: 0.9; font-size: 0.9em;">
-                LINE Bot: <%= lineConfigured ? '✅ เชื่อมต่อแล้ว' : '❌ ยังไม่ได้เชื่อมต่อ' %>
+                <%= lineConfigured ? '✅ เชื่อมต่อแล้ว' : '❌ ยังไม่ได้เชื่อมต่อ' %>
             </p>
         </div>
     </div>
 </div>
+
+<!-- Active Activities Section -->
+<% if (activities && activities.length > 0) { %>
+<div class="section">
+    <h2>🎁 กิจกรรมที่เปิดใช้งาน</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-top: 20px;">
+        <% activities.forEach(function(activity) { %>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 5px solid #667eea;">
+                <h3 style="color: #667eea; margin-bottom: 10px; font-size: 1.1em;">
+                    <%= activity.name %>
+                </h3>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9em;">
+                    <span style="color: #666;">🔑 คีย์เวิร์ด:</span>
+                    <strong><%= activity.keywords.length %> คำ</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9em;">
+                    <span style="color: #666;">📦 ข้อความ:</span>
+                    <strong><%= activity.messageBoxes ? activity.messageBoxes.length : (activity.message ? 1 : 0) %> รายการ</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9em;">
+                    <span style="color: #666;">⏱️ Cooldown:</span>
+                    <strong><%= activity.useCooldown !== false ? activity.cooldownHours + ' ชม.' : 'ไม่จำกัด' %></strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.9em;">
+                    <span style="color: #666;">📱 Channels:</span>
+                    <strong><%= activity.channels ? activity.channels.length : 0 %> ช่อง</strong>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+
+    <% if (totalActivities > 5) { %>
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="/activities" class="btn btn-primary">ดูทั้งหมด <%= totalActivities %> กิจกรรม →</a>
+        </div>
+    <% } %>
+</div>
+<% } %>
 
 <!-- System Info Section -->
 <div class="section">
@@ -91,13 +131,21 @@
     </div>
 
     <div class="info-box" style="margin-top: 10px;">
-        <strong>🔑 คีย์เวิร์ดกิจกรรม:</strong> 
+        <strong>🔑 คีย์เวิร์ดกิจกรรมทั้งหมด:</strong> 
         <%= activityKeywordsList %>
     </div>
 
     <div class="info-box" style="margin-top: 10px;">
         <strong>🎨 คีย์เวิร์ดโปรโมชั่น:</strong> 
         <%= promotionKeywordsList %>
+    </div>
+
+    <div class="info-box" style="margin-top: 10px;">
+        <strong>📦 Message Boxes ทั้งหมด:</strong> 
+        <%= totalMessageBoxes || 0 %> รายการ
+        <small style="display: block; color: #666; margin-top: 5px;">
+            จากทุกกิจกรรม (ข้อความ, รูปภาพ, Flex Message)
+        </small>
     </div>
 </div>
 
@@ -110,6 +158,9 @@
             <div class="icon">📭</div>
             <h3>ยังไม่มีผู้ใช้งาน</h3>
             <p>รอให้มีผู้ใช้ส่งข้อความเข้ามาก่อนนะครับ</p>
+            <small style="color: #999; margin-top: 10px; display: block;">
+                📊 ข้อมูลจาก userMessageHistory: <%= totalUsers %> ผู้ใช้
+            </small>
         </div>
     <% } else { %>
         <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
@@ -117,6 +168,7 @@
                 <tr>
                     <th style="padding: 15px; text-align: left;">#</th>
                     <th style="padding: 15px; text-align: left;">User ID</th>
+                    <th style="padding: 15px; text-align: left;">กิจกรรม</th>
                     <th style="padding: 15px; text-align: left;">เวลา</th>
                     <th style="padding: 15px; text-align: left;">สถานะ</th>
                 </tr>
@@ -126,6 +178,11 @@
                     <tr style="border-bottom: 1px solid #ddd;">
                         <td style="padding: 15px;"><%= index + 1 %></td>
                         <td style="padding: 15px;"><%= user.userId.substring(0, 20) %>...</td>
+                        <td style="padding: 15px;">
+                            <span style="background: #e7f3ff; color: #1976D2; padding: 5px 10px; border-radius: 10px; font-size: 0.85em;">
+                                <%= user.activityName %>
+                            </span>
+                        </td>
                         <td style="padding: 15px;"><%= user.lastSent %></td>
                         <td style="padding: 15px;">
                             <span style="padding: 5px 12px; border-radius: 15px; font-size: 0.85em; font-weight: bold; background: <%= user.canSend ? '#d4edda' : '#fff3cd' %>; color: <%= user.canSend ? '#155724' : '#856404' %>;">
@@ -137,13 +194,27 @@
             </tbody>
         </table>
 
-        <% if (recentUsers.length >= 5) { %>
+        <% if (totalUsers > 5) { %>
             <div style="text-align: center; margin-top: 20px;">
-                <a href="/activities" class="btn btn-primary">ดูทั้งหมด →</a>
+                <a href="/activities" class="btn btn-primary">ดูทั้งหมด (<%= totalUsers %> ผู้ใช้) →</a>
             </div>
         <% } %>
     <% } %>
 </div>
+
+<!-- Debug Info (เฉพาะ Development) -->
+<% if (process.env.NODE_ENV !== 'production') { %>
+<div class="section" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 10px;">
+    <h3 style="margin-top: 0; color: #856404;">🐛 Debug Info</h3>
+    <div style="font-family: monospace; font-size: 0.9em; color: #666;">
+        <strong>Total Users:</strong> <%= totalUsers %><br>
+        <strong>UserMessageHistory Size:</strong> <%= totalUsers %><br>
+        <strong>Activities:</strong> <%= totalActivities %> (Enabled: <%= enabledActivities %>)<br>
+        <strong>Message Boxes:</strong> <%= totalMessageBoxes || 0 %><br>
+        <strong>LINE Configured:</strong> <%= lineConfigured ? 'Yes' : 'No' %>
+    </div>
+</div>
+<% } %>
 
 <script>
     // Refresh every 60 seconds

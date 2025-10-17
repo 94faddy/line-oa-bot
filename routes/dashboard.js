@@ -4,13 +4,18 @@ const fs = require('fs');
 const path = require('path');
 
 // ฟังก์ชันคำนวณเวลาที่เหลือ
-function getRemainingTime(userId, userMessageHistory, getCooldownPeriod) {
-  const lastSentTime = userMessageHistory.get(userId);
+function getRemainingTime(userId, activityId, userMessageHistory, activities) {
+  const key = `${userId}_${activityId}`;
+  const lastSentTime = userMessageHistory.get(key);
   if (!lastSentTime) return 0;
+  
+  const activity = activities.find(a => a.id === activityId);
+  if (!activity) return 0;
   
   const currentTime = Date.now();
   const timeDiff = currentTime - lastSentTime;
-  const remaining = getCooldownPeriod() - timeDiff;
+  const cooldownPeriod = activity.cooldownHours * 60 * 60 * 1000;
+  const remaining = cooldownPeriod - timeDiff;
   
   return remaining > 0 ? remaining : 0;
 }
@@ -23,38 +28,57 @@ function formatTime(milliseconds) {
 }
 
 // Dashboard Route
-function setupDashboardRoute(requireLogin, appConfig, userMessageHistory, getCooldownPeriod, promotionsConfig) {
+function setupDashboardRoute(requireLogin, appConfig, userMessageHistory, promotionsConfig) {
   router.get('/', requireLogin, (req, res) => {
-    // ดึงข้อมูลผู้ใช้
-    const users = Array.from(userMessageHistory.entries()).map(([userId, timestamp]) => {
-      const date = new Date(timestamp);
-      const remaining = getRemainingTime(userId, userMessageHistory, getCooldownPeriod);
-      const canSend = remaining === 0;
-      
-      return {
-        userId,
-        lastSent: date.toLocaleString('th-TH'),
-        canSend,
-        remainingTime: canSend ? 'สามารถส่งได้' : formatTime(remaining)
-      };
+    // ตรวจสอบและสร้าง activities array ถ้ายังไม่มี
+    if (!appConfig.activities) {
+      appConfig.activities = [];
+    }
+
+    // นับจำนวนผู้ใช้ทั้งหมดจาก userMessageHistory
+    const allUsers = new Set();
+    userMessageHistory.forEach((timestamp, key) => {
+      const userId = key.split('_')[0];
+      allUsers.add(userId);
     });
 
-    // เรียงตามเวลาล่าสุด
-    users.sort((a, b) => new Date(b.lastSent) - new Date(a.lastSent));
+    // สร้างข้อมูลผู้ใช้ล่าสุด 5 คน
+    const recentUsersMap = new Map();
+    
+    userMessageHistory.forEach((timestamp, key) => {
+      const [userId, activityId] = key.split('_');
+      
+      if (!recentUsersMap.has(userId) || recentUsersMap.get(userId).timestamp < timestamp) {
+        const activity = appConfig.activities.find(a => a.id === activityId);
+        const activityName = activity ? activity.name : 'ไม่ทราบ';
+        
+        const remaining = getRemainingTime(userId, activityId, userMessageHistory, appConfig.activities);
+        const canSend = remaining === 0;
+        
+        recentUsersMap.set(userId, {
+          userId,
+          activityName,
+          lastSent: new Date(timestamp).toLocaleString('th-TH'),
+          timestamp,
+          canSend,
+          remainingTime: canSend ? 'สามารถส่งได้' : formatTime(remaining)
+        });
+      }
+    });
 
-    // ดึงผู้ใช้ 5 คนล่าสุด
-    const recentUsers = users.slice(0, 5);
+    // แปลง Map เป็น Array และเรียงตามเวลาล่าสุด
+    const recentUsers = Array.from(recentUsersMap.values())
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 5);
 
     // สร้าง Webhook URL
     const domain = process.env.DOMAIN;
     let webhookUrl;
     
     if (domain) {
-      // ใช้ domain จาก .env
       const protocol = domain.includes('localhost') ? 'http' : 'https';
       webhookUrl = `${protocol}://${domain}/webhook`;
     } else {
-      // Fallback ถ้าไม่มี DOMAIN ใน .env
       const protocol = req.protocol;
       const host = req.get('host');
       webhookUrl = `${protocol}://${host}/webhook`;
@@ -64,18 +88,42 @@ function setupDashboardRoute(requireLogin, appConfig, userMessageHistory, getCoo
     const activeChannels = (appConfig.lineChannels || []).filter(ch => ch.enabled).length;
     const totalChannels = (appConfig.lineChannels || []).length;
     
+    // นับจำนวนกิจกรรม
+    const totalActivities = appConfig.activities.length;
+    const enabledActivities = appConfig.activities.filter(a => a.enabled).length;
+    
+    // รวม keywords จากทุกกิจกรรม
+    const allActivityKeywords = new Set();
+    appConfig.activities.forEach(activity => {
+      if (activity.enabled && activity.keywords) {
+        activity.keywords.forEach(k => allActivityKeywords.add(k));
+      }
+    });
+    
+    // นับจำนวน message boxes ทั้งหมด
+    let totalMessageBoxes = 0;
+    appConfig.activities.forEach(activity => {
+      if (activity.messageBoxes && Array.isArray(activity.messageBoxes)) {
+        totalMessageBoxes += activity.messageBoxes.length;
+      } else if (activity.message) {
+        totalMessageBoxes += 1; // นับ message แบบเก่าเป็น 1 box
+      }
+    });
+    
     res.render('dashboard', { 
-      totalUsers: users.length,
-      activityKeywords: appConfig.botSettings.keywords.length,
+      totalUsers: allUsers.size,
+      totalActivities: totalActivities,
+      enabledActivities: enabledActivities,
       totalPromotions: promotionsConfig.flexMessages.length,
-      cooldownHours: appConfig.botSettings.cooldownHours,
+      totalMessageBoxes: totalMessageBoxes,
       lineConfigured: global.isLineConfigured,
       activeChannels: activeChannels,
       totalChannels: totalChannels,
       webhookUrl: webhookUrl,
-      activityKeywordsList: appConfig.botSettings.keywords.join(', '),
+      activityKeywordsList: Array.from(allActivityKeywords).join(', ') || 'ไม่มีคีย์เวิร์ด',
       promotionKeywordsList: promotionsConfig.promotionSettings.keywords.join(', '),
       recentUsers: recentUsers,
+      activities: appConfig.activities.filter(a => a.enabled).slice(0, 5),
       username: req.session.username
     });
   });
