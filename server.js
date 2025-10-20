@@ -144,10 +144,9 @@ if (appConfig.activities) {
   }
 }
 
-// Migration 6: แปลง message เป็น messageBoxes (NEW!)
+// Migration 6: แปลง message เป็น messageBoxes
 if (appConfig.activities) {
   appConfig.activities.forEach(activity => {
-    // ถ้ามี message แบบเก่าแต่ไม่มี messageBoxes
     if (activity.message && !activity.messageBoxes) {
       activity.messageBoxes = [
         {
@@ -156,11 +155,9 @@ if (appConfig.activities) {
           altText: ''
         }
       ];
-      // เก็บ message เดิมไว้สำหรับ backward compatibility
       needsSave = true;
       console.log(`✅ แปลง message เป็น messageBoxes สำหรับกิจกรรม: ${activity.name}`);
     }
-    // ถ้าไม่มีทั้ง message และ messageBoxes ให้สร้าง messageBoxes เปล่า
     else if (!activity.message && !activity.messageBoxes) {
       activity.messageBoxes = [];
       needsSave = true;
@@ -265,6 +262,7 @@ const {
   setupLiffRoutes,
   liffConfig
 } = require('./routes/liff');
+const { setupBroadcastRoutes } = require('./routes/broadcast');
 const { setupWebhookRoute } = require('./routes/webhook');
 
 // ใช้งาน Routes
@@ -275,6 +273,7 @@ app.use('/', setupActivitiesRoutes(requireLogin, appConfig, userMessageHistory, 
 app.use('/', setupPromotionsRoutes(requireLogin));
 app.use('/', setupFlexRoutes(requireLogin));
 app.use('/', setupLiffRoutes(requireLogin));
+app.use('/', setupBroadcastRoutes(requireLogin, appConfig));
 app.use('/', setupSettingsRoutes(requireLogin, appConfig, saveConfig, userMessageHistory, initializeLineClients));
 app.use('/', setupWebhookRoute(
   appConfig, 
@@ -315,7 +314,7 @@ app.get('/health', (req, res) => {
     quickReplyEnabled: quickReplyConfig.quickReplySettings.enabled,
     welcomeEnabled: welcomeConfig.welcomeSettings.enabled,
     liffEnabled: liffConfig.liffSettings.enabled,
-    version: '4.0'
+    version: '4.1'
   });
 });
 
@@ -325,11 +324,10 @@ const DOMAIN = process.env.DOMAIN;
 
 app.listen(PORT, () => {
   console.log('='.repeat(70));
-  console.log('🚀 LINE OA Bot Server Started! (Version 4.0 - Multi Message Types)');
+  console.log('🚀 LINE OA Bot Server Started! (Version 4.1 - Broadcast System)');
   console.log('='.repeat(70));
   console.log(`📡 Server running on port ${PORT}`);
 
-  // แสดง Webhook URL ตาม DOMAIN
   if (DOMAIN) {
     const protocol = DOMAIN.includes('localhost') ? 'http' : 'https';
     console.log(`🔗 Webhook URL: ${protocol}://${DOMAIN}/webhook`);
@@ -347,6 +345,7 @@ app.listen(PORT, () => {
   console.log(`🎁 Activities:     http://localhost:${PORT}/activities`);
   console.log(`🎨 Promotions:     http://localhost:${PORT}/promotions`);
   console.log(`💬 Flex Messages:  http://localhost:${PORT}/flex-messages`);
+  console.log(`📢 Broadcast:      http://localhost:${PORT}/broadcast`);
   console.log(`📤 LIFF Share:     http://localhost:${PORT}/liff`);
   console.log(`⚙️  Settings:       http://localhost:${PORT}/settings`);
   console.log('='.repeat(70));
@@ -369,6 +368,7 @@ app.listen(PORT, () => {
   console.log(`💬 Flex Messages:  ${quickReplyConfig.flexMessageSettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
   console.log(`🔘 Quick Reply:    ${quickReplyConfig.quickReplySettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
   console.log(`📤 LIFF Share:     ${liffConfig.liffSettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
+  console.log(`📢 Broadcast:      ✅ Enabled`);
   console.log('='.repeat(70));
   
   if (global.lineClients.size === 0) {
@@ -420,6 +420,7 @@ app.listen(PORT, () => {
   console.log('   ✅ Flex Messages: สุ่มส่ง Flex + จัดการผ่าน Dashboard');
   console.log('   ✅ Quick Reply: จัดการปุ่มและคีย์เวิร์ดได้เต็มรูปแบบ');
   console.log('   ✅ LIFF Share: หน้าแชร์ LINE LIFF พร้อม Carousel');
+  console.log('   ✅ Broadcast: ส่งข้อความแบบ Broadcast พร้อมตั้งเวลา');
   
   console.log('\n');
 });

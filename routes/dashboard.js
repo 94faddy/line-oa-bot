@@ -28,7 +28,7 @@ function formatTime(milliseconds) {
 }
 
 // Dashboard Route
-function setupDashboardRoute(requireLogin, appConfig, userMessageHistory, promotionsConfig) {
+function setupDashboardRoute(requireLogin, appConfig, userMessageHistory, promotionsConfig, broadcastHistory) {
   router.get('/', requireLogin, (req, res) => {
     // ตรวจสอบและสร้าง activities array ถ้ายังไม่มี
     if (!appConfig.activities) {
@@ -106,9 +106,15 @@ function setupDashboardRoute(requireLogin, appConfig, userMessageHistory, promot
       if (activity.messageBoxes && Array.isArray(activity.messageBoxes)) {
         totalMessageBoxes += activity.messageBoxes.length;
       } else if (activity.message) {
-        totalMessageBoxes += 1; // นับ message แบบเก่าเป็น 1 box
+        totalMessageBoxes += 1;
       }
     });
+
+    // นับสถิติ Broadcast
+    const totalBroadcasts = broadcastHistory ? broadcastHistory.length : 0;
+    const successfulBroadcasts = broadcastHistory ? broadcastHistory.filter(b => b.status === 'success').length : 0;
+    const scheduledBroadcasts = broadcastHistory ? broadcastHistory.filter(b => b.status === 'scheduled').length : 0;
+    const totalBroadcastRecipients = broadcastHistory ? broadcastHistory.reduce((sum, b) => sum + (b.targetCount || 0), 0) : 0;
     
     res.render('dashboard', { 
       totalUsers: allUsers.size,
@@ -116,6 +122,10 @@ function setupDashboardRoute(requireLogin, appConfig, userMessageHistory, promot
       enabledActivities: enabledActivities,
       totalPromotions: promotionsConfig.flexMessages.length,
       totalMessageBoxes: totalMessageBoxes,
+      totalBroadcasts: totalBroadcasts,
+      successfulBroadcasts: successfulBroadcasts,
+      scheduledBroadcasts: scheduledBroadcasts,
+      totalBroadcastRecipients: totalBroadcastRecipients,
       lineConfigured: global.isLineConfigured,
       activeChannels: activeChannels,
       totalChannels: totalChannels,

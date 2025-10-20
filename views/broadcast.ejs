@@ -1,0 +1,1480 @@
+<%- include('partials/header', {
+    title: 'Broadcast Message',
+    pageIcon: '📢',
+    pageTitle: 'Broadcast Message',
+    pageSubtitle: 'ส่งข้อความแบบ Broadcast ไปยังผู้ติดตามทั้งหมดหรือเฉพาะกลุ่ม',
+    username: username,
+    activePage: 'broadcast'
+}) %>
+
+<style>
+    .broadcast-container {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 20px;
+        padding: 30px;
+    }
+
+    .main-panel {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .preview-panel {
+        position: sticky;
+        top: 20px;
+        height: fit-content;
+    }
+
+    .phone-mockup {
+        background: #000;
+        border-radius: 40px;
+        padding: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        position: relative;
+    }
+
+    .phone-notch {
+        background: #000;
+        height: 25px;
+        width: 150px;
+        border-radius: 0 0 20px 20px;
+        margin: 0 auto 10px;
+        position: relative;
+    }
+
+    .phone-screen {
+        background: #f5f5f5;
+        border-radius: 25px;
+        height: 650px;
+        overflow-y: auto;
+        position: relative;
+    }
+
+    .phone-header {
+        background: #06c755;
+        color: white;
+        padding: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .phone-header img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: white;
+    }
+
+    .phone-messages {
+        padding: 15px;
+        min-height: 500px;
+    }
+
+    .message-bubble {
+        background: white;
+        border-radius: 15px;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        max-width: 85%;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        word-wrap: break-word;
+        animation: slideIn 0.3s;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .message-bubble img {
+        max-width: 100%;
+        border-radius: 10px;
+        display: block;
+    }
+
+    .flex-message-container {
+        max-width: 85%;
+        margin-bottom: 10px;
+    }
+
+    .flex-preview-box {
+        background: white;
+        border-radius: 15px;
+        padding: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .flex-preview-box img {
+        width: 100%;
+        border-radius: 10px;
+        margin-bottom: 10px;
+    }
+
+    .message-box {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        position: relative;
+        transition: all 0.3s;
+    }
+
+    .message-box:hover {
+        border-color: #667eea;
+        box-shadow: 0 2px 10px rgba(102, 126, 234, 0.1);
+    }
+
+    .message-box-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .message-box-number {
+        background: #667eea;
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 0.9em;
+    }
+
+    .message-box-controls {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-move {
+        background: #17a2b8;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.85em;
+        transition: all 0.3s;
+    }
+
+    .btn-move:hover {
+        background: #138496;
+    }
+
+    .btn-remove-box {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.85em;
+        transition: all 0.3s;
+    }
+
+    .btn-remove-box:hover {
+        background: #c82333;
+    }
+
+    .message-type-selector {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .type-option {
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: white;
+    }
+
+    .type-option:hover {
+        border-color: #667eea;
+        background: #f0f4ff;
+    }
+
+    .type-option.active {
+        border-color: #667eea;
+        background: #667eea;
+        color: white;
+        font-weight: bold;
+    }
+
+    .type-option input[type="radio"] {
+        display: none;
+    }
+
+    .btn-add-box {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1em;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 15px;
+    }
+
+    .btn-add-box:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .json-editor {
+        font-family: 'Courier New', monospace;
+        min-height: 200px;
+        background: #f8f9fa;
+        border: 2px solid #e0e0e0;
+        padding: 10px;
+        border-radius: 8px;
+    }
+
+    .target-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+    }
+
+    .send-type-selector {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    .send-type-option {
+        padding: 20px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: white;
+    }
+
+    .send-type-option:hover {
+        border-color: #667eea;
+        transform: translateY(-2px);
+    }
+
+    .send-type-option.active {
+        border-color: #667eea;
+        background: #e7f3ff;
+    }
+
+    .send-type-option input[type="radio"] {
+        display: none;
+    }
+
+    .send-type-option .icon {
+        font-size: 3em;
+        margin-bottom: 10px;
+    }
+
+    .followers-count-display {
+        margin: 20px 0;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+    }
+
+    .followers-count-display.show {
+        display: block;
+    }
+
+    .multicast-input-section {
+        margin-top: 15px;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        border: 2px solid #e0e0e0;
+        display: none;
+    }
+
+    .multicast-input-section.show {
+        display: block;
+    }
+
+    .schedule-section {
+        background: #fff3cd;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 4px solid #ffc107;
+        margin: 20px 0;
+    }
+
+    .schedule-options {
+        display: flex;
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    .schedule-option {
+        flex: 1;
+        padding: 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: white;
+    }
+
+    .schedule-option:hover {
+        border-color: #ffc107;
+        background: #fffbf0;
+    }
+
+    .schedule-option.active {
+        border-color: #ffc107;
+        background: #fffbf0;
+    }
+
+    .schedule-option input[type="radio"] {
+        display: none;
+    }
+
+    .datetime-picker {
+        margin-top: 15px;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        border: 2px solid #e0e0e0;
+    }
+
+    .send-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .btn-send {
+        padding: 15px 30px;
+        border-radius: 10px;
+        font-size: 1.1em;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-send-now {
+        background: linear-gradient(135deg, #06c755 0%, #00b900 100%);
+        color: white;
+    }
+
+    .btn-send-now:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(6, 199, 85, 0.3);
+    }
+
+    .btn-schedule {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        color: white;
+    }
+
+    .btn-schedule:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+    }
+
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    .history-table thead {
+        background: #667eea;
+        color: white;
+    }
+
+    .history-table th,
+    .history-table td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .history-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.85em;
+        font-weight: bold;
+    }
+
+    .status-success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-scheduled {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-failed {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    @media (max-width: 1200px) {
+        .broadcast-container {
+            grid-template-columns: 1fr;
+        }
+
+        .preview-panel {
+            position: relative;
+            top: 0;
+        }
+    }
+</style>
+
+<div class="broadcast-container">
+    <!-- Main Panel -->
+    <div class="main-panel">
+        <h2 style="color: #667eea; margin-bottom: 30px;">
+            📢 สร้าง Broadcast Message
+        </h2>
+
+        <!-- Channel Selection -->
+        <div class="form-group">
+            <label for="channelSelect">📱 เลือก LINE Channel</label>
+            <select id="channelSelect" required onchange="updateChannelInfo()">
+                <option value="">-- เลือก Channel --</option>
+                <% lineChannels.forEach(function(channel) { %>
+                    <% if (channel.enabled) { %>
+                        <option value="<%= channel.id %>" data-name="<%= channel.displayName %>"><%= channel.name %> (<%= channel.displayName %>)</option>
+                    <% } %>
+                <% }); %>
+            </select>
+            <small>เลือก LINE OA ที่ต้องการส่ง Broadcast</small>
+        </div>
+
+        <!-- Message Boxes -->
+        <div class="form-group">
+            <label>📦 ข้อความที่จะส่ง</label>
+            <small style="display: block; margin-bottom: 10px;">
+                สร้างข้อความหลายแบบ (ข้อความ, รูปภาพ, Flex Message) สูงสุด 5 ข้อความ
+            </small>
+            
+            <div id="messageBoxesContainer" style="background: #f8f9fa; padding: 20px; border-radius: 10px; border: 2px dashed #667eea;">
+                <!-- Message boxes จะถูกเพิ่มที่นี่ -->
+            </div>
+
+            <button type="button" class="btn-add-box" onclick="addMessageBox()">
+                ➕ เพิ่มข้อความ
+            </button>
+        </div>
+
+        <!-- Target Section -->
+        <div class="target-section">
+            <h3 style="color: #667eea; margin-bottom: 15px;">🎯 วิธีการส่ง</h3>
+            
+            <div class="send-type-selector">
+                <label class="send-type-option active" onclick="selectSendType('broadcast')">
+                    <input type="radio" name="sendType" value="broadcast" checked>
+                    <div class="icon">📡</div>
+                    <h4>Broadcast</h4>
+                    <p style="font-size: 0.9em; color: #666; margin-top: 8px;">
+                        ส่งไปยัง Followers ทั้งหมด<br>
+                        <small>(ไม่จำกัดจำนวน)</small>
+                    </p>
+                </label>
+
+                <label class="send-type-option" onclick="selectSendType('multicast')">
+                    <input type="radio" name="sendType" value="multicast">
+                    <div class="icon">👥</div>
+                    <h4>Multicast</h4>
+                    <p style="font-size: 0.9em; color: #666; margin-top: 8px;">
+                        ส่งไปยังจำนวนที่กำหนด<br>
+                        <small>(สูงสุด 500 คน)</small>
+                    </p>
+                </label>
+            </div>
+
+            <!-- Followers Count Display -->
+            <div id="followersCountDisplay" class="followers-count-display">
+                <div style="color: white; font-size: 0.9em; margin-bottom: 5px;">📊 จำนวน Followers</div>
+                <div id="followersCountNumber" style="color: white; font-size: 2.5em; font-weight: bold;">0</div>
+                <div style="color: rgba(255,255,255,0.9); font-size: 0.85em; margin-top: 5px;">คน</div>
+            </div>
+
+            <!-- Get Followers Count Button -->
+            <button 
+                type="button" 
+                id="getFollowersBtn" 
+                onclick="loadFollowersCount()" 
+                class="btn btn-primary" 
+                style="width: 100%; margin-top: 15px; padding: 12px; font-size: 1em;"
+                disabled>
+                ℹ️ ตรวจสอบ Followers (เฉพาะ Verified Account)
+            </button>
+            
+            <div style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                <small style="color: #666;">
+                    💡 <strong>Free Plan</strong>: ไม่ต้องระบุจำนวน เลือก Broadcast ส่งได้เลย!
+                </small>
+            </div>
+
+            <!-- Multicast Input Section -->
+            <div id="multicastInputSection" class="multicast-input-section">
+                <label for="targetFollowersCount">
+                    👥 จำนวนที่ต้องการส่ง
+                </label>
+                <input 
+                    type="number" 
+                    id="targetFollowersCount" 
+                    placeholder="เช่น: 50, 100, 500..." 
+                    min="1"
+                    max="500"
+                    style="text-align: center; font-size: 1.1em; font-weight: bold;">
+                <small style="color: #666; display: block; margin-top: 8px;">
+                    💡 Multicast จะส่งไปยัง Followers แรกตามจำนวนที่ระบุ (สูงสุด 500 คน)
+                </small>
+            </div>
+
+            <div style="margin-top: 15px; padding: 12px; background: #e7f3ff; border-radius: 8px;">
+                <small style="color: #1976d2;">
+                    📡 <strong>Broadcast</strong>: ส่งไปทุกคน (ใช้โควต้า)<br>
+                    &nbsp;&nbsp;&nbsp;• Free Plan: 300 ข้อความ/เดือน<br>
+                    &nbsp;&nbsp;&nbsp;• ตัวอย่าง: 300 followers = ใช้ครบใน 1 ครั้ง<br><br>
+                    👥 <strong>Multicast</strong>: ส่งตามจำนวนที่กำหนด (ไม่ใช้โควต้า)<br>
+                    &nbsp;&nbsp;&nbsp;• ต้องเป็น Verified Account<br>
+                    &nbsp;&nbsp;&nbsp;• Free Plan ไม่รองรับ
+                </small>
+            </div>
+            
+            <div style="margin-top: 10px; padding: 12px; background: #fff3cd; border-radius: 8px;">
+                <small style="color: #856404;">
+                    ⚠️ <strong>สำหรับ LINE Free Plan:</strong><br>
+                    • ใช้ Broadcast เท่านั้น (300 ข้อความ/เดือน)<br>
+                    • Multicast ต้องอัพเกรดเป็น Verified Account<br>
+                    • ตรวจสอบโควต้า: LINE Official Account Manager
+                </small>
+            </div>
+        </div>
+
+        <!-- Schedule Section -->
+        <div class="schedule-section">
+            <h3 style="color: #856404; margin-bottom: 15px;">⏰ กำหนดเวลาส่ง</h3>
+            
+            <div class="schedule-options">
+                <label class="schedule-option active" onclick="selectScheduleType('now')">
+                    <input type="radio" name="scheduleType" value="now" checked>
+                    <div style="font-size: 2em; margin-bottom: 5px;">🚀</div>
+                    <h4>ส่งทันที</h4>
+                </label>
+
+                <label class="schedule-option" onclick="selectScheduleType('scheduled')">
+                    <input type="radio" name="scheduleType" value="scheduled">
+                    <div style="font-size: 2em; margin-bottom: 5px;">⏰</div>
+                    <h4>ตั้งเวลาส่ง</h4>
+                </label>
+            </div>
+
+            <div id="datetimeSection" style="display: none;">
+                <div class="datetime-picker">
+                    <label for="scheduledDatetime">📅 เลือกวันและเวลาที่ต้องการส่ง</label>
+                    <input type="datetime-local" id="scheduledDatetime" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em; margin-top: 10px;">
+                    <small style="display: block; margin-top: 5px; color: #666;">
+                        ระบุวันและเวลาที่ต้องการส่งข้อความ
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Send Buttons -->
+        <div class="send-buttons">
+            <button class="btn-send btn-send-now" onclick="sendBroadcast('now')">
+                🚀 ส่งทันที
+            </button>
+            <button class="btn-send btn-schedule" onclick="sendBroadcast('schedule')">
+                ⏰ ตั้งเวลาส่ง
+            </button>
+        </div>
+    </div>
+
+    <!-- Preview Panel -->
+    <div class="preview-panel">
+        <h3 style="color: #667eea; margin-bottom: 15px; text-align: center;">
+            📱 ตัวอย่างข้อความ
+        </h3>
+        
+        <div class="phone-mockup">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+                <div class="phone-header">
+                    <img src="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2740%27 height=%2740%27%3E%3Crect fill=%27%2306c755%27 width=%2740%27 height=%2740%27/%3E%3C/svg%3E" alt="Bot" id="previewBotAvatar">
+                    <div>
+                        <strong id="previewBotName">LINE OA</strong>
+                        <div style="font-size: 0.85em; opacity: 0.9;">Official Account</div>
+                    </div>
+                </div>
+                <div class="phone-messages" id="previewMessages">
+                    <div style="text-align: center; padding: 40px; color: #999;">
+                        <div style="font-size: 3em; margin-bottom: 10px;">💬</div>
+                        <p>เพิ่มข้อความเพื่อดูตัวอย่าง</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 15px; color: #666; font-size: 0.9em;">
+            ⚠️ ตัวอย่างนี้แสดงขนาดและรูปแบบจริงที่จะส่งใน LINE
+        </div>
+    </div>
+</div>
+
+<!-- Broadcast History -->
+<div class="section">
+    <h2>📊 ประวัติการส่ง Broadcast</h2>
+    
+    <% if (broadcastHistory.length === 0) { %>
+        <div class="empty-state">
+            <div class="icon">🔭</div>
+            <h3>ยังไม่มีประวัติการส่ง</h3>
+            <p>เริ่มส่ง Broadcast แรกของคุณเลย!</p>
+        </div>
+    <% } else { %>
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>เวลา</th>
+                    <th>Channel</th>
+                    <th>ประเภท</th>
+                    <th>จำนวน</th>
+                    <th>ข้อความ</th>
+                    <th>สถานะ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% broadcastHistory.forEach(function(item) { %>
+                    <tr>
+                        <td>
+                            <% if (item.sentAt) { %>
+                                <%= new Date(item.sentAt).toLocaleString('th-TH') %>
+                            <% } else if (item.scheduledFor) { %>
+                                กำหนด: <%= new Date(item.scheduledFor).toLocaleString('th-TH') %>
+                            <% } else { %>
+                                -
+                            <% } %>
+                        </td>
+                        <td><%= item.channelName %></td>
+                        <td>
+                            <% if (item.targetType === 'multicast') { %>
+                                👥 Multicast
+                            <% } else { %>
+                                📡 Broadcast
+                            <% } %>
+                        </td>
+                        <td><strong><%= item.targetCount %></strong></td>
+                        <td><%= item.messageCount %> ข้อความ</td>
+                        <td>
+                            <span class="status-badge status-<%= item.status %>">
+                                <% if (item.status === 'success') { %>
+                                    ✅ สำเร็จ
+                                <% } else if (item.status === 'scheduled') { %>
+                                    ⏰ รอส่ง
+                                <% } else { %>
+                                    ❌ ล้มเหลว
+                                <% } %>
+                            </span>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    <% } %>
+</div>
+
+<script>
+    // Global Variables
+    let messageBoxCounter = 0;
+    let selectedChannel = null;
+    let currentFollowersCount = 0;
+
+    // Initialize - Add one default message box
+    window.addEventListener('DOMContentLoaded', function() {
+        addMessageBox({ type: 'text', content: '' });
+    });
+
+    // ===================================
+    // HELPER FUNCTIONS
+    // ===================================
+
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 20px 30px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            z-index: 10000;
+            max-width: 400px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease-out;
+        `;
+        
+        if (type === 'success') {
+            alertDiv.style.background = 'linear-gradient(135deg, #06c755 0%, #00b900 100%)';
+        } else if (type === 'error') {
+            alertDiv.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+        } else if (type === 'info') {
+            alertDiv.style.background = 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)';
+        }
+        
+        alertDiv.innerHTML = message.replace(/\n/g, '<br>');
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            alertDiv.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => alertDiv.remove(), 300);
+        }, 5000);
+    }
+
+    // Add animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(400px); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+
+    function updateChannelInfo() {
+        const channelSelect = document.getElementById('channelSelect');
+        const channelId = channelSelect.value;
+        
+        if (!channelId) {
+            document.getElementById('previewBotName').textContent = 'LINE OA';
+            document.getElementById('getFollowersBtn').disabled = true;
+            document.getElementById('followersCountDisplay').classList.remove('show');
+            return;
+        }
+
+        selectedChannel = channelId;
+        const channelName = channelSelect.options[channelSelect.selectedIndex].getAttribute('data-name');
+        document.getElementById('previewBotName').textContent = channelName || 'LINE OA';
+        document.getElementById('getFollowersBtn').disabled = false;
+    }
+
+    // ===================================
+    // FOLLOWERS COUNT
+    // ===================================
+
+    async function loadFollowersCount() {
+        if (!selectedChannel) {
+            showAlert('error', 'กรุณาเลือก Channel ก่อน');
+            return;
+        }
+
+        const btn = document.getElementById('getFollowersBtn');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '⏳ กำลังดึงข้อมูล...';
+
+        try {
+            const response = await fetch('/broadcast/get-followers-count', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ channelId: selectedChannel })
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.count !== undefined) {
+                currentFollowersCount = result.count;
+                document.getElementById('followersCountNumber').textContent = result.count.toLocaleString();
+                document.getElementById('followersCountDisplay').classList.add('show');
+                showAlert('success', result.message || `พบ Followers ทั้งหมด ${result.count.toLocaleString()} คน`);
+            } else {
+                if (result.hint === 'free_plan') {
+                    showAlert('info', '💡 LINE Free Plan\n\n' +
+                        'คุณสามารถใช้ Broadcast ส่งไปยัง Followers ทั้งหมดได้เลย!\n\n' +
+                        '• โควต้า: 300 ข้อความ/เดือน\n' +
+                        '• ไม่ต้องระบุจำนวน Followers\n' +
+                        '• เลือก "Broadcast" แล้วกดส่งได้เลย');
+                } else {
+                    showAlert('error', result.message || 'ไม่สามารถดึงข้อมูลได้');
+                }
+            }
+        } catch (error) {
+            console.warn('Followers API not available:', error.message);
+            showAlert('info', '💡 LINE Free Plan\n\n' +
+                'คุณสามารถใช้ Broadcast ส่งไปยัง Followers ทั้งหมดได้เลย!\n\n' +
+                '• โควต้า: 300 ข้อความ/เดือน\n' +
+                '• ไม่ต้องระบุจำนวน Followers\n' +
+                '• เลือก "Broadcast" แล้วกดส่งได้เลย');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+    // ===================================
+    // SEND TYPE SELECTION
+    // ===================================
+
+    function selectSendType(type) {
+        document.querySelectorAll('.send-type-option').forEach(opt => {
+            opt.classList.remove('active');
+        });
+        
+        const selectedOption = document.querySelector(`.send-type-option input[value="${type}"]`).closest('.send-type-option');
+        selectedOption.classList.add('active');
+        
+        document.querySelector(`input[name="sendType"][value="${type}"]`).checked = true;
+        
+        if (type === 'multicast') {
+            document.getElementById('multicastInputSection').classList.add('show');
+        } else {
+            document.getElementById('multicastInputSection').classList.remove('show');
+        }
+    }
+
+    // ===================================
+    // MESSAGE BOX MANAGEMENT
+    // ===================================
+
+    function addMessageBox(data = null) {
+        const container = document.getElementById('messageBoxesContainer');
+        const currentBoxes = container.querySelectorAll('.message-box');
+        
+        if (currentBoxes.length >= 5) {
+            showAlert('error', 'สามารถเพิ่มข้อความได้สูงสุด 5 รายการ');
+            return;
+        }
+
+        messageBoxCounter++;
+        const boxId = `box-${messageBoxCounter}`;
+        
+        const boxDiv = document.createElement('div');
+        boxDiv.className = 'message-box';
+        boxDiv.id = boxId;
+        boxDiv.dataset.boxId = boxId;
+        
+        const defaultType = data?.type || 'text';
+        const defaultContent = data?.content || '';
+        const defaultAltText = data?.altText || '';
+        
+        boxDiv.innerHTML = `
+            <div class="message-box-header">
+                <span class="message-box-number">ข้อความที่ ${messageBoxCounter}</span>
+                <div class="message-box-controls">
+                    <button type="button" class="btn-move" onclick="moveBoxUp('${boxId}')">▲ ขึ้น</button>
+                    <button type="button" class="btn-move" onclick="moveBoxDown('${boxId}')">▼ ลง</button>
+                    <button type="button" class="btn-remove-box" onclick="removeMessageBox('${boxId}')">🗑️ ลบ</button>
+                </div>
+            </div>
+            
+            <div class="message-type-selector">
+                <label class="type-option ${defaultType === 'text' ? 'active' : ''}" onclick="selectMessageType('${boxId}', 'text')">
+                    <input type="radio" name="type-${boxId}" value="text" ${defaultType === 'text' ? 'checked' : ''}>
+                    <div>📝</div>
+                    <div>ข้อความ</div>
+                </label>
+                <label class="type-option ${defaultType === 'image' ? 'active' : ''}" onclick="selectMessageType('${boxId}', 'image')">
+                    <input type="radio" name="type-${boxId}" value="image" ${defaultType === 'image' ? 'checked' : ''}>
+                    <div>🖼️</div>
+                    <div>รูปภาพ</div>
+                </label>
+                <label class="type-option ${defaultType === 'flex' ? 'active' : ''}" onclick="selectMessageType('${boxId}', 'flex')">
+                    <input type="radio" name="type-${boxId}" value="flex" ${defaultType === 'flex' ? 'checked' : ''}>
+                    <div>💬</div>
+                    <div>Flex Message</div>
+                </label>
+            </div>
+            
+            <div class="message-content-area" id="content-${boxId}">
+                ${getMessageContentHTML(boxId, defaultType, defaultContent, defaultAltText)}
+            </div>
+        `;
+        
+        container.appendChild(boxDiv);
+        updateBoxNumbers();
+        updatePreview();
+    }
+
+    function getMessageContentHTML(boxId, type, content = '', altText = '') {
+        if (type === 'text') {
+            return `
+                <div class="form-group">
+                    <label>📝 ข้อความ</label>
+                    <textarea id="textarea-${boxId}" style="min-height: 150px; font-family: 'Courier New', monospace;" placeholder="พิมพ์ข้อความที่ต้องการส่ง..." required oninput="updatePreview()">${content}</textarea>
+                </div>
+            `;
+        } else if (type === 'image') {
+            return `
+                <div class="form-group">
+                    <label>🖼️ URL รูปภาพ</label>
+                    <input type="url" id="input-${boxId}" placeholder="https://example.com/image.jpg" value="${content}" required oninput="updatePreview()">
+                    <small>⚠️ รูปภาพจะถูกส่งเป็นไฟล์รูปใน LINE OA</small>
+                </div>
+            `;
+        } else if (type === 'flex') {
+            return `
+                <div class="form-group">
+                    <label>💬 Flex Message JSON</label>
+                    <textarea id="textarea-${boxId}" class="json-editor" placeholder='{"type": "bubble", "body": {...}}' oninput="updatePreview()">${content}</textarea>
+                    <small>📋 วาง Flex Message JSON ที่สร้างจาก LINE Bot Designer</small>
+                </div>
+                <div class="form-group">
+                    <label>📱 Alt Text (ข้อความแสดงแทน)</label>
+                    <input type="text" id="alttext-${boxId}" placeholder="Flex Message" value="${altText}">
+                    <small>ข้อความที่แสดงในการแจ้งเตือน</small>
+                </div>
+            `;
+        }
+    }
+
+    function selectMessageType(boxId, type) {
+        const box = document.getElementById(boxId);
+        box.querySelectorAll('.type-option').forEach(opt => opt.classList.remove('active'));
+        box.querySelector(`input[value="${type}"]`).closest('.type-option').classList.add('active');
+        
+        const contentArea = document.getElementById(`content-${boxId}`);
+        contentArea.innerHTML = getMessageContentHTML(boxId, type);
+        updatePreview();
+    }
+
+    function removeMessageBox(boxId) {
+        const container = document.getElementById('messageBoxesContainer');
+        const boxes = container.querySelectorAll('.message-box');
+        
+        if (boxes.length <= 1) {
+            showAlert('error', 'ต้องมีอย่างน้อย 1 ข้อความ');
+            return;
+        }
+        
+        if (confirm('ลบข้อความนี้?')) {
+            document.getElementById(boxId).remove();
+            updateBoxNumbers();
+            updatePreview();
+        }
+    }
+
+    function moveBoxUp(boxId) {
+        const box = document.getElementById(boxId);
+        const prev = box.previousElementSibling;
+        if (prev) {
+            box.parentNode.insertBefore(box, prev);
+            updateBoxNumbers();
+            updatePreview();
+        }
+    }
+
+    function moveBoxDown(boxId) {
+        const box = document.getElementById(boxId);
+        const next = box.nextElementSibling;
+        if (next) {
+            box.parentNode.insertBefore(next, box);
+            updateBoxNumbers();
+            updatePreview();
+        }
+    }
+
+    function updateBoxNumbers() {
+        const boxes = document.querySelectorAll('.message-box');
+        boxes.forEach((box, index) => {
+            box.querySelector('.message-box-number').textContent = `ข้อความที่ ${index + 1}`;
+        });
+    }
+
+    function getMessageBoxesData() {
+        const boxes = document.querySelectorAll('.message-box');
+        const data = [];
+        
+        boxes.forEach(box => {
+            const boxId = box.dataset.boxId;
+            const type = box.querySelector('input[type="radio"]:checked').value;
+            
+            let content = '';
+            let altText = '';
+            
+            if (type === 'text' || type === 'flex') {
+                const textarea = document.getElementById(`textarea-${boxId}`);
+                content = textarea ? textarea.value.trim() : '';
+                
+                if (type === 'flex') {
+                    const altTextInput = document.getElementById(`alttext-${boxId}`);
+                    altText = altTextInput ? altTextInput.value.trim() : 'Flex Message';
+                }
+            } else if (type === 'image') {
+                const input = document.getElementById(`input-${boxId}`);
+                content = input ? input.value.trim() : '';
+            }
+            
+            data.push({
+                type: type,
+                content: content,
+                altText: altText
+            });
+        });
+        
+        return data;
+    }
+
+    // ===================================
+    // PREVIEW MANAGEMENT - แก้ไขส่วนนี้
+    // ===================================
+
+    function updatePreview() {
+        const previewMessages = document.getElementById('previewMessages');
+        const messageBoxes = getMessageBoxesData();
+        
+        if (messageBoxes.length === 0 || messageBoxes.every(box => !box.content)) {
+            previewMessages.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #999;">
+                    <div style="font-size: 3em; margin-bottom: 10px;">💬</div>
+                    <p>เพิ่มข้อความเพื่อดูตัวอย่าง</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        messageBoxes.forEach((box, index) => {
+            if (!box.content) return;
+
+            if (box.type === 'text') {
+                html += `
+                    <div class="message-bubble">
+                        ${box.content.replace(/\n/g, '<br>')}
+                    </div>
+                `;
+            } else if (box.type === 'image') {
+                html += `
+                    <div class="message-bubble" style="padding: 0; overflow: hidden;">
+                        <img src="${box.content}" 
+                             onerror="this.parentElement.innerHTML='<div style=\\'padding: 15px; text-align: center; color: #999;\\'>❌ ไม่สามารถโหลดรูปภาพ</div>'" 
+                             alt="Preview"
+                             style="width: 100%; display: block;">
+                    </div>
+                `;
+            } else if (box.type === 'flex') {
+                try {
+                    const flexJson = JSON.parse(box.content);
+                    html += renderFlexPreview(flexJson, box.altText);
+                } catch (e) {
+                    html += `
+                        <div class="message-bubble" style="background: #fff3cd; color: #856404; border-left: 4px solid #ffc107;">
+                            ⚠️ Flex JSON ไม่ถูกต้อง<br>
+                            <small>${e.message}</small>
+                        </div>
+                    `;
+                }
+            }
+        });
+
+        previewMessages.innerHTML = html;
+    }
+
+    function renderFlexPreview(flexJson, altText) {
+        let previewHtml = '<div class="flex-message-container"><div class="flex-preview-box">';
+        
+        // ถ้ามี hero image
+        if (flexJson.hero && flexJson.hero.type === 'image') {
+            const heroStyle = flexJson.hero.aspectMode === 'cover' ? 'object-fit: cover;' : 'object-fit: contain;';
+            const heroHeight = flexJson.hero.aspectRatio === '20:13' ? '200px' : 'auto';
+            previewHtml += `<img src="${flexJson.hero.url}" alt="Hero Image" style="${heroStyle} width: 100%; height: ${heroHeight}; border-radius: 10px 10px 0 0; display: block;" onerror="this.style.display='none'">`;
+        }
+        
+        // ถ้ามี body
+        if (flexJson.body && flexJson.body.contents) {
+            const bodyBg = flexJson.styles?.body?.backgroundColor || '#FFFFFF';
+            previewHtml += `<div style="padding: 15px; background: ${bodyBg};">`;
+            previewHtml += renderBoxContents(flexJson.body.contents);
+            previewHtml += '</div>';
+        }
+        
+        // ถ้ามี footer
+        if (flexJson.footer && flexJson.footer.contents) {
+            const footerBg = flexJson.styles?.footer?.backgroundColor || '#FFFFFF';
+            const hasSeparator = flexJson.styles?.footer?.separator ? 'border-top: 1px solid #e0e0e0;' : '';
+            previewHtml += `<div style="padding: 12px; background: ${footerBg}; ${hasSeparator}">`;
+            previewHtml += renderBoxContents(flexJson.footer.contents);
+            previewHtml += '</div>';
+        }
+        
+        previewHtml += '</div></div>';
+        return previewHtml;
+    }
+
+    function renderBoxContents(contents) {
+        let html = '';
+        
+        contents.forEach(content => {
+            if (content.type === 'text') {
+                html += renderText(content);
+            } else if (content.type === 'button') {
+                html += renderButton(content);
+            } else if (content.type === 'box') {
+                html += renderBox(content);
+            } else if (content.type === 'separator') {
+                const margin = getMarginValue(content.margin);
+                html += `<hr style="border: none; border-top: 1px solid #e0e0e0; margin: ${margin};">`;
+            }
+        });
+        
+        return html;
+    }
+
+    function renderText(textContent) {
+        const fontSize = {
+            'xxl': '1.5em',
+            'xl': '1.3em',
+            'lg': '1.1em',
+            'md': '1em',
+            'sm': '0.9em',
+            'xs': '0.8em',
+            'xxs': '0.7em'
+        }[textContent.size] || '1em';
+        
+        const fontWeight = textContent.weight === 'bold' ? 'bold' : 'normal';
+        const color = textContent.color || '#000000';
+        const align = textContent.align || 'left';
+        const margin = getMarginValue(textContent.margin);
+        const wrap = textContent.wrap !== false;
+        const flex = textContent.flex !== undefined ? textContent.flex : 1;
+        
+        const style = `
+            font-size: ${fontSize};
+            font-weight: ${fontWeight};
+            color: ${color};
+            text-align: ${align};
+            margin: ${margin};
+            ${wrap ? 'word-wrap: break-word;' : 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'}
+            ${flex === 0 ? 'flex-shrink: 0;' : `flex: ${flex};`}
+        `;
+        
+        return `<div style="${style}">${textContent.text}</div>`;
+    }
+
+    function renderButton(buttonContent) {
+        const bgColor = buttonContent.color || '#17C0EB';
+        const height = buttonContent.height === 'sm' ? '40px' : '50px';
+        
+        let style = '';
+        if (buttonContent.style === 'primary') {
+            style = `
+                background: ${bgColor};
+                color: white;
+                border: none;
+            `;
+        } else if (buttonContent.style === 'secondary') {
+            style = `
+                background: white;
+                color: ${bgColor};
+                border: 1px solid ${bgColor};
+            `;
+        } else {
+            style = `
+                background: transparent;
+                color: ${bgColor};
+                border: none;
+            `;
+        }
+        
+        return `
+            <div style="
+                ${style}
+                padding: 0 16px;
+                height: ${height};
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 4px;
+                font-weight: bold;
+                cursor: pointer;
+                margin-top: 8px;
+            ">
+                ${buttonContent.action?.label || 'Button'}
+            </div>
+        `;
+    }
+
+    function renderBox(boxContent) {
+        const layout = boxContent.layout || 'vertical';
+        const spacing = getSpacingValue(boxContent.spacing);
+        const margin = getMarginValue(boxContent.margin);
+        const padding = boxContent.paddingAll ? `${boxContent.paddingAll}px` : '0';
+        
+        let boxStyle = `
+            display: flex;
+            flex-direction: ${layout === 'vertical' ? 'column' : 'row'};
+            gap: ${spacing};
+            margin: ${margin};
+            padding: ${padding};
+        `;
+        
+        if (layout === 'baseline') {
+            boxStyle += 'align-items: center;';
+        }
+        
+        let html = `<div style="${boxStyle}">`;
+        
+        if (boxContent.contents && boxContent.contents.length > 0) {
+            html += renderBoxContents(boxContent.contents);
+        }
+        
+        html += '</div>';
+        return html;
+    }
+
+    function getMarginValue(margin) {
+        const values = {
+            'xxl': '24px 0',
+            'xl': '20px 0',
+            'lg': '16px 0',
+            'md': '12px 0',
+            'sm': '8px 0',
+            'xs': '4px 0',
+            'xxs': '2px 0',
+            'none': '0'
+        };
+        return values[margin] || '0';
+    }
+
+    function getSpacingValue(spacing) {
+        const values = {
+            'xxl': '24px',
+            'xl': '20px',
+            'lg': '16px',
+            'md': '12px',
+            'sm': '8px',
+            'xs': '4px',
+            'xxs': '2px',
+            'none': '0'
+        };
+        return values[spacing] || '8px';
+    }
+
+    // ===================================
+    // SCHEDULE MANAGEMENT
+    // ===================================
+
+    function selectScheduleType(type) {
+        document.querySelectorAll('.schedule-option').forEach(opt => {
+            opt.classList.remove('active');
+        });
+        
+        const selectedOption = document.querySelector(`.schedule-option input[value="${type}"]`).closest('.schedule-option');
+        selectedOption.classList.add('active');
+        
+        document.querySelector(`input[name="scheduleType"][value="${type}"]`).checked = true;
+        
+        if (type === 'scheduled') {
+            document.getElementById('datetimeSection').style.display = 'block';
+        } else {
+            document.getElementById('datetimeSection').style.display = 'none';
+        }
+    }
+
+    // ===================================
+    // SEND BROADCAST
+    // ===================================
+
+    async function sendBroadcast(mode) {
+        const channelId = document.getElementById('channelSelect').value;
+        
+        if (!channelId) {
+            showAlert('error', 'กรุณาเลือก LINE Channel');
+            return;
+        }
+
+        const messageBoxes = getMessageBoxesData();
+        
+        if (messageBoxes.length === 0) {
+            showAlert('error', 'กรุณาเพิ่มข้อความอย่างน้อย 1 รายการ');
+            return;
+        }
+
+        // Validate message boxes
+        for (let i = 0; i < messageBoxes.length; i++) {
+            const box = messageBoxes[i];
+            if (!box.content || box.content.trim() === '') {
+                showAlert('error', `ข้อความที่ ${i + 1}: กรุณากรอกข้อมูล`);
+                return;
+            }
+            
+            if (box.type === 'image' && !box.content.startsWith('http')) {
+                showAlert('error', `ข้อความที่ ${i + 1}: URL รูปภาพไม่ถูกต้อง`);
+                return;
+            }
+            
+            if (box.type === 'flex') {
+                try {
+                    JSON.parse(box.content);
+                } catch (e) {
+                    showAlert('error', `ข้อความที่ ${i + 1}: Flex JSON ไม่ถูกต้อง`);
+                    return;
+                }
+            }
+        }
+
+        const sendType = document.querySelector('input[name="sendType"]:checked').value;
+        let targetCount = null;
+
+        if (sendType === 'multicast') {
+            const input = document.getElementById('targetFollowersCount');
+            if (!input.value || parseInt(input.value) <= 0) {
+                showAlert('error', 'กรุณาระบุจำนวนผู้รับสำหรับ Multicast');
+                return;
+            }
+            targetCount = parseInt(input.value);
+            if (targetCount > 500) {
+                showAlert('error', 'Multicast สามารถส่งได้สูงสุด 500 คนต่อครั้ง');
+                return;
+            }
+        }
+
+        if (mode === 'schedule') {
+            const scheduleType = document.querySelector('input[name="scheduleType"]:checked').value;
+            
+            if (scheduleType === 'scheduled') {
+                const scheduledDatetime = document.getElementById('scheduledDatetime').value;
+                
+                if (!scheduledDatetime) {
+                    showAlert('error', 'กรุณาเลือกวันและเวลาที่ต้องการส่ง');
+                    return;
+                }
+
+                const scheduledDate = new Date(scheduledDatetime);
+                const now = new Date();
+
+                if (scheduledDate <= now) {
+                    showAlert('error', 'เวลาที่ตั้งต้องอยู่ในอนาคต');
+                    return;
+                }
+
+                return await scheduleBroadcast(channelId, messageBoxes, scheduledDatetime, targetCount, sendType);
+            }
+        }
+
+        return await sendBroadcastNow(channelId, messageBoxes, targetCount, sendType);
+    }
+
+    async function sendBroadcastNow(channelId, messageBoxes, targetCount, sendType) {
+        let confirmMessage;
+        
+        if (sendType === 'multicast') {
+            confirmMessage = `ยืนยันการส่ง Multicast ไปยัง ${targetCount.toLocaleString()} คนทันที?`;
+        } else {
+            confirmMessage = currentFollowersCount > 0
+                ? `ยืนยันการส่ง Broadcast ไปยัง Followers ทั้งหมด (ประมาณ ${currentFollowersCount.toLocaleString()} คน) ทันที?\n\n⚠️ จะใช้โควต้า ${currentFollowersCount} ข้อความจากโควต้า 300/เดือน`
+                : 'ยืนยันการส่ง Broadcast ไปยัง Followers ทั้งหมดทันที?';
+        }
+            
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/broadcast/send-now', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    channelId,
+                    messageBoxes,
+                    estimatedFollowers: targetCount,
+                    sendType: sendType
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('success', result.message);
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showAlert('error', result.message);
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+        }
+    }
+
+    async function scheduleBroadcast(channelId, messageBoxes, scheduledTime, targetCount, sendType) {
+        let confirmMessage;
+        const formattedTime = new Date(scheduledTime).toLocaleString('th-TH');
+        
+        if (sendType === 'multicast') {
+            confirmMessage = `ยืนยันการตั้งเวลาส่ง Multicast ไปยัง ${targetCount.toLocaleString()} คน?\n\nจะส่งเมื่อ: ${formattedTime}`;
+        } else {
+            confirmMessage = currentFollowersCount > 0
+                ? `ยืนยันการตั้งเวลาส่ง Broadcast ไปยัง Followers ทั้งหมด (ประมาณ ${currentFollowersCount.toLocaleString()} คน)?\n\nจะส่งเมื่อ: ${formattedTime}\n\n⚠️ จะใช้โควต้า ${currentFollowersCount} ข้อความจากโควต้า 300/เดือน`
+                : `ยืนยันการตั้งเวลาส่ง Broadcast?\n\nจะส่งเมื่อ: ${formattedTime}`;
+        }
+            
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/broadcast/schedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    channelId,
+                    messageBoxes,
+                    scheduledTime,
+                    estimatedFollowers: targetCount,
+                    sendType: sendType
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('success', result.message);
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showAlert('error', result.message);
+            }
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+        }
+    }
+</script>
+
+<%- include('partials/footer') %>

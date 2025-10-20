@@ -39,6 +39,46 @@
         "flexMessages": true
       },
       "createdAt": "2025-10-13T20:38:02.020Z"
+    },
+    {
+      "id": "channel-1760785684687",
+      "name": "dobby ทดสอบ",
+      "channelAccessToken": "ZYkv6iHXVswHJAhmK78Wbl8DMS4NwzepxX2oJzByov3LERpdHEUZ1zVVQIMCIfytMESatfjg/GGukTmTP3pICOw1jpFM61OkqiRZXBKIObgPnFubRS7ZjMosfol551oHu5DUemL1Tfq1h89/NBSvYQdB04t89/1O/w1cDnyilFU=",
+      "channelSecret": "6b3248a248ae98d73ae09fcc0c053edc",
+      "profilePictureUrl": "",
+      "displayName": "db99 (สำรอง)",
+      "basicId": "@405khvhc",
+      "userId": "U9d51f9589d25b2c1b24995aded73c950",
+      "premiumId": "",
+      "chatMode": "chat",
+      "enabled": true,
+      "features": {
+        "welcome": true,
+        "activities": true,
+        "promotions": true,
+        "flexMessages": true
+      },
+      "createdAt": "2025-10-18T11:08:04.687Z"
+    },
+    {
+      "id": "channel-1760958507894",
+      "name": "ทดสอบ broadcast",
+      "channelAccessToken": "Ur5vQOdY+NjALODBqQeCalLMiNbOQP/KIqqDC6E9Wis1EGVlISFbEsTdW9SCt8IEkO22UHnv2+KryGlkmEPR0984x0UzYEtA2rC7e+T+Fun5gvUlN1qDkkuRce1QEZE908yQ23s2SIE+5zRUOCf09QdB04t89/1O/w1cDnyilFU=",
+      "channelSecret": "323669754b6af592e215e1a6b18ccf7c",
+      "profilePictureUrl": "",
+      "displayName": "ด็อปบี้99 (สำรอง)",
+      "basicId": "@544ljjtw",
+      "userId": "U887eb37881efc8fb3fb479777a95f5ad",
+      "premiumId": "",
+      "chatMode": "chat",
+      "enabled": true,
+      "features": {
+        "welcome": true,
+        "activities": true,
+        "promotions": true,
+        "flexMessages": true
+      },
+      "createdAt": "2025-10-20T11:08:27.894Z"
     }
   ],
   "activities": [
@@ -130,6 +170,30 @@
         "channel-1760387882020"
       ],
       "createdAt": "2025-10-16T23:06:43.512Z"
+    },
+    {
+      "id": "activity-1760960650763",
+      "name": "ทดสอบ flex",
+      "enabled": true,
+      "useCooldown": false,
+      "allowSharedKeywords": false,
+      "messageBoxes": [
+        {
+          "type": "flex",
+          "content": "{\n  \"type\": \"bubble\",\n  \"hero\": {\n    \"type\": \"image\",\n    \"url\": \"https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcXB2eGgwcW5yY3d1OHpjbnhtOXlrcnYxMnBpbjFtY3drNW85bDcwMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/OgevJFXHhVUw68jrb6/giphy.gif\",\n    \"size\": \"full\",\n    \"aspectRatio\": \"20:13\",\n    \"aspectMode\": \"cover\"\n  },\n  \"body\": {\n    \"type\": \"box\",\n    \"layout\": \"vertical\",\n    \"contents\": [\n      {\n        \"type\": \"text\",\n        \"text\": \"W99 เเจกฟรี 100\",\n        \"weight\": \"bold\",\n        \"size\": \"xxl\",\n        \"color\": \"#FF6B00\",\n        \"align\": \"center\"\n      },\n      {\n        \"type\": \"box\",\n        \"layout\": \"vertical\",\n        \"margin\": \"lg\",\n        \"spacing\": \"sm\",\n        \"contents\": [\n          {\n            \"type\": \"box\",\n            \"layout\": \"baseline\",\n            \"spacing\": \"sm\",\n            \"contents\": []\n          },\n          {\n            \"type\": \"box\",\n            \"layout\": \"baseline\",\n            \"spacing\": \"sm\",\n            \"contents\": [\n              {\n                \"type\": \"text\",\n                \"text\": \"✓\",\n                \"size\": \"xl\",\n                \"color\": \"#FF6B00\",\n                \"flex\": 0\n              },\n              {\n                \"type\": \"text\",\n                \"text\": \"ไม่ต้องฝากเงินก่อน\",\n                \"size\": \"md\",\n                \"color\": \"#666666\",\n                \"flex\": 1,\n                \"wrap\": true\n              }\n            ]\n          },\n          {\n            \"type\": \"box\",\n            \"layout\": \"baseline\",\n            \"spacing\": \"sm\",\n            \"contents\": [\n              {\n                \"type\": \"text\",\n                \"text\": \"∞\",\n                \"size\": \"xl\",\n                \"color\": \"#FF6B00\",\n                \"flex\": 0\n              },\n              {\n                \"type\": \"text\",\n                \"text\": \"ไม่จำกัดจำนวนครั้ง\",\n                \"size\": \"md\",\n                \"color\": \"#666666\",\n                \"flex\": 1,\n                \"wrap\": true\n              }\n            ]\n          }\n        ]\n      }\n    ]\n  },\n  \"footer\": {\n    \"type\": \"box\",\n    \"layout\": \"vertical\",\n    \"spacing\": \"sm\",\n    \"contents\": [\n      {\n        \"type\": \"button\",\n        \"style\": \"primary\",\n        \"height\": \"sm\",\n        \"action\": {\n          \"type\": \"message\",\n          \"label\": \"🎉 รับรางวัลฟรี\",\n          \"text\": \"รับเครดิตฟรี 100\"\n        },\n        \"color\": \"#FF6B00\"\n      },\n      {\n        \"type\": \"box\",\n        \"layout\": \"vertical\",\n        \"contents\": [],\n        \"margin\": \"sm\"\n      }\n    ],\n    \"flex\": 0\n  },\n  \"styles\": {\n    \"hero\": {\n      \"backgroundColor\": \"#FFFFFF\"\n    },\n    \"body\": {\n      \"backgroundColor\": \"#FFFFFF\"\n    },\n    \"footer\": {\n      \"backgroundColor\": \"#FFFFFF\",\n      \"separator\": true\n    }\n  }\n}",
+          "altText": "W99 เเจกรางวัลฟรี 100 ไม่ต้องฝากก่อน"
+        }
+      ],
+      "cooldownMessage": "คุณได้รับกิจกรรมไปแล้วค่ะ กรุณารอ {timeLeft} ก่อนขอรับกิจกรรมอีกครั้งนะคะ 😊",
+      "keywords": [
+        "ทดสอบ",
+        "flex"
+      ],
+      "cooldownHours": 2,
+      "channels": [
+        "channel-1760958507894"
+      ],
+      "createdAt": "2025-10-20T11:44:10.763Z"
     }
   ],
   "botSettings": {
