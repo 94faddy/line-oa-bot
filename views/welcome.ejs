@@ -1,100 +1,391 @@
 <%- include('partials/header', {
     title: 'Welcome Message',
     pageIcon: '👋',
-    pageTitle: 'Welcome Message',
-    pageSubtitle: 'จัดการข้อความต้อนรับเพื่อนใหม่',
+    pageTitle: 'Welcome Message Manager',
+    pageSubtitle: 'จัดการข้อความต้อนรับเพื่อนใหม่แบบหลาย Box',
     username: username,
     activePage: 'welcome'
 }) %>
 
 <style>
-    .button-card {
+    .welcome-box-card {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+        position: relative;
+    }
+
+    .welcome-box-card:hover {
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+
+    .welcome-box-card.disabled {
+        opacity: 0.6;
+        background: #f5f5f5;
+    }
+
+    .box-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .box-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .box-status {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.9em;
+        font-weight: bold;
+        color: white;
+    }
+
+    .box-status.enabled {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+
+    .box-status.disabled {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    }
+
+    .box-controls {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .editor-mode-badge {
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: bold;
+        color: white;
+    }
+
+    .editor-mode-badge.template {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .editor-mode-badge.json {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .channel-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 10px;
+    }
+
+    .channel-tag {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.85em;
+    }
+
+    .channel-tag.all {
+        background: #fff3e0;
+        color: #f57c00;
+    }
+
+    /* Enhanced Flex Simulator Styles */
+    .flex-simulator {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 30px;
+        min-height: 700px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .simulator-device {
+        width: 375px;
+        background: #000;
+        border-radius: 40px;
+        padding: 10px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .simulator-screen {
+        background: white;
+        border-radius: 30px;
+        overflow: hidden;
+    }
+
+    .simulator-header {
+        background: #002545;
+        color: white;
+        padding: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .simulator-header::before {
+        content: '';
+        width: 40px;
+        height: 40px;
+        background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iIzAwQzcwMCIgZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bS0yIDEzdi0yaDR2MmgtNHptNC02YzAgMS4xLS45IDItMiAycy0yLS45LTItMiAuOS0yIDItMiAyIC45IDIgMnoiLz48L3N2Zz4=') center/contain no-repeat;
+    }
+
+    .simulator-content {
+        background: #c4d7e5;
+        min-height: 550px;
+        padding: 15px 10px;
+        overflow-y: auto;
+    }
+
+    /* Enhanced Flex Message Rendering */
+    .flex-bubble-wrapper {
+        max-width: 100%;
+        display: flex;
+        justify-content: flex-start;
+        margin-bottom: 10px;
+    }
+
+    .flex-bubble {
+        background: white;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        max-width: 100%;
+        width: 100%;
+        position: relative;
+    }
+
+    .flex-bubble::before {
+        content: '';
+        position: absolute;
+        left: -8px;
+        top: 10px;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 0 10px 10px 0;
+        border-color: transparent white transparent transparent;
+    }
+
+    .flex-hero {
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .flex-hero img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .flex-header {
+        padding: 16px;
+        font-weight: bold;
+    }
+
+    .flex-body {
+        padding: 16px;
+    }
+
+    .flex-footer {
+        padding: 12px 16px;
+        border-top: 1px solid #e9ecef;
+    }
+
+    /* Flex Components */
+    .flex-text {
+        line-height: 1.5;
+        word-wrap: break-word;
+    }
+
+    .flex-button {
+        width: 100%;
+        padding: 10px;
+        margin: 4px 0;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: white;
+        text-align: center;
+        display: block;
+    }
+
+    .flex-button:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    .flex-button:active {
+        transform: translateY(0);
+    }
+
+    .flex-separator {
+        height: 1px;
+        background: #e9ecef;
+        margin: 12px 0;
+    }
+
+    .flex-box {
+        display: flex;
+        gap: 8px;
+    }
+
+    .flex-box.vertical {
+        flex-direction: column;
+    }
+
+    .flex-box.horizontal {
+        flex-direction: row;
+    }
+
+    .flex-box.baseline {
+        align-items: baseline;
+    }
+
+    .flex-spacer {
+        flex: 1;
+    }
+
+    .flex-image {
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .flex-image img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    /* Carousel Support */
+    .flex-carousel {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 10px 0;
+    }
+
+    .flex-carousel .flex-bubble {
+        min-width: 280px;
+        flex-shrink: 0;
+    }
+
+    /* Form Styles */
+    .json-editor-section {
+        background: #f8f9fa;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+
+    .json-editor {
+        width: 100%;
+        min-height: 400px;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 13px;
+        padding: 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        background: white;
+        resize: vertical;
+        line-height: 1.5;
+    }
+
+    .json-editor.valid {
+        border-color: #28a745;
+        background: #f8fff9;
+    }
+
+    .json-editor.invalid {
+        border-color: #dc3545;
+        background: #fff8f8;
+    }
+
+    .template-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+
+    .button-list {
+        margin-top: 15px;
+    }
+
+    .button-item {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .button-item:hover {
+        border-color: #667eea;
+    }
+
+    .channel-selector-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    .channel-selector-item {
         background: white;
         border: 2px solid #e0e0e0;
         border-radius: 10px;
         padding: 15px;
-        margin-bottom: 15px;
+        cursor: pointer;
         transition: all 0.3s;
-        cursor: move;
         position: relative;
     }
 
-    .button-card:hover {
+    .channel-selector-item:hover {
         border-color: #667eea;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
     }
 
-    .button-card.dragging {
-        opacity: 0.5;
-        transform: scale(0.95);
+    .channel-selector-item.selected {
+        background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+        border-color: #667eea;
     }
 
-    .button-card.drag-over {
-        border-color: #28a745;
-        border-style: dashed;
-        background: #f0fff4;
-    }
-
-    .button-card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-    }
-
-    .drag-handle {
-        cursor: grab;
-        padding: 5px 10px;
-        color: #999;
-        font-size: 1.2em;
-        user-select: none;
-    }
-
-    .drag-handle:active {
-        cursor: grabbing;
-    }
-
-    .button-card-title {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex: 1;
-    }
-
-    .button-preview {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        margin: 10px 0;
-    }
-
-    .button-preview .color-box {
-        width: 40px;
-        height: 40px;
-        border-radius: 8px;
-        border: 2px solid #e0e0e0;
-    }
-
-    .color-picker-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .color-picker-wrapper input[type="color"] {
-        width: 60px;
-        height: 40px;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
+    .channel-checkbox {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width: 20px;
+        height: 20px;
         cursor: pointer;
     }
 
-    .color-picker-wrapper input[type="text"] {
-        flex: 1;
-        font-family: 'Courier New', monospace;
+    .channel-info {
+        padding-right: 40px;
     }
 
     .toggle-switch {
@@ -142,28 +433,6 @@
         transform: translateX(30px);
     }
 
-    .preview-container {
-        background: #f8f9fa;
-        border: 2px solid #e0e0e0;
-        border-radius: 15px;
-        padding: 20px;
-        margin-top: 20px;
-        min-height: 400px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .preview-phone {
-        width: 100%;
-        max-width: 400px;
-        background: white;
-        border-radius: 30px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        padding: 20px;
-        border: 8px solid #333;
-    }
-
     .modal {
         display: none;
         position: fixed;
@@ -173,7 +442,6 @@
         width: 100%;
         height: 100%;
         background-color: rgba(0, 0, 0, 0.5);
-        animation: fadeIn 0.3s;
         overflow-y: auto;
     }
 
@@ -183,8 +451,9 @@
         padding: 0;
         border-radius: 15px;
         width: 90%;
-        max-width: 600px;
-        animation: slideDown 0.3s;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow-y: auto;
     }
 
     .modal-header {
@@ -195,12 +464,13 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
     }
 
-    .modal-header h2 {
-        margin: 0;
-        border: none;
-        padding: 0;
+    .modal-body {
+        padding: 30px;
     }
 
     .close {
@@ -218,625 +488,530 @@
         opacity: 0.8;
     }
 
-    .modal-body {
-        padding: 30px;
+    .color-picker-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
-    .order-badge {
-        background: #667eea;
-        color: white;
-        padding: 3px 10px;
+    .color-picker-wrapper input[type="color"] {
+        width: 60px;
+        height: 40px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .validation-message {
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin-top: 10px;
+        display: none;
+    }
+
+    .validation-message.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        display: block;
+    }
+
+    .validation-message.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        display: block;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: #f8f9fa;
         border-radius: 15px;
-        font-size: 0.85em;
-        font-weight: bold;
+        margin: 20px 0;
     }
 
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+    .empty-state .icon {
+        font-size: 4em;
+        margin-bottom: 20px;
+        opacity: 0.5;
     }
 
-    @keyframes slideDown {
-        from {
-            transform: translateY(-50px);
-            opacity: 0;
-        }
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
+    .mode-selector {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .mode-btn {
+        flex: 1;
+        padding: 10px;
+        border: 2px solid #e0e0e0;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .mode-btn.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: #667eea;
+    }
+
+    .json-toolbar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
     }
 </style>
 
-<!-- Stats -->
-<div class="stats">
-    <div class="stat-card">
-        <div class="icon">👋</div>
-        <h3>Welcome Message</h3>
-        <div class="value"><%= settings.enabled ? 'เปิด' : 'ปิด' %></div>
-    </div>
-
-    <div class="stat-card">
-        <div class="icon">🔘</div>
-        <h3>ปุ่มทั้งหมด</h3>
-        <div class="value"><%= totalButtons %></div>
-    </div>
-
-    <div class="stat-card">
-        <div class="icon">✅</div>
-        <h3>ปุ่มที่เปิดใช้งาน</h3>
-        <div class="value"><%= enabledButtons %></div>
-    </div>
-
-    <div class="stat-card">
-        <div class="icon">📱</div>
-        <h3>แสดงเมื่อ Follow</h3>
-        <div class="value"><%= settings.showOnFollow ? 'เปิด' : 'ปิด' %></div>
-    </div>
-</div>
-
-<!-- Welcome Settings Section -->
+<!-- Global Settings -->
 <div class="section">
-    <h2>
-        ⚙️ การตั้งค่า Welcome Message
-        <button class="btn btn-primary" onclick="openSettingsModal()">✏️ แก้ไข</button>
-    </h2>
-
-    <div class="info-box">
-        💡 <strong>สถานะ:</strong> 
-        <%= settings.enabled ? '✅ เปิดใช้งาน' : '❌ ปิดใช้งาน' %>
-        | 
-        <strong>แสดงเมื่อ Follow:</strong> 
-        <%= settings.showOnFollow ? '✅ เปิด' : '❌ ปิด' %>
-    </div>
-
-    <div style="background: white; padding: 20px; border-radius: 10px; margin-top: 20px; border-left: 5px solid <%= settings.backgroundColor %>;">
-        <h3 style="color: <%= settings.backgroundColor %>; margin-bottom: 15px;"><%= settings.title %></h3>
-        <p style="color: #666;"><%= settings.description %></p>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+    <h2>⚙️ การตั้งค่าระบบ Welcome Message</h2>
+    
+    <div style="background: white; padding: 20px; border-radius: 10px;">
+        <div style="display: flex; gap: 30px; align-items: center;">
             <div>
-                <strong>🎨 สีพื้นหลังหัวข้อ:</strong><br>
-                <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                    <div style="width: 40px; height: 40px; background: <%= settings.backgroundColor %>; border-radius: 8px; border: 2px solid #e0e0e0;"></div>
-                    <code><%= settings.backgroundColor %></code>
-                </div>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="globalEnabled" 
+                           <%= settings.enabled ? 'checked' : '' %>
+                           onchange="updateGlobalSettings()" style="width: 20px; height: 20px;">
+                    <span style="font-size: 1.1em;">เปิดใช้งานระบบ Welcome Message</span>
+                </label>
             </div>
-
+            
             <div>
-                <strong>📝 สีข้อความหัวข้อ:</strong><br>
-                <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                    <div style="width: 40px; height: 40px; background: <%= settings.textColor %>; border-radius: 8px; border: 2px solid #e0e0e0;"></div>
-                    <code><%= settings.textColor %></code>
-                </div>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="globalShowOnFollow" 
+                           <%= settings.showOnFollow ? 'checked' : '' %>
+                           onchange="updateGlobalSettings()" style="width: 20px; height: 20px;">
+                    <span style="font-size: 1.1em;">แสดงเมื่อมีคนกด Follow</span>
+                </label>
             </div>
-
-            <div>
-                <strong>🖼️ สีพื้นหลังเนื้อหา:</strong><br>
-                <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                    <div style="width: 40px; height: 40px; background: <%= settings.bodyBackgroundColor || '#ffffff' %>; border-radius: 8px; border: 2px solid #e0e0e0;"></div>
-                    <code><%= settings.bodyBackgroundColor || '#ffffff' %></code>
-                </div>
-            </div>
-
-            <% if (settings.backgroundImageUrl) { %>
-            <div style="grid-column: 1 / -1;">
-                <strong>🖼️ รูปพื้นหลัง:</strong><br>
-                <img src="<%= settings.backgroundImageUrl %>" alt="Background" style="max-width: 100%; height: 200px; object-fit: cover; border-radius: 10px; margin-top: 10px;" onerror="this.style.display='none'">
-            </div>
-            <% } %>
         </div>
     </div>
 </div>
 
-<!-- Buttons Management Section -->
+<!-- Welcome Boxes List -->
 <div class="section">
     <h2>
-        🔘 จัดการปุ่ม Welcome
-        <button class="btn btn-success" onclick="openAddButtonModal()">➕ เพิ่มปุ่ม</button>
+        📦 Welcome Message Boxes
+        <button class="btn btn-success" onclick="createNewBox()">➕ สร้าง Box ใหม่</button>
     </h2>
 
     <div class="info-box" style="background: #e3f2fd; border-left: 4px solid #2196f3;">
-        💡 <strong>เคล็ดลับ:</strong> ลากปุ่มเพื่อเรียงลำดับ (ปุ่มที่อยู่บนจะแสดงก่อน)
+        💡 <strong>คำแนะนำ:</strong> สร้างได้หลาย Box และกำหนด Channel ที่ใช้แยกกันได้ | ระบบจะใช้ Box แรกที่เปิดใช้งานและตรงกับ Channel
     </div>
 
-    <% if (buttons.length === 0) { %>
+    <% if (!welcomeBoxes || welcomeBoxes.length === 0) { %>
         <div class="empty-state">
             <div class="icon">📭</div>
-            <h3>ยังไม่มีปุ่ม</h3>
-            <p>คลิกปุ่ม "เพิ่มปุ่ม" เพื่อเริ่มสร้างปุ่มแรกของคุณ</p>
+            <h3>ยังไม่มี Welcome Box</h3>
+            <p>คลิก "สร้าง Box ใหม่" เพื่อเริ่มต้น</p>
+            <button class="btn btn-success" onclick="createNewBox()">➕ สร้าง Box แรก</button>
         </div>
     <% } else { %>
-        <div id="buttonsContainer">
-            <% buttons.forEach(function(btn, index) { %>
-                <div class="button-card" draggable="true" data-id="<%= btn.id %>" data-order="<%= btn.order || index %>">
-                    <div class="button-card-header">
-                        <div class="button-card-title">
-                            <span class="drag-handle">⋮⋮</span>
-                            <span class="order-badge">#<%= index + 1 %></span>
-                            <h3 style="margin: 0;">🔘 <%= btn.label %></h3>
-                        </div>
+        <% welcomeBoxes.forEach(function(box, index) { %>
+            <div class="welcome-box-card <%= !box.enabled ? 'disabled' : '' %>" data-box-id="<%= box.id %>">
+                <div class="box-header">
+                    <div class="box-title">
+                        <span class="box-status <%= box.enabled ? 'enabled' : 'disabled' %>">
+                            <%= box.enabled ? '✅ เปิดใช้งาน' : '❌ ปิดใช้งาน' %>
+                        </span>
+                        <h3 style="margin: 0;"><%= box.name || 'Unnamed Box' %></h3>
+                        <span class="editor-mode-badge <%= box.editorMode || 'template' %>">
+                            <%= box.editorMode === 'json' ? '{ } JSON' : '🎨 Template' %>
+                        </span>
+                    </div>
+                    
+                    <div class="box-controls">
                         <label class="toggle-switch">
-                            <input type="checkbox" <%= btn.enabled ? 'checked' : '' %> onchange="toggleButton('<%= btn.id %>', this.checked)">
+                            <input type="checkbox" <%= box.enabled ? 'checked' : '' %> 
+                                   onchange="toggleBox('<%= box.id %>', this.checked)">
                             <span class="slider"></span>
                         </label>
-                    </div>
-
-                    <div class="button-preview">
-                        <div class="color-box" style="background: <%= btn.color %>;"></div>
-                        <div>
-                            <strong><%= btn.label %></strong><br>
-                            <small style="color: #666;">
-                                <%= btn.type === 'uri' ? '🔗 ' + btn.uri : '💬 ' + btn.text %>
-                            </small>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <button class="btn btn-warning" onclick="editButton('<%= JSON.stringify(btn).replace(/'/g, "\\'") %>')" style="flex: 1;">
-                            ✏️ แก้ไข
-                        </button>
-                        <button class="btn btn-danger" onclick="deleteButton('<%= btn.id %>')" style="flex: 1;">
-                            🗑️ ลบ
-                        </button>
+                        <button class="btn btn-primary" onclick="editBox('<%= box.id %>')">✏️ แก้ไข</button>
+                        <button class="btn btn-info" onclick="previewBox('<%= box.id %>')">👁️ ดู</button>
+                        <button class="btn btn-danger" onclick="deleteBox('<%= box.id %>')">🗑️ ลบ</button>
                     </div>
                 </div>
-            <% }); %>
+
+                <div class="channel-tags">
+                    <% if (!box.enabledChannels || box.enabledChannels.length === 0) { %>
+                        <span class="channel-tag all">
+                            📢 ใช้กับทุก Channel
+                        </span>
+                    <% } else { %>
+                        <% box.enabledChannels.forEach(function(channelId) { 
+                            const channel = lineChannels.find(c => c.id === channelId);
+                        %>
+                            <span class="channel-tag">
+                                📱 <%= channel ? channel.name : 'Unknown Channel' %>
+                            </span>
+                        <% }); %>
+                    <% } %>
+                </div>
+
+                <% if (box.editorMode === 'template' && box.templateSettings) { %>
+                    <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <strong style="color: <%= box.templateSettings.backgroundColor %>;">
+                            <%= box.templateSettings.title || 'No Title' %>
+                        </strong>
+                        <p style="margin: 5px 0; color: #666; font-size: 0.9em;">
+                            <%= box.templateSettings.description || 'No Description' %>
+                        </p>
+                        <div style="margin-top: 10px;">
+                            🔘 ปุ่ม: <%= (box.templateSettings.buttons || []).filter(b => b.enabled !== false).length %> ปุ่ม
+                        </div>
+                    </div>
+                <% } else if (box.editorMode === 'json') { %>
+                    <div style="margin-top: 15px; padding: 15px; background: #fff3e0; border-radius: 8px;">
+                        <strong>💻 JSON Mode</strong>
+                        <p style="margin: 5px 0; color: #666; font-size: 0.9em;">
+                            <%= box.customFlexJson ? '✅ มี Custom JSON' : '⚠️ ยังไม่มี JSON' %>
+                        </p>
+                    </div>
+                <% } %>
+            </div>
+        <% }); %>
+    <% } %></div>
+
+<!-- Edit Box Modal -->
+<div id="editBoxModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="editBoxTitle">แก้ไข Welcome Box</h2>
+            <button class="close" onclick="closeEditModal()">&times;</button>
         </div>
-    <% } %>
-</div>
+        <div class="modal-body">
+            <input type="hidden" id="currentBoxId">
+            
+            <!-- Box Settings -->
+            <div class="form-group">
+                <label for="boxName">📝 ชื่อ Box</label>
+                <input type="text" id="boxName" placeholder="Welcome Box 1">
+            </div>
 
-<!-- Preview Section -->
-<div class="section">
-    <h2>
-        👁️ ดูตัวอย่าง
-        <button class="btn btn-primary" onclick="refreshPreview()">🔄 รีเฟรช</button>
-    </h2>
+            <!-- Channel Selection -->
+            <div class="form-group">
+                <label>📱 เลือก LINE Channels ที่จะใช้ Box นี้</label>
+                <div class="info-box" style="margin: 10px 0;">
+                    💡 ไม่เลือก = ใช้กับทุก Channel | เลือกบางตัว = ใช้เฉพาะที่เลือก
+                </div>
+                
+                <div class="channel-selector-grid" id="channelSelectorGrid">
+                    <!-- จะถูก render ด้วย JavaScript -->
+                </div>
+            </div>
 
-    <div class="preview-container">
-        <div class="preview-phone" id="previewPhone">
-            <div style="text-align: center; padding: 40px 20px; color: #999;">
-                <div style="font-size: 3em; margin-bottom: 15px;">📱</div>
-                <p>กำลังโหลดตัวอย่าง...</p>
-                <button class="btn btn-primary" onclick="refreshPreview()" style="margin-top: 15px;">โหลดตัวอย่าง</button>
+            <!-- Editor Mode Selection -->
+            <div class="form-group">
+                <label>🎨 เลือกโหมดการสร้าง</label>
+                <div class="mode-selector">
+                    <button class="mode-btn active" data-mode="template" onclick="switchEditorMode('template')">
+                        🎨 Template Builder
+                    </button>
+                    <button class="mode-btn" data-mode="json" onclick="switchEditorMode('json')">
+                        { } JSON Editor
+                    </button>
+                </div>
+            </div>
+
+            <!-- Template Editor Section -->
+            <div id="templateEditorSection" class="template-section">
+                <h3>🎨 Template Settings</h3>
+                
+                <div class="form-group">
+                    <label for="templateTitle">หัวข้อ</label>
+                    <input type="text" id="templateTitle" placeholder="ยินดีต้อนรับ!">
+                </div>
+
+                <div class="form-group">
+                    <label for="templateDescription">คำอธิบาย</label>
+                    <textarea id="templateDescription" rows="3" placeholder="ขอบคุณที่เป็นเพื่อนกับเรา"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>สีพื้นหลังหัวข้อ</label>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="templateBgColor" value="#667eea">
+                        <input type="text" id="templateBgColorText" value="#667eea" placeholder="#667eea">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>สีข้อความหัวข้อ</label>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="templateTextColor" value="#ffffff">
+                        <input type="text" id="templateTextColorText" value="#ffffff" placeholder="#ffffff">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>สีพื้นหลังเนื้อหา</label>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="templateBodyBgColor" value="#ffffff">
+                        <input type="text" id="templateBodyBgColorText" value="#ffffff" placeholder="#ffffff">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="templateBgImage">URL รูปพื้นหลัง (ไม่บังคับ)</label>
+                    <input type="url" id="templateBgImage" placeholder="https://...">
+                </div>
+
+                <!-- Buttons Management -->
+                <div style="margin-top: 30px;">
+                    <h4>
+                        🔘 ปุ่ม
+                        <button class="btn btn-success btn-sm" onclick="addButton()">➕ เพิ่มปุ่ม</button>
+                    </h4>
+                    <div id="buttonsList" class="button-list"></div>
+                </div>
+            </div>
+
+            <!-- JSON Editor Section -->
+            <div id="jsonEditorSection" class="json-editor-section" style="display: none;">
+                <h3>{ } JSON Editor</h3>
+                
+                <div class="json-toolbar">
+                    <button class="btn btn-primary btn-sm" onclick="beautifyJson()">🎨 จัดรูปแบบ</button>
+                    <button class="btn btn-success btn-sm" onclick="validateJson()">✅ ตรวจสอบ</button>
+                    <button class="btn btn-warning btn-sm" onclick="loadJsonTemplate()">📋 โหลดตัวอย่าง</button>
+                    <button class="btn btn-info btn-sm" onclick="openFlexSimulator()">🔗 Flex Simulator</button>
+                    <button class="btn btn-secondary btn-sm" onclick="clearJson()">🗑️ ล้าง</button>
+                </div>
+
+                <textarea id="jsonEditor" class="json-editor" 
+                          placeholder="วาง Flex Message JSON ที่นี่..."></textarea>
+                
+                <div id="jsonValidation" class="validation-message"></div>
+            </div>
+
+            <!-- Save Button -->
+            <div style="margin-top: 30px; display: flex; gap: 10px;">
+                <button class="btn btn-success" onclick="saveBox()" style="flex: 1;">💾 บันทึก</button>
+                <button class="btn btn-secondary" onclick="closeEditModal()" style="flex: 1;">❌ ยกเลิก</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Settings Modal -->
-<div id="settingsModal" class="modal">
+<!-- Preview Modal -->
+<div id="previewModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>⚙️ ตั้งค่า Welcome Message</h2>
-            <button class="close" onclick="closeSettingsModal()">&times;</button>
+            <h2>👁️ ตัวอย่าง Welcome Message</h2>
+            <button class="close" onclick="closePreviewModal()">&times;</button>
         </div>
         <div class="modal-body">
-            <form id="settingsForm">
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="settingsEnabled" <%= settings.enabled ? 'checked' : '' %>>
-                        เปิดใช้งาน Welcome Message
-                    </label>
-                </div>
-
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="settingsShowOnFollow" <%= settings.showOnFollow ? 'checked' : '' %>>
-                        แสดงเมื่อมีคนกด Follow
-                    </label>
-                </div>
-
-                <div class="form-group">
-                    <label for="settingsTitle">📝 ข้อความหัวข้อ</label>
-                    <input type="text" id="settingsTitle" value="<%= settings.title %>" placeholder="ยินดีต้อนรับ!" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="settingsDescription">📄 ข้อความรายละเอียด</label>
-                    <textarea id="settingsDescription" style="min-height: 100px;"><%= settings.description %></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="settingsBackgroundColor">🎨 สีพื้นหลังหัวข้อ</label>
-                    <div class="color-picker-wrapper">
-                        <input type="color" id="settingsBackgroundColor" value="<%= settings.backgroundColor %>">
-                        <input type="text" id="settingsBackgroundColorText" value="<%= settings.backgroundColor %>" placeholder="#667eea">
+            <div class="flex-simulator">
+                <div class="simulator-device">
+                    <div class="simulator-screen">
+                        <div class="simulator-header">
+                            LINE
+                        </div>
+                        <div class="simulator-content">
+                            <div id="flexPreview" class="flex-message-container">
+                                <div style="text-align: center; padding: 40px;">
+                                    <div style="font-size: 3em; color: #999;">📱</div>
+                                    <p style="color: #666;">กำลังโหลดตัวอย่าง...</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <div class="form-group">
-                    <label for="settingsTextColor">📝 สีข้อความหัวข้อ</label>
-                    <div class="color-picker-wrapper">
-                        <input type="color" id="settingsTextColor" value="<%= settings.textColor %>">
-                        <input type="text" id="settingsTextColorText" value="<%= settings.textColor %>" placeholder="#ffffff">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="settingsBodyBackgroundColor">🖼️ สีพื้นหลังเนื้อหา</label>
-                    <div class="color-picker-wrapper">
-                        <input type="color" id="settingsBodyBackgroundColor" value="<%= settings.bodyBackgroundColor || '#ffffff' %>">
-                        <input type="text" id="settingsBodyBackgroundColorText" value="<%= settings.bodyBackgroundColor || '#ffffff' %>" placeholder="#ffffff">
-                    </div>
-                    <small>สีพื้นหลังของส่วนเนื้อหาและปุ่ม</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="settingsBackgroundImage">🖼️ URL รูปพื้นหลัง (ไม่บังคับ)</label>
-                    <input type="url" id="settingsBackgroundImage" value="<%= settings.backgroundImageUrl || '' %>" placeholder="https://...">
-                    <small>ขนาดแนะนำ: 1040x670 พิกเซล (อัตราส่วน 20:13)</small>
-                </div>
-
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button type="submit" class="btn btn-success" style="flex: 1;">💾 บันทึก</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeSettingsModal()" style="flex: 1;">❌ ยกเลิก</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Add/Edit Button Modal -->
-<div id="buttonModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 id="buttonModalTitle">➕ เพิ่มปุ่ม</h2>
-            <button class="close" onclick="closeButtonModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <form id="buttonForm">
-                <input type="hidden" id="buttonId">
-                
-                <div class="form-group">
-                    <label for="buttonType">ประเภทปุ่ม</label>
-                    <select id="buttonType" onchange="toggleButtonFields()">
-                        <option value="uri">เปิด URL</option>
-                        <option value="message">ส่งข้อความ</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="buttonLabel">ข้อความบนปุ่ม</label>
-                    <input type="text" id="buttonLabel" placeholder="🎨 โปรโมชั่น" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="buttonColor">🎨 สีปุ่ม</label>
-                    <div class="color-picker-wrapper">
-                        <input type="color" id="buttonColor" value="#667eea">
-                        <input type="text" id="buttonColorText" value="#667eea" placeholder="#667eea">
-                    </div>
-                </div>
-
-                <div class="form-group" id="uriField">
-                    <label for="buttonUri">URL ลิงก์</label>
-                    <input type="url" id="buttonUri" placeholder="https://m.w99.in/promotions">
-                </div>
-
-                <div class="form-group hidden" id="textField">
-                    <label for="buttonText">ข้อความที่จะส่ง</label>
-                    <input type="text" id="buttonText" placeholder="ฟรี">
-                </div>
-
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button type="submit" class="btn btn-success" style="flex: 1;">💾 บันทึก</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeButtonModal()" style="flex: 1;">❌ ยกเลิก</button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    let isEditButton = false;
-    let draggedElement = null;
+    let currentEditingBox = null;
+    let selectedChannels = [];
+    let currentButtons = [];
+    let welcomeBoxesData = <%- JSON.stringify(welcomeBoxes || []) %>;
+    let lineChannelsData = <%- JSON.stringify(lineChannels || []) %>;
 
-    // ========== Drag and Drop System ==========
-    function initDragAndDrop() {
-        const container = document.getElementById('buttonsContainer');
-        if (!container) return;
-
-        const cards = container.querySelectorAll('.button-card');
-        
-        cards.forEach(card => {
-            card.addEventListener('dragstart', handleDragStart);
-            card.addEventListener('dragend', handleDragEnd);
-            card.addEventListener('dragover', handleDragOver);
-            card.addEventListener('drop', handleDrop);
-            card.addEventListener('dragenter', handleDragEnter);
-            card.addEventListener('dragleave', handleDragLeave);
-        });
-    }
-
-    function handleDragStart(e) {
-        draggedElement = this;
-        this.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/html', this.innerHTML);
-    }
-
-    function handleDragEnd(e) {
-        this.classList.remove('dragging');
-        
-        // ลบ class drag-over จากทุก card
-        document.querySelectorAll('.button-card').forEach(card => {
-            card.classList.remove('drag-over');
-        });
-        
-        draggedElement = null;
-    }
-
-    function handleDragOver(e) {
-        if (e.preventDefault) {
-            e.preventDefault();
-        }
-        e.dataTransfer.dropEffect = 'move';
-        return false;
-    }
-
-    function handleDragEnter(e) {
-        if (this !== draggedElement) {
-            this.classList.add('drag-over');
-        }
-    }
-
-    function handleDragLeave(e) {
-        this.classList.remove('drag-over');
-    }
-
-    function handleDrop(e) {
-        if (e.stopPropagation) {
-            e.stopPropagation();
-        }
-        
-        this.classList.remove('drag-over');
-        
-        if (draggedElement !== this) {
-            const container = document.getElementById('buttonsContainer');
-            const allCards = [...container.querySelectorAll('.button-card')];
-            const draggedIndex = allCards.indexOf(draggedElement);
-            const targetIndex = allCards.indexOf(this);
-            
-            if (draggedIndex < targetIndex) {
-                this.parentNode.insertBefore(draggedElement, this.nextSibling);
-            } else {
-                this.parentNode.insertBefore(draggedElement, this);
-            }
-            
-            // บันทึกลำดับใหม่
-            saveNewOrder();
-        }
-        
-        return false;
-    }
-
-    async function saveNewOrder() {
-        const container = document.getElementById('buttonsContainer');
-        const cards = container.querySelectorAll('.button-card');
-        const buttonIds = Array.from(cards).map(card => card.getAttribute('data-id'));
-        
-        try {
-            const response = await fetch('/welcome/reorder-buttons', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ buttonIds })
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                // อัพเดทหมายเลขลำดับ
-                cards.forEach((card, index) => {
-                    const badge = card.querySelector('.order-badge');
-                    if (badge) {
-                        badge.textContent = `#${index + 1}`;
-                    }
-                });
-                
-                showAlert('success', '✅ จัดเรียงลำดับสำเร็จ');
-                setTimeout(() => refreshPreview(), 500);
-            } else {
-                showAlert('error', result.message);
-                location.reload();
-            }
-        } catch (error) {
-            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
-            location.reload();
-        }
-    }
-
-    // ========== Color Picker Sync ==========
-    document.getElementById('settingsBackgroundColor')?.addEventListener('input', function() {
-        document.getElementById('settingsBackgroundColorText').value = this.value;
-    });
-
-    document.getElementById('settingsBackgroundColorText')?.addEventListener('input', function() {
-        document.getElementById('settingsBackgroundColor').value = this.value;
-    });
-
-    document.getElementById('settingsTextColor')?.addEventListener('input', function() {
-        document.getElementById('settingsTextColorText').value = this.value;
-    });
-
-    document.getElementById('settingsTextColorText')?.addEventListener('input', function() {
-        document.getElementById('settingsTextColor').value = this.value;
-    });
-
-    document.getElementById('settingsBodyBackgroundColor')?.addEventListener('input', function() {
-        document.getElementById('settingsBodyBackgroundColorText').value = this.value;
-    });
-
-    document.getElementById('settingsBodyBackgroundColorText')?.addEventListener('input', function() {
-        document.getElementById('settingsBodyBackgroundColor').value = this.value;
-    });
-
-    document.getElementById('buttonColor')?.addEventListener('input', function() {
-        document.getElementById('buttonColorText').value = this.value;
-    });
-
-    document.getElementById('buttonColorText')?.addEventListener('input', function() {
-        document.getElementById('buttonColor').value = this.value;
-    });
-
-    // ========== Settings Form ==========
-    document.getElementById('settingsForm')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const formData = {
-            enabled: document.getElementById('settingsEnabled').checked,
-            showOnFollow: document.getElementById('settingsShowOnFollow').checked,
-            title: document.getElementById('settingsTitle').value,
-            description: document.getElementById('settingsDescription').value,
-            backgroundColor: document.getElementById('settingsBackgroundColorText').value,
-            textColor: document.getElementById('settingsTextColorText').value,
-            bodyBackgroundColor: document.getElementById('settingsBodyBackgroundColorText').value,
-            backgroundImageUrl: document.getElementById('settingsBackgroundImage').value
-        };
+    // ==================== Global Settings ====================
+    async function updateGlobalSettings() {
+        const enabled = document.getElementById('globalEnabled').checked;
+        const showOnFollow = document.getElementById('globalShowOnFollow').checked;
 
         try {
             const response = await fetch('/welcome/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({ enabled, showOnFollow })
             });
 
             const result = await response.json();
+            showAlert(result.success ? 'success' : 'error', result.message);
+        } catch (error) {
+            showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
+        }
+    }
 
+    // ==================== Box Management ====================
+    async function createNewBox() {
+        const name = prompt('ชื่อ Welcome Box:', `Welcome Box ${(welcomeBoxesData.length || 0) + 1}`);
+        if (!name) return;
+
+        try {
+            const response = await fetch('/welcome/create-box', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+
+            const result = await response.json();
+            
             if (result.success) {
                 showAlert('success', result.message);
-                setTimeout(() => location.reload(), 1500);
+                setTimeout(() => location.reload(), 1000);
             } else {
                 showAlert('error', result.message);
             }
         } catch (error) {
             showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
         }
-    });
+    }
 
-    // ========== Button Form ==========
-    document.getElementById('buttonForm')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
+    function editBox(boxId) {
+        const box = welcomeBoxesData.find(b => b.id === boxId);
+        if (!box) return;
+
+        currentEditingBox = box;
+        document.getElementById('currentBoxId').value = boxId;
+        document.getElementById('boxName').value = box.name || '';
+
+        // Set selected channels
+        selectedChannels = Array.isArray(box.enabledChannels) ? [...box.enabledChannels] : [];
+        console.log('Loading channels for box:', boxId, selectedChannels);
         
-        const formData = {
-            id: document.getElementById('buttonId').value,
-            type: document.getElementById('buttonType').value,
-            label: document.getElementById('buttonLabel').value,
-            color: document.getElementById('buttonColorText').value,
-            enabled: true
+        // Render channel selector
+        renderChannelSelector();
+
+        // Set editor mode
+        const mode = box.editorMode || 'template';
+        switchEditorMode(mode);
+
+        // Load template settings
+        if (box.templateSettings) {
+            document.getElementById('templateTitle').value = box.templateSettings.title || '';
+            document.getElementById('templateDescription').value = box.templateSettings.description || '';
+            document.getElementById('templateBgColor').value = box.templateSettings.backgroundColor || '#667eea';
+            document.getElementById('templateBgColorText').value = box.templateSettings.backgroundColor || '#667eea';
+            document.getElementById('templateTextColor').value = box.templateSettings.textColor || '#ffffff';
+            document.getElementById('templateTextColorText').value = box.templateSettings.textColor || '#ffffff';
+            document.getElementById('templateBodyBgColor').value = box.templateSettings.bodyBackgroundColor || '#ffffff';
+            document.getElementById('templateBodyBgColorText').value = box.templateSettings.bodyBackgroundColor || '#ffffff';
+            document.getElementById('templateBgImage').value = box.templateSettings.backgroundImageUrl || '';
+            
+            currentButtons = box.templateSettings.buttons || [];
+            renderButtons();
+        }
+
+        // Load JSON if exists
+        if (box.customFlexJson) {
+            document.getElementById('jsonEditor').value = 
+                typeof box.customFlexJson === 'string' ? box.customFlexJson : JSON.stringify(box.customFlexJson, null, 2);
+        }
+
+        document.getElementById('editBoxModal').style.display = 'block';
+    }
+
+    async function saveBox() {
+        const boxId = document.getElementById('currentBoxId').value;
+        const mode = document.querySelector('.mode-btn.active').dataset.mode;
+
+        const updates = {
+            boxId: boxId,
+            name: document.getElementById('boxName').value,
+            editorMode: mode,
+            enabledChannels: selectedChannels
         };
 
-        if (formData.type === 'uri') {
-            formData.uri = document.getElementById('buttonUri').value;
-        } else {
-            formData.text = document.getElementById('buttonText').value;
+        console.log('Saving box with channels:', selectedChannels);
+
+        if (mode === 'template') {
+            updates.templateSettings = {
+                title: document.getElementById('templateTitle').value,
+                description: document.getElementById('templateDescription').value,
+                backgroundColor: document.getElementById('templateBgColorText').value,
+                textColor: document.getElementById('templateTextColorText').value,
+                bodyBackgroundColor: document.getElementById('templateBodyBgColorText').value,
+                backgroundImageUrl: document.getElementById('templateBgImage').value,
+                buttons: currentButtons
+            };
+        } else if (mode === 'json') {
+            updates.customFlexJson = document.getElementById('jsonEditor').value;
         }
 
-        const url = isEditButton ? '/welcome/update-button' : '/welcome/add-button';
-
         try {
-            const response = await fetch(url, {
+            const response = await fetch('/welcome/update-box', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(updates)
             });
 
             const result = await response.json();
-
+            
             if (result.success) {
                 showAlert('success', result.message);
-                setTimeout(() => location.reload(), 1500);
+                setTimeout(() => location.reload(), 1000);
             } else {
                 showAlert('error', result.message);
             }
         } catch (error) {
             showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
         }
-    });
-
-    // ========== Toggle Button Fields ==========
-    function toggleButtonFields() {
-        const type = document.getElementById('buttonType').value;
-        const uriField = document.getElementById('uriField');
-        const textField = document.getElementById('textField');
-        
-        if (type === 'uri') {
-            uriField.classList.remove('hidden');
-            textField.classList.add('hidden');
-        } else {
-            uriField.classList.add('hidden');
-            textField.classList.remove('hidden');
-        }
     }
 
-    // ========== Button Management ==========
-    function openAddButtonModal() {
-        isEditButton = false;
-        document.getElementById('buttonModalTitle').textContent = '➕ เพิ่มปุ่ม';
-        document.getElementById('buttonForm').reset();
-        document.getElementById('buttonId').value = '';
-        document.getElementById('buttonColorText').value = '#667eea';
-        document.getElementById('buttonColor').value = '#667eea';
-        toggleButtonFields();
-        document.getElementById('buttonModal').style.display = 'block';
-    }
-
-    function editButton(btnJson) {
-        isEditButton = true;
-        const btn = JSON.parse(btnJson.replace(/\\'/g, "'"));
-        document.getElementById('buttonModalTitle').textContent = '✏️ แก้ไขปุ่ม';
-        document.getElementById('buttonId').value = btn.id;
-        document.getElementById('buttonType').value = btn.type;
-        document.getElementById('buttonLabel').value = btn.label;
-        document.getElementById('buttonColorText').value = btn.color || '#667eea';
-        document.getElementById('buttonColor').value = btn.color || '#667eea';
-        
-        if (btn.type === 'uri') {
-            document.getElementById('buttonUri').value = btn.uri;
-        } else {
-            document.getElementById('buttonText').value = btn.text;
-        }
-        
-        toggleButtonFields();
-        document.getElementById('buttonModal').style.display = 'block';
-    }
-
-    async function toggleButton(id, enabled) {
-        const btn = <%- JSON.stringify(buttons) %>.find(b => b.id === id);
-        
+    async function toggleBox(boxId, enabled) {
         try {
-            const response = await fetch('/welcome/update-button', {
+            const response = await fetch('/welcome/update-box', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...btn, enabled })
+                body: JSON.stringify({ boxId, enabled })
             });
 
             const result = await response.json();
             showAlert(result.success ? 'success' : 'error', result.message);
             
             if (result.success) {
-                setTimeout(() => refreshPreview(), 500);
+                const card = document.querySelector(`[data-box-id="${boxId}"]`);
+                card.classList.toggle('disabled', !enabled);
+                
+                // Update status badge
+                const statusBadge = card.querySelector('.box-status');
+                if (statusBadge) {
+                    statusBadge.textContent = enabled ? '✅ เปิดใช้งาน' : '❌ ปิดใช้งาน';
+                    statusBadge.className = 'box-status ' + (enabled ? 'enabled' : 'disabled');
+                }
             }
         } catch (error) {
             showAlert('error', 'เกิดข้อผิดพลาด: ' + error.message);
         }
     }
 
-    async function deleteButton(id) {
-        if (!confirm('ลบปุ่มนี้?')) return;
-        
+    async function deleteBox(boxId) {
+        if (!confirm('ลบ Welcome Box นี้?')) return;
+
         try {
-            const response = await fetch('/welcome/delete-button', {
+            const response = await fetch('/welcome/delete-box', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id })
+                body: JSON.stringify({ boxId })
             });
 
             const result = await response.json();
-
+            
             if (result.success) {
                 showAlert('success', result.message);
-                setTimeout(() => location.reload(), 1500);
+                setTimeout(() => location.reload(), 1000);
             } else {
                 showAlert('error', result.message);
             }
@@ -845,90 +1020,499 @@
         }
     }
 
-    // ========== Preview ==========
-    async function refreshPreview() {
-        const previewPhone = document.getElementById('previewPhone');
-        previewPhone.innerHTML = '<div style="text-align: center; padding: 40px 20px; color: #999;"><div style="font-size: 3em;">⏳</div><p>กำลังโหลด...</p></div>';
+    // ==================== Channel Selection ====================
+    function renderChannelSelector() {
+        const container = document.getElementById('channelSelectorGrid');
+        container.innerHTML = '';
+        
+        lineChannelsData.forEach(channel => {
+            const isSelected = selectedChannels.includes(channel.id);
+            
+            const item = document.createElement('div');
+            item.className = 'channel-selector-item' + (isSelected ? ' selected' : '');
+            item.dataset.channelId = channel.id;
+            
+            item.innerHTML = `
+                <input type="checkbox" 
+                       class="channel-checkbox"
+                       id="modal_channel_${channel.id}" 
+                       ${isSelected ? 'checked' : ''}
+                       onchange="toggleChannelSelection('${channel.id}', this.checked)"
+                       onclick="event.stopPropagation()">
+                <div class="channel-info" onclick="toggleChannelSelection('${channel.id}')">
+                    <strong>${channel.name}</strong>
+                    <div style="margin-top: 5px; font-size: 0.9em; color: #666;">
+                        ${channel.basicId || 'No ID'}
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(item);
+        });
+    }
 
-        try {
-            const response = await fetch('/welcome/preview');
-            const result = await response.json();
+    function toggleChannelSelection(channelId, checked) {
+        const item = document.querySelector(`[data-channel-id="${channelId}"]`);
+        const checkbox = document.getElementById('modal_channel_' + channelId);
+        
+        if (checked === undefined) {
+            checked = !selectedChannels.includes(channelId);
+        }
+        
+        if (checked && !selectedChannels.includes(channelId)) {
+            selectedChannels.push(channelId);
+            checkbox.checked = true;
+            item.classList.add('selected');
+        } else if (!checked && selectedChannels.includes(channelId)) {
+            selectedChannels = selectedChannels.filter(id => id !== channelId);
+            checkbox.checked = false;
+            item.classList.remove('selected');
+        }
+        
+        console.log('Updated selectedChannels:', selectedChannels);
+    }
 
-            if (result.success && result.flex) {
-                const flex = result.flex;
-                let html = '';
+    // ==================== Editor Mode ====================
+    function switchEditorMode(mode) {
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
 
-                // Header
-                if (flex.header) {
-                    const headerBg = flex.header.backgroundColor || '#667eea';
-                    const textColor = flex.header.contents[0]?.color || '#ffffff';
-                    html += `<div style="background: ${headerBg}; color: ${textColor}; padding: 20px; border-radius: 15px 15px 0 0; text-align: center;">`;
-                    html += `<h2 style="margin: 0; font-size: 1.3em;">${flex.header.contents[0]?.text || 'Welcome'}</h2>`;
-                    html += `</div>`;
-                }
+        document.getElementById('templateEditorSection').style.display = mode === 'template' ? 'block' : 'none';
+        document.getElementById('jsonEditorSection').style.display = mode === 'json' ? 'block' : 'none';
+    }
 
-                // Hero Image
-                if (flex.hero) {
-                    html += `<img src="${flex.hero.url}" style="width: 100%; height: 150px; object-fit: cover;" onerror="this.style.display='none'">`;
-                }
+    // ==================== Template Buttons ====================
+    function renderButtons() {
+        const container = document.getElementById('buttonsList');
+        container.innerHTML = '';
 
-                // Body
-                if (flex.body) {
-                    const bodyBg = flex.body.backgroundColor || '#ffffff';
-                    html += `<div style="padding: 20px; background: ${bodyBg}; border-radius: 0 0 15px 15px;">`;
-                    
-                    // Description
-                    const desc = flex.body.contents.find(c => c.type === 'text');
-                    if (desc) {
-                        html += `<p style="text-align: center; color: #666; margin-bottom: 20px;">${desc.text}</p>`;
-                    }
+        currentButtons.forEach((btn, index) => {
+            const item = document.createElement('div');
+            item.className = 'button-item';
+            item.innerHTML = `
+                <div>
+                    <strong>${btn.label}</strong>
+                    <small style="margin-left: 10px; color: #666;">
+                        ${btn.type === 'uri' ? '🔗 ' + btn.uri : '💬 ' + btn.text}
+                    </small>
+                </div>
+                <div>
+                    <button class="btn btn-warning btn-sm" onclick="editButton(${index})">✏️</button>
+                    <button class="btn btn-danger btn-sm" onclick="removeButton(${index})">🗑️</button>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+    }
 
-                    // Buttons
-                    const buttonBox = flex.body.contents.find(c => c.type === 'box' && c.contents[0]?.type === 'button');
-                    if (buttonBox) {
-                        buttonBox.contents.forEach(btn => {
-                            const color = btn.color || '#667eea';
-                            const label = btn.action?.label || 'Button';
-                            html += `<button style="width: 100%; padding: 12px; margin: 8px 0; background: ${color}; color: white; border: none; border-radius: 8px; font-size: 1em; cursor: pointer;">${label}</button>`;
-                        });
-                    }
+    function addButton() {
+        const label = prompt('ข้อความบนปุ่ม:');
+        if (!label) return;
 
-                    html += `</div>`;
-                }
+        const type = confirm('ปุ่มประเภท Link? (Cancel = ส่งข้อความ)') ? 'uri' : 'message';
+        
+        let value;
+        if (type === 'uri') {
+            value = prompt('URL:');
+            if (!value) return;
+        } else {
+            value = prompt('ข้อความที่จะส่ง:');
+            if (!value) return;
+        }
 
-                previewPhone.innerHTML = html;
-            } else {
-                previewPhone.innerHTML = '<div style="text-align: center; padding: 40px 20px; color: #999;"><div style="font-size: 3em;">😕</div><p>' + (result.message || 'ไม่สามารถโหลดตัวอย่างได้') + '</p></div>';
-            }
-        } catch (error) {
-            previewPhone.innerHTML = '<div style="text-align: center; padding: 40px 20px; color: #999;"><div style="font-size: 3em;">❌</div><p>เกิดข้อผิดพลาด</p></div>';
+        const newButton = {
+            id: 'btn-' + Date.now(),
+            type: type,
+            label: label,
+            enabled: true,
+            color: '#667eea',
+            order: currentButtons.length
+        };
+
+        if (type === 'uri') {
+            newButton.uri = value;
+        } else {
+            newButton.text = value;
+        }
+
+        currentButtons.push(newButton);
+        renderButtons();
+    }
+
+    function editButton(index) {
+        const btn = currentButtons[index];
+        const label = prompt('ข้อความบนปุ่ม:', btn.label);
+        if (label) btn.label = label;
+        
+        if (btn.type === 'uri') {
+            const uri = prompt('URL:', btn.uri);
+            if (uri) btn.uri = uri;
+        } else {
+            const text = prompt('ข้อความที่จะส่ง:', btn.text);
+            if (text) btn.text = text;
+        }
+        
+        renderButtons();
+    }
+
+    function removeButton(index) {
+        if (confirm('ลบปุ่มนี้?')) {
+            currentButtons.splice(index, 1);
+            renderButtons();
         }
     }
 
-    // ========== Modal Functions ==========
-    function openSettingsModal() {
-        document.getElementById('settingsModal').style.display = 'block';
+    // ==================== JSON Editor ====================
+    function beautifyJson() {
+        const editor = document.getElementById('jsonEditor');
+        try {
+            const json = JSON.parse(editor.value);
+            editor.value = JSON.stringify(json, null, 2);
+            editor.classList.remove('invalid');
+            editor.classList.add('valid');
+            showJsonValidation('success', 'JSON ถูกต้อง');
+        } catch (e) {
+            showJsonValidation('error', 'JSON ไม่ถูกต้อง: ' + e.message);
+            editor.classList.remove('valid');
+            editor.classList.add('invalid');
+        }
     }
 
-    function closeSettingsModal() {
-        document.getElementById('settingsModal').style.display = 'none';
+    async function validateJson() {
+        const json = document.getElementById('jsonEditor').value;
+
+        try {
+            const response = await fetch('/welcome/validate-json', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ json })
+            });
+
+            const result = await response.json();
+            showJsonValidation(result.success ? 'success' : 'error', result.message);
+            
+            const editor = document.getElementById('jsonEditor');
+            editor.classList.toggle('valid', result.success);
+            editor.classList.toggle('invalid', !result.success);
+        } catch (error) {
+            showJsonValidation('error', 'เกิดข้อผิดพลาด: ' + error.message);
+        }
     }
 
-    function closeButtonModal() {
-        document.getElementById('buttonModal').style.display = 'none';
+    function showJsonValidation(type, message) {
+        const div = document.getElementById('jsonValidation');
+        div.className = 'validation-message ' + type;
+        div.textContent = message;
+        div.style.display = 'block';
     }
+
+    function loadJsonTemplate() {
+        const template = {
+            "type": "bubble",
+            "hero": {
+                "type": "image",
+                "url": "https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png",
+                "size": "full",
+                "aspectRatio": "20:13",
+                "aspectMode": "cover"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "ยินดีต้อนรับ!",
+                        "weight": "bold",
+                        "size": "xxl"
+                    },
+                    {
+                        "type": "text",
+                        "text": "ขอบคุณที่เป็นเพื่อนกับเรา",
+                        "size": "sm",
+                        "color": "#999999",
+                        "margin": "md"
+                    }
+                ]
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": [
+                    {
+                        "type": "button",
+                        "style": "primary",
+                        "height": "sm",
+                        "action": {
+                            "type": "uri",
+                            "label": "เริ่มต้นใช้งาน",
+                            "uri": "https://linecorp.com"
+                        }
+                    }
+                ]
+            }
+        };
+
+        document.getElementById('jsonEditor').value = JSON.stringify(template, null, 2);
+        beautifyJson();
+    }
+
+    function clearJson() {
+        if (confirm('ล้าง JSON ทั้งหมด?')) {
+            document.getElementById('jsonEditor').value = '';
+            document.getElementById('jsonValidation').style.display = 'none';
+        }
+    }
+
+    function openFlexSimulator() {
+        window.open('https://developers.line.biz/flex-simulator/', '_blank');
+    }
+
+    // ==================== Enhanced Preview Renderer ====================
+    async function previewBox(boxId) {
+        document.getElementById('previewModal').style.display = 'block';
+        
+        const previewContainer = document.getElementById('flexPreview');
+        previewContainer.innerHTML = '<div style="text-align: center; padding: 40px;"><div style="font-size: 3em; color: #999;">⏳</div><p style="color: #666;">กำลังโหลด...</p></div>';
+
+        try {
+            const response = await fetch('/welcome/preview/' + boxId);
+            const result = await response.json();
+
+            if (result.success && result.flex) {
+                renderEnhancedFlexMessage(result.flex);
+            } else {
+                previewContainer.innerHTML = '<div style="text-align: center; padding: 40px;"><div style="font-size: 3em; color: #999;">😕</div><p style="color: #666;">' + (result.message || 'ไม่สามารถโหลดตัวอย่างได้') + '</p></div>';
+            }
+        } catch (error) {
+            previewContainer.innerHTML = '<div style="text-align: center; padding: 40px;"><div style="font-size: 3em; color: #999;">❌</div><p style="color: #666;">เกิดข้อผิดพลาด</p></div>';
+        }
+    }
+
+    function renderEnhancedFlexMessage(flex) {
+        const container = document.getElementById('flexPreview');
+        
+        // Check if carousel
+        if (flex.type === 'carousel') {
+            container.innerHTML = '<div class="flex-carousel">' + 
+                flex.contents.map(bubble => renderFlexBubble(bubble)).join('') + 
+                '</div>';
+        } else {
+            container.innerHTML = '<div class="flex-bubble-wrapper">' + renderFlexBubble(flex) + '</div>';
+        }
+    }
+
+    function renderFlexBubble(bubble) {
+        let html = '<div class="flex-bubble">';
+
+        // Render Hero
+        if (bubble.hero) {
+            html += renderFlexComponent(bubble.hero, 'hero');
+        }
+
+        // Render Header
+        if (bubble.header) {
+            const bgColor = bubble.header.backgroundColor || '#ffffff';
+            html += `<div class="flex-header" style="background: ${bgColor};">`;
+            html += renderFlexBox(bubble.header);
+            html += '</div>';
+        }
+
+        // Render Body
+        if (bubble.body) {
+            const bgColor = bubble.body.backgroundColor || '#ffffff';
+            html += `<div class="flex-body" style="background: ${bgColor};">`;
+            html += renderFlexBox(bubble.body);
+            html += '</div>';
+        }
+
+        // Render Footer
+        if (bubble.footer) {
+            const bgColor = bubble.footer.backgroundColor || '#ffffff';
+            html += `<div class="flex-footer" style="background: ${bgColor};">`;
+            html += renderFlexBox(bubble.footer);
+            html += '</div>';
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    function renderFlexBox(box) {
+        if (!box.contents) return '';
+        
+        const layout = box.layout || 'vertical';
+        let html = `<div class="flex-box ${layout}">`;
+        
+        box.contents.forEach(content => {
+            html += renderFlexComponent(content);
+        });
+        
+        html += '</div>';
+        return html;
+    }
+
+    function renderFlexComponent(component, context) {
+        if (!component) return '';
+        
+        switch (component.type) {
+            case 'text':
+                return renderFlexText(component);
+            case 'button':
+                return renderFlexButton(component);
+            case 'separator':
+                return '<div class="flex-separator"></div>';
+            case 'spacer':
+                return '<div class="flex-spacer"></div>';
+            case 'image':
+                return renderFlexImage(component, context);
+            case 'box':
+                return renderFlexBox(component);
+            case 'filler':
+                return '<div style="flex-grow: 1;"></div>';
+            default:
+                return '';
+        }
+    }
+
+    function renderFlexText(text) {
+        const size = getFontSize(text.size);
+        const color = text.color || '#000000';
+        const weight = text.weight || 'normal';
+        const align = text.align || 'left';
+        const wrap = text.wrap !== false;
+        const margin = text.margin ? getMargin(text.margin) : '0';
+        
+        const style = `
+            font-size: ${size};
+            color: ${color};
+            font-weight: ${weight};
+            text-align: ${align};
+            margin: ${margin};
+            ${wrap ? 'word-wrap: break-word;' : 'white-space: nowrap;'}
+            ${text.decoration ? `text-decoration: ${text.decoration};` : ''}
+        `;
+        
+        return `<div class="flex-text" style="${style}">${text.text || ''}</div>`;
+    }
+
+    function renderFlexButton(button) {
+        if (!button.action) return '';
+        
+        const color = button.color || '#667eea';
+        const height = button.height || 'md';
+        const style = button.style || 'primary';
+        
+        let bgColor = color;
+        let textColor = '#ffffff';
+        
+        if (style === 'secondary') {
+            bgColor = '#ffffff';
+            textColor = color;
+        }
+        
+        const heightPx = height === 'sm' ? '32px' : '40px';
+        
+        return `<button class="flex-button" style="background: ${bgColor}; color: ${textColor}; height: ${heightPx};">
+            ${button.action.label || 'Button'}
+        </button>`;
+    }
+
+    function renderFlexImage(image, context) {
+        const url = image.url || 'https://via.placeholder.com/150';
+        const size = image.size || 'full';
+        const aspectRatio = image.aspectRatio || '1:1';
+        const aspectMode = image.aspectMode || 'cover';
+        
+        let style = '';
+        if (context === 'hero') {
+            style = 'width: 100%; height: auto;';
+        } else {
+            const width = getSizeValue(size);
+            style = `width: ${width}; height: auto;`;
+        }
+        
+        return `<div class="flex-image" style="${style}">
+            <img src="${url}" style="object-fit: ${aspectMode};" onerror="this.src='https://via.placeholder.com/400x200?text=Image'">
+        </div>`;
+    }
+
+    function getFontSize(size) {
+        const sizes = {
+            xxs: '10px',
+            xs: '12px',
+            sm: '14px',
+            md: '16px',
+            lg: '20px',
+            xl: '24px',
+            xxl: '28px',
+            '3xl': '32px',
+            '4xl': '36px',
+            '5xl': '40px'
+        };
+        return sizes[size] || '16px';
+    }
+
+    function getMargin(margin) {
+        const margins = {
+            none: '0',
+            xs: '2px',
+            sm: '4px',
+            md: '8px',
+            lg: '12px',
+            xl: '16px',
+            xxl: '20px'
+        };
+        return margins[margin] || '0';
+    }
+
+    function getSizeValue(size) {
+        const sizes = {
+            xxs: '40px',
+            xs: '60px',
+            sm: '80px',
+            md: '100px',
+            lg: '120px',
+            xl: '150px',
+            xxl: '200px',
+            '3xl': '240px',
+            '4xl': '280px',
+            '5xl': '320px',
+            full: '100%'
+        };
+        return sizes[size] || '100%';
+    }
+
+    // ==================== Modal Controls ====================
+    function closeEditModal() {
+        document.getElementById('editBoxModal').style.display = 'none';
+        selectedChannels = [];
+    }
+
+    function closePreviewModal() {
+        document.getElementById('previewModal').style.display = 'none';
+    }
+
+    // ==================== Color Sync ====================
+    document.getElementById('templateBgColor')?.addEventListener('input', function() {
+        document.getElementById('templateBgColorText').value = this.value;
+    });
+
+    document.getElementById('templateTextColor')?.addEventListener('input', function() {
+        document.getElementById('templateTextColorText').value = this.value;
+    });
+
+    document.getElementById('templateBodyBgColor')?.addEventListener('input', function() {
+        document.getElementById('templateBodyBgColorText').value = this.value;
+    });
 
     window.onclick = function(event) {
         if (event.target.classList.contains('modal')) {
             event.target.style.display = 'none';
         }
     }
-
-    // ========== Initialize ==========
-    window.addEventListener('load', function() {
-        initDragAndDrop();
-        setTimeout(refreshPreview, 500);
-    });
 </script>
 
 <%- include('partials/footer') %>

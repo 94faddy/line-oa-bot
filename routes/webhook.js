@@ -326,10 +326,12 @@ async function handleEvent(
     }
     
     console.log(`🎉 [${channelConfig.name}] Creating Welcome Message...`);
-    const welcomeMessage = createWelcomeFlexMessage();
+    
+    // ส่ง channelId ไปด้วยเพื่อตรวจสอบว่า channel นี้ถูกเลือกใช้งานหรือไม่
+    const welcomeMessage = createWelcomeFlexMessage(channelId);
     
     if (!welcomeMessage) {
-      console.log(`⚠️ [${channelConfig.name}] Welcome message is NULL - check config`);
+      console.log(`⚠️ [${channelConfig.name}] Welcome message is NULL - check config or channel is not selected`);
       return null;
     }
 

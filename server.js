@@ -268,7 +268,7 @@ const { setupWebhookRoute } = require('./routes/webhook');
 // ใช้งาน Routes
 app.use('/', authRouter);
 app.use('/', setupDashboardRoute(requireLogin, appConfig, userMessageHistory, promotionsConfig));
-app.use('/', setupWelcomeRoutes(requireLogin));
+app.use('/', setupWelcomeRoutes(requireLogin, appConfig)); // <- ส่ง appConfig ไปด้วย
 app.use('/', setupActivitiesRoutes(requireLogin, appConfig, userMessageHistory, saveConfig));
 app.use('/', setupPromotionsRoutes(requireLogin));
 app.use('/', setupFlexRoutes(requireLogin));
@@ -314,7 +314,7 @@ app.get('/health', (req, res) => {
     quickReplyEnabled: quickReplyConfig.quickReplySettings.enabled,
     welcomeEnabled: welcomeConfig.welcomeSettings.enabled,
     liffEnabled: liffConfig.liffSettings.enabled,
-    version: '4.1'
+    version: '4.2'
   });
 });
 
@@ -324,7 +324,7 @@ const DOMAIN = process.env.DOMAIN;
 
 app.listen(PORT, () => {
   console.log('='.repeat(70));
-  console.log('🚀 LINE OA Bot Server Started! (Version 4.1 - Broadcast System)');
+  console.log('🚀 LINE OA Bot Server Started! (Version 4.2 - Welcome Channel Selection)');
   console.log('='.repeat(70));
   console.log(`📡 Server running on port ${PORT}`);
 
@@ -365,6 +365,8 @@ app.listen(PORT, () => {
   console.log(`   📦 Using MessageBoxes: ${messageBoxesCount}`);
   
   console.log(`👋 Welcome Message: ${welcomeConfig.welcomeSettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
+  console.log(`   📝 Editor Mode: ${welcomeConfig.welcomeSettings.editorMode || 'Template'}`);
+  console.log(`   📱 Selected Channels: ${welcomeConfig.welcomeSettings.enabledChannels ? welcomeConfig.welcomeSettings.enabledChannels.length : 0}`);
   console.log(`💬 Flex Messages:  ${quickReplyConfig.flexMessageSettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
   console.log(`🔘 Quick Reply:    ${quickReplyConfig.quickReplySettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
   console.log(`📤 LIFF Share:     ${liffConfig.liffSettings.enabled ? '✅ Enabled' : '❌ Disabled'}`);
@@ -383,7 +385,12 @@ app.listen(PORT, () => {
         if (channel.features?.activities) features.push('Activities');
         if (channel.features?.promotions) features.push('Promotions');
         if (channel.features?.flexMessages) features.push('Flex');
-        console.log(`   ✅ ${channel.name} [${features.join(', ')}]`);
+        
+        // ตรวจสอบว่า channel นี้ถูกเลือกใช้ Welcome หรือไม่
+        const isWelcomeEnabled = welcomeConfig.welcomeSettings.enabledChannels && 
+                                welcomeConfig.welcomeSettings.enabledChannels.includes(channel.id);
+        
+        console.log(`   ✅ ${channel.name} [${features.join(', ')}]${isWelcomeEnabled ? ' 👋' : ''}`);
       }
     });
   }
@@ -414,7 +421,7 @@ app.listen(PORT, () => {
   console.log('   ✅ Cooldown Toggle: เปิด/ปิด Cooldown แยกแต่ละกิจกรรม');
   console.log('   ✅ Shared Keywords: อนุญาต/ไม่อนุญาตคีย์เวิร์ดซ้ำระหว่างกิจกรรม');
   console.log('   ✅ Feature Control: เลือกฟีเจอร์แยกตาม Channel');
-  console.log('   ✅ Welcome Message: ทักทายเพื่อนใหม่อัตโนมัติ');
+  console.log('   ✅ Welcome Message: Template Builder + JSON Editor + Channel Selection');
   console.log('   ✅ กิจกรรมแชร์: จัดการข้อความและ Cooldown แยกแต่ละกิจกรรม');
   console.log('   ✅ โปรโมชั่น: สร้าง Flex Messages สวยงาม');
   console.log('   ✅ Flex Messages: สุ่มส่ง Flex + จัดการผ่าน Dashboard');

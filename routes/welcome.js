@@ -12,70 +12,89 @@ if (!fs.existsSync(WELCOME_DIR)) {
   fs.mkdirSync(WELCOME_DIR, { recursive: true });
 }
 
+// Default Config Structure
+const getDefaultConfig = () => ({
+  welcomeSettings: {
+    enabled: true,
+    showOnFollow: true
+  },
+  welcomeBoxes: []
+});
+
 // สร้างไฟล์ config.json สำหรับ Welcome Message ถ้ายังไม่มี
 if (!fs.existsSync(WELCOME_CONFIG_PATH)) {
-  const defaultConfig = {
-    welcomeSettings: {
-      enabled: true,
-      showOnFollow: true,
-      title: "ยินดีต้อนรับสู่ W99! 🎉",
-      description: "ขอบคุณที่เป็นเพื่อนกับเรา เลือกเมนูด้านล่างเพื่อเริ่มต้นใช้งาน",
-      backgroundColor: "#667eea",
-      textColor: "#ffffff",
-      bodyBackgroundColor: "#ffffff"
-    },
-    welcomeButtons: [
-      {
-        id: "btn-welcome-1",
-        type: "uri",
-        label: "🎨 โปรโมชั่น",
-        uri: "https://m.w99.in/promotions",
-        enabled: true,
-        color: "#667eea",
-        order: 0
-      },
-      {
-        id: "btn-welcome-2",
-        type: "message",
-        label: "🎁 รับเครดิตฟรี",
-        text: "ฟรี",
-        enabled: true,
-        color: "#28a745",
-        order: 1
-      },
-      {
-        id: "btn-welcome-3",
-        type: "uri",
-        label: "📝 สมัครสมาชิก",
-        uri: "https://m.w99.in/register",
-        enabled: true,
-        color: "#ffc107",
-        order: 2
-      }
-    ]
-  };
-  fs.writeFileSync(WELCOME_CONFIG_PATH, JSON.stringify(defaultConfig, null, 2), 'utf8');
+  fs.writeFileSync(WELCOME_CONFIG_PATH, JSON.stringify(getDefaultConfig(), null, 2), 'utf8');
 }
 
 // โหลด Welcome Config
 let welcomeConfig = JSON.parse(fs.readFileSync(WELCOME_CONFIG_PATH, 'utf8'));
 
-// Migration: เพิ่ม bodyBackgroundColor ถ้ายังไม่มี
-if (!welcomeConfig.welcomeSettings.bodyBackgroundColor) {
-  welcomeConfig.welcomeSettings.bodyBackgroundColor = "#ffffff";
-  fs.writeFileSync(WELCOME_CONFIG_PATH, JSON.stringify(welcomeConfig, null, 2), 'utf8');
+// Migration: แปลงจาก config เดิมเป็นแบบใหม่
+let needsSave = false;
+
+// ถ้ามี welcomeButtons แบบเดิม ให้แปลงเป็น welcomeBox
+if (welcomeConfig.welcomeButtons && !welcomeConfig.welcomeBoxes) {
+  console.log('🔄 Migrating old welcome config to new format...');
+  
+  const newBox = {
+    id: 'box-' + Date.now(),
+    name: 'Welcome Box 1',
+    editorMode: welcomeConfig.welcomeSettings?.editorMode || 'template',
+    enabledChannels: welcomeConfig.welcomeSettings?.enabledChannels || [],
+    enabled: true,
+    templateSettings: {
+      title: welcomeConfig.welcomeSettings?.title || "ยินดีต้อนรับ!",
+      description: welcomeConfig.welcomeSettings?.description || "ขอบคุณที่เป็นเพื่อนกับเรา",
+      backgroundColor: welcomeConfig.welcomeSettings?.backgroundColor || "#667eea",
+      textColor: welcomeConfig.welcomeSettings?.textColor || "#ffffff",
+      bodyBackgroundColor: welcomeConfig.welcomeSettings?.bodyBackgroundColor || "#ffffff",
+      backgroundImageUrl: welcomeConfig.welcomeSettings?.backgroundImageUrl || null,
+      buttons: welcomeConfig.welcomeButtons || []
+    },
+    customFlexJson: welcomeConfig.welcomeSettings?.customFlexJson || null,
+    createdAt: new Date().toISOString()
+  };
+  
+  welcomeConfig.welcomeBoxes = [newBox];
+  delete welcomeConfig.welcomeButtons;
+  
+  // ลบ settings เก่าที่ไม่จำเป็น
+  welcomeConfig.welcomeSettings = {
+    enabled: welcomeConfig.welcomeSettings?.enabled !== false,
+    showOnFollow: welcomeConfig.welcomeSettings?.showOnFollow !== false
+  };
+  
+  needsSave = true;
 }
 
-// Migration: เพิ่ม order ให้กับปุ่มที่ยังไม่มี
-let needsSave = false;
-welcomeConfig.welcomeButtons.forEach((btn, index) => {
-  if (btn.order === undefined) {
-    btn.order = index;
-    needsSave = true;
-  }
-});
+// ลบ priority จาก boxes เก่า
+if (welcomeConfig.welcomeBoxes) {
+  welcomeConfig.welcomeBoxes.forEach(box => {
+    if (box.priority !== undefined) {
+      delete box.priority;
+      needsSave = true;
+    }
+  });
+}
+
+// ตรวจสอบว่ามี welcomeBoxes หรือไม่
+if (!welcomeConfig.welcomeBoxes) {
+  welcomeConfig.welcomeBoxes = [];
+  needsSave = true;
+}
+
+// ตรวจสอบ welcomeSettings
+if (!welcomeConfig.welcomeSettings) {
+  welcomeConfig.welcomeSettings = {
+    enabled: true,
+    showOnFollow: true
+  };
+  needsSave = true;
+}
+
 if (needsSave) {
   fs.writeFileSync(WELCOME_CONFIG_PATH, JSON.stringify(welcomeConfig, null, 2), 'utf8');
+  console.log('✅ Migration completed');
 }
 
 // ฟังก์ชันบันทึก Welcome Config
@@ -83,54 +102,98 @@ function saveWelcomeConfig() {
   fs.writeFileSync(WELCOME_CONFIG_PATH, JSON.stringify(welcomeConfig, null, 2), 'utf8');
 }
 
-// ฟังก์ชันสร้าง Flex Message สำหรับ Welcome
-function createWelcomeFlexMessage() {
+// ฟังก์ชันสร้าง Flex Message สำหรับ Welcome (หา Box ที่เหมาะสมกับ Channel)
+function createWelcomeFlexMessage(channelId = null) {
   try {
-    // ตรวจสอบว่า config ถูกโหลดมาหรือไม่
-    if (!welcomeConfig || !welcomeConfig.welcomeSettings) {
-      console.error('❌ Welcome config is not loaded properly');
+    // ตรวจสอบว่า Welcome ถูกเปิดใช้งานหรือไม่
+    if (!welcomeConfig?.welcomeSettings?.enabled) {
+      console.log('ℹ️ Welcome is globally disabled');
       return null;
     }
 
-    if (!welcomeConfig.welcomeSettings.enabled) {
-      console.log('ℹ️ Welcome is disabled in config');
+    // หา Welcome Box แรกที่ใช้ได้กับ channel นี้
+    const availableBox = welcomeConfig.welcomeBoxes.find(box => {
+      // Box ต้องเปิดใช้งาน
+      if (!box.enabled) return false;
+      
+      // ถ้า box ไม่ได้เลือก channel ไว้เลย = ใช้กับทุก channel
+      if (!box.enabledChannels || box.enabledChannels.length === 0) {
+        return true;
+      }
+      
+      // ถ้าระบุ channelId ให้ตรวจสอบว่าอยู่ในรายการหรือไม่
+      if (channelId) {
+        return box.enabledChannels.includes(channelId);
+      }
+      
+      return true;
+    });
+
+    if (!availableBox) {
+      console.log(`ℹ️ No Welcome Box available for channel: ${channelId}`);
       return null;
     }
-
-    const settings = welcomeConfig.welcomeSettings;
     
-    // เรียงลำดับปุ่มตาม order แล้วกรองเฉพาะที่เปิดใช้งาน
-    const enabledButtons = (welcomeConfig.welcomeButtons || [])
-      .filter(btn => btn.enabled)
+    console.log(`📝 Using Welcome Box: ${availableBox.name} (ID: ${availableBox.id})`);
+
+    // สร้าง Flex Message จาก Box ที่เลือก
+    if (availableBox.editorMode === 'json' && availableBox.customFlexJson) {
+      try {
+        let flexJson;
+        if (typeof availableBox.customFlexJson === 'string') {
+          flexJson = JSON.parse(availableBox.customFlexJson);
+        } else {
+          flexJson = availableBox.customFlexJson;
+        }
+
+        // Validate ว่าเป็น Flex Message ที่ถูกต้อง
+        if (!flexJson.type || (flexJson.type !== 'bubble' && flexJson.type !== 'carousel')) {
+          console.error('❌ Invalid Flex JSON: must be bubble or carousel');
+          return null;
+        }
+
+        console.log('✅ Using custom JSON Flex Message');
+        
+        return {
+          type: "flex",
+          altText: availableBox.name || "Welcome Message",
+          contents: flexJson
+        };
+      } catch (error) {
+        console.error('❌ Error parsing custom JSON:', error);
+        // Fallback to template mode ถ้า JSON error
+      }
+    }
+
+    // Template Mode - สร้าง Flex จาก template
+    const settings = availableBox.templateSettings;
+    
+    if (!settings) {
+      console.error('❌ No template settings found in box');
+      return null;
+    }
+
+    // เรียงลำดับปุ่มและกรองเฉพาะที่เปิดใช้งาน
+    const enabledButtons = (settings.buttons || [])
+      .filter(btn => btn.enabled !== false)
       .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-    if (enabledButtons.length === 0) {
-      console.log('⚠️ No enabled buttons found');
-      return null;
-    }
+    console.log(`📝 Creating Welcome Flex with ${enabledButtons.length} buttons (Template Mode)`);
 
-    console.log(`📝 Creating Welcome Flex with ${enabledButtons.length} buttons`);
-
-    // สร้าง Button Actions พร้อม validation เข้มงวด
+    // สร้าง Button Actions
     const buttonContents = enabledButtons.map(btn => {
-      // ตรวจสอบ label
       if (!btn.label || typeof btn.label !== 'string' || btn.label.trim() === '') {
-        console.warn(`⚠️ Button ${btn.id} has invalid label, skipping`);
         return null;
       }
 
       let action;
       if (btn.type === 'uri') {
-        // ตรวจสอบ URI
         if (!btn.uri || typeof btn.uri !== 'string' || btn.uri.trim() === '') {
-          console.warn(`⚠️ Button ${btn.id} (${btn.label}) has invalid URI, skipping`);
           return null;
         }
-        // ตรวจสอบว่า URI เป็น URL ที่ถูกต้อง
         try {
           new URL(btn.uri);
         } catch (e) {
-          console.warn(`⚠️ Button ${btn.id} (${btn.label}) has malformed URI: ${btn.uri}`);
           return null;
         }
         action = {
@@ -139,9 +202,7 @@ function createWelcomeFlexMessage() {
           uri: btn.uri.trim()
         };
       } else if (btn.type === 'message') {
-        // ตรวจสอบ text
         if (!btn.text || typeof btn.text !== 'string' || btn.text.trim() === '') {
-          console.warn(`⚠️ Button ${btn.id} (${btn.label}) has invalid text, skipping`);
           return null;
         }
         action = {
@@ -150,7 +211,6 @@ function createWelcomeFlexMessage() {
           text: btn.text.trim()
         };
       } else {
-        console.warn(`⚠️ Button ${btn.id} has invalid type: ${btn.type}`);
         return null;
       }
 
@@ -163,14 +223,6 @@ function createWelcomeFlexMessage() {
       };
     }).filter(btn => btn !== null);
 
-    // ตรวจสอบว่ามีปุ่มที่ valid หรือไม่
-    if (buttonContents.length === 0) {
-      console.error('❌ No valid buttons found after filtering');
-      return null;
-    }
-
-    console.log(`✅ Created ${buttonContents.length} valid buttons`);
-
     // สร้าง Body Contents
     const bodyContents = [
       {
@@ -181,47 +233,28 @@ function createWelcomeFlexMessage() {
         wrap: true,
         align: "center",
         margin: "md"
-      },
-      {
+      }
+    ];
+
+    // เพิ่มปุ่มถ้ามี
+    if (buttonContents.length > 0) {
+      bodyContents.push({
         type: "separator",
         margin: "lg"
-      },
-      {
+      });
+      bodyContents.push({
         type: "box",
         layout: "vertical",
         contents: buttonContents,
         spacing: "sm",
         margin: "lg"
-      }
-    ];
+      });
+    }
 
     // สร้าง Flex Message
     const flexMessage = {
       type: "bubble",
-      size: "mega",
-      header: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "text",
-            text: settings.title || "ยินดีต้อนรับ!",
-            color: settings.textColor || "#ffffff",
-            size: "xl",
-            weight: "bold",
-            align: "center"
-          }
-        ],
-        backgroundColor: settings.backgroundColor || "#667eea",
-        paddingAll: "20px"
-      },
-      body: {
-        type: "box",
-        layout: "vertical",
-        contents: bodyContents,
-        paddingAll: "20px",
-        backgroundColor: settings.bodyBackgroundColor || "#ffffff"
-      }
+      size: "mega"
     };
 
     // เพิ่ม Hero Image ถ้ามี
@@ -239,146 +272,194 @@ function createWelcomeFlexMessage() {
         };
         console.log('✅ Added hero image:', settings.backgroundImageUrl);
       } catch (e) {
-        console.warn('⚠️ Invalid background image URL, skipping hero');
+        console.warn('⚠️ Invalid background image URL');
       }
     }
 
+    // เพิ่ม Header
+    flexMessage.header = {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "text",
+          text: settings.title || "ยินดีต้อนรับ!",
+          color: settings.textColor || "#ffffff",
+          size: "xl",
+          weight: "bold",
+          align: "center"
+        }
+      ],
+      backgroundColor: settings.backgroundColor || "#667eea",
+      paddingAll: "20px"
+    };
+
+    // เพิ่ม Body
+    flexMessage.body = {
+      type: "box",
+      layout: "vertical",
+      contents: bodyContents,
+      paddingAll: "20px",
+      backgroundColor: settings.bodyBackgroundColor || "#ffffff"
+    };
+
     console.log('✅ Welcome Flex Message created successfully');
     
-    const finalMessage = {
+    return {
       type: "flex",
       altText: settings.title || "ยินดีต้อนรับ!",
       contents: flexMessage
     };
 
-    // Validate ขั้นสุดท้าย
-    if (!finalMessage.type || !finalMessage.altText || !finalMessage.contents) {
-      console.error('❌ Final message validation failed');
-      return null;
-    }
-
-    return finalMessage;
   } catch (error) {
     console.error('❌ Error creating welcome flex message:', error);
-    console.error('Error stack:', error.stack);
     return null;
   }
 }
 
 // Setup Welcome Routes
-function setupWelcomeRoutes(requireLogin) {
+function setupWelcomeRoutes(requireLogin, appConfig) {
   
   // หน้าจัดการ Welcome Message
   router.get('/welcome', requireLogin, (req, res) => {
-    // เรียงลำดับปุ่มตาม order ก่อนส่งไปแสดง
-    const sortedButtons = [...welcomeConfig.welcomeButtons].sort((a, b) => (a.order || 0) - (b.order || 0));
+    const lineChannels = appConfig.lineChannels || [];
     
     res.render('welcome', {
       settings: welcomeConfig.welcomeSettings,
-      buttons: sortedButtons,
-      totalButtons: welcomeConfig.welcomeButtons.length,
-      enabledButtons: welcomeConfig.welcomeButtons.filter(b => b.enabled).length,
+      welcomeBoxes: welcomeConfig.welcomeBoxes || [],
+      lineChannels: lineChannels,
       username: req.session.username
     });
   });
 
-  // อัพเดทการตั้งค่า Welcome
+  // สร้าง Welcome Box ใหม่
+  router.post('/welcome/create-box', requireLogin, (req, res) => {
+    try {
+      const newBox = {
+        id: 'box-' + Date.now(),
+        name: req.body.name || `Welcome Box ${(welcomeConfig.welcomeBoxes?.length || 0) + 1}`,
+        editorMode: 'template',
+        enabledChannels: [],
+        enabled: true,
+        templateSettings: {
+          title: "ยินดีต้อนรับ! 🎉",
+          description: "ขอบคุณที่เป็นเพื่อนกับเรา",
+          backgroundColor: "#667eea",
+          textColor: "#ffffff",
+          bodyBackgroundColor: "#ffffff",
+          backgroundImageUrl: null,
+          buttons: []
+        },
+        customFlexJson: null,
+        createdAt: new Date().toISOString()
+      };
+
+      if (!welcomeConfig.welcomeBoxes) {
+        welcomeConfig.welcomeBoxes = [];
+      }
+      
+      welcomeConfig.welcomeBoxes.push(newBox);
+      saveWelcomeConfig();
+      
+      res.json({ success: true, message: 'สร้าง Welcome Box สำเร็จ', boxId: newBox.id });
+    } catch (error) {
+      console.error('Error creating welcome box:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  // อัพเดทการตั้งค่า Welcome Settings (Global)
   router.post('/welcome/settings', requireLogin, (req, res) => {
     try {
-      const { enabled, showOnFollow, title, description, backgroundColor, textColor, bodyBackgroundColor, backgroundImageUrl } = req.body;
+      const { enabled, showOnFollow } = req.body;
       
       welcomeConfig.welcomeSettings.enabled = enabled === 'true' || enabled === true;
       welcomeConfig.welcomeSettings.showOnFollow = showOnFollow === 'true' || showOnFollow === true;
-      welcomeConfig.welcomeSettings.title = (title && title.trim()) || welcomeConfig.welcomeSettings.title;
-      welcomeConfig.welcomeSettings.description = (description && description.trim()) || welcomeConfig.welcomeSettings.description;
-      welcomeConfig.welcomeSettings.backgroundColor = (backgroundColor && backgroundColor.trim()) || '#667eea';
-      welcomeConfig.welcomeSettings.textColor = (textColor && textColor.trim()) || '#ffffff';
-      welcomeConfig.welcomeSettings.bodyBackgroundColor = (bodyBackgroundColor && bodyBackgroundColor.trim()) || '#ffffff';
-      
-      // จัดการ backgroundImageUrl
-      if (backgroundImageUrl && backgroundImageUrl.trim() !== '') {
-        try {
-          new URL(backgroundImageUrl.trim());
-          welcomeConfig.welcomeSettings.backgroundImageUrl = backgroundImageUrl.trim();
-        } catch (e) {
-          console.warn('Invalid background image URL provided, ignoring');
-          delete welcomeConfig.welcomeSettings.backgroundImageUrl;
-        }
-      } else {
-        delete welcomeConfig.welcomeSettings.backgroundImageUrl;
-      }
       
       saveWelcomeConfig();
-      
-      console.log('✅ Welcome settings updated:', {
-        enabled: welcomeConfig.welcomeSettings.enabled,
-        showOnFollow: welcomeConfig.welcomeSettings.showOnFollow,
-        hasBackgroundImage: !!welcomeConfig.welcomeSettings.backgroundImageUrl,
-        bodyBackgroundColor: welcomeConfig.welcomeSettings.bodyBackgroundColor
-      });
       
       res.json({ success: true, message: 'บันทึกการตั้งค่าสำเร็จ' });
     } catch (error) {
-      console.error('Error updating welcome settings:', error);
       res.status(500).json({ success: false, message: error.message });
     }
   });
 
-  // เพิ่มปุ่ม Welcome
-  router.post('/welcome/add-button', requireLogin, (req, res) => {
+  // อัพเดท Welcome Box
+  router.post('/welcome/update-box', requireLogin, (req, res) => {
     try {
-      const { type, label, uri, text, color } = req.body;
+      const { boxId, ...updates } = req.body;
       
-      if (!label || label.trim() === '') {
-        return res.status(400).json({ success: false, message: 'กรุณากรอก Label' });
+      const boxIndex = welcomeConfig.welcomeBoxes.findIndex(box => box.id === boxId);
+      if (boxIndex === -1) {
+        return res.status(404).json({ success: false, message: 'ไม่พบ Welcome Box' });
       }
 
-      if (type === 'uri' && (!uri || uri.trim() === '')) {
-        return res.status(400).json({ success: false, message: 'กรุณากรอก URI สำหรับปุ่มประเภท Link' });
+      const box = welcomeConfig.welcomeBoxes[boxIndex];
+
+      // อัพเดทค่าต่างๆ
+      if (updates.name !== undefined) box.name = updates.name;
+      if (updates.enabled !== undefined) box.enabled = updates.enabled === true || updates.enabled === 'true';
+      if (updates.editorMode !== undefined) box.editorMode = updates.editorMode;
+      if (updates.enabledChannels !== undefined) box.enabledChannels = updates.enabledChannels;
+
+      // อัพเดท Template Settings
+      if (updates.templateSettings) {
+        box.templateSettings = { ...box.templateSettings, ...updates.templateSettings };
       }
 
-      if (type === 'message' && (!text || text.trim() === '')) {
-        return res.status(400).json({ success: false, message: 'กรุณากรอก Text สำหรับปุ่มประเภท Message' });
+      // อัพเดท Custom JSON
+      if (updates.editorMode === 'json' && updates.customFlexJson !== undefined) {
+        try {
+          // Validate JSON
+          if (updates.customFlexJson) {
+            const parsed = JSON.parse(updates.customFlexJson);
+            if (!parsed.type || (parsed.type !== 'bubble' && parsed.type !== 'carousel')) {
+              return res.status(400).json({ 
+                success: false, 
+                message: 'JSON ต้องเป็น Flex Message ประเภท bubble หรือ carousel' 
+              });
+            }
+          }
+          box.customFlexJson = updates.customFlexJson;
+        } catch (e) {
+          return res.status(400).json({ 
+            success: false, 
+            message: 'รูปแบบ JSON ไม่ถูกต้อง: ' + e.message 
+          });
+        }
       }
 
-      // หา order ใหม่ (เอาค่าสูงสุด + 1)
-      const maxOrder = welcomeConfig.welcomeButtons.length > 0 
-        ? Math.max(...welcomeConfig.welcomeButtons.map(b => b.order || 0))
-        : -1;
-
-      const newButton = {
-        id: `btn-welcome-${Date.now()}`,
-        type: type,
-        label: label.trim(),
-        enabled: true,
-        color: (color && color.trim()) || '#667eea',
-        order: maxOrder + 1
-      };
-
-      if (type === 'uri') {
-        newButton.uri = uri.trim();
-      } else if (type === 'message') {
-        newButton.text = text.trim();
-      }
-
-      welcomeConfig.welcomeButtons.push(newButton);
       saveWelcomeConfig();
       
-      res.json({ success: true, message: 'เพิ่มปุ่มสำเร็จ' });
+      res.json({ success: true, message: 'อัพเดท Welcome Box สำเร็จ' });
+    } catch (error) {
+      console.error('Error updating welcome box:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  // ลบ Welcome Box
+  router.post('/welcome/delete-box', requireLogin, (req, res) => {
+    try {
+      const { boxId } = req.body;
+      
+      welcomeConfig.welcomeBoxes = welcomeConfig.welcomeBoxes.filter(box => box.id !== boxId);
+      saveWelcomeConfig();
+      
+      res.json({ success: true, message: 'ลบ Welcome Box สำเร็จ' });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
     }
   });
 
-  // อัพเดทปุ่ม Welcome
-  router.post('/welcome/update-button', requireLogin, (req, res) => {
+  // เพิ่มปุ่มใน Welcome Box
+  router.post('/welcome/add-button', requireLogin, (req, res) => {
     try {
-      const { id, type, label, uri, text, enabled, color } = req.body;
+      const { boxId, type, label, uri, text, color } = req.body;
       
-      const index = welcomeConfig.welcomeButtons.findIndex(btn => btn.id === id);
-      
-      if (index === -1) {
-        return res.status(404).json({ success: false, message: 'ไม่พบปุ่ม' });
+      const box = welcomeConfig.welcomeBoxes.find(b => b.id === boxId);
+      if (!box) {
+        return res.status(404).json({ success: false, message: 'ไม่พบ Welcome Box' });
       }
 
       if (!label || label.trim() === '') {
@@ -393,22 +474,69 @@ function setupWelcomeRoutes(requireLogin) {
         return res.status(400).json({ success: false, message: 'กรุณากรอก Text' });
       }
 
-      // เก็บ order เดิมไว้
-      const currentOrder = welcomeConfig.welcomeButtons[index].order;
+      if (!box.templateSettings) {
+        box.templateSettings = { buttons: [] };
+      }
+      if (!box.templateSettings.buttons) {
+        box.templateSettings.buttons = [];
+      }
 
-      welcomeConfig.welcomeButtons[index] = {
-        id: id,
+      const maxOrder = box.templateSettings.buttons.length > 0 
+        ? Math.max(...box.templateSettings.buttons.map(b => b.order || 0))
+        : -1;
+
+      const newButton = {
+        id: `btn-${Date.now()}`,
         type: type,
         label: label.trim(),
-        enabled: enabled === 'true' || enabled === true,
+        enabled: true,
         color: (color && color.trim()) || '#667eea',
-        order: currentOrder !== undefined ? currentOrder : index
+        order: maxOrder + 1
       };
 
       if (type === 'uri') {
-        welcomeConfig.welcomeButtons[index].uri = uri.trim();
+        newButton.uri = uri.trim();
       } else if (type === 'message') {
-        welcomeConfig.welcomeButtons[index].text = text.trim();
+        newButton.text = text.trim();
+      }
+
+      box.templateSettings.buttons.push(newButton);
+      saveWelcomeConfig();
+      
+      res.json({ success: true, message: 'เพิ่มปุ่มสำเร็จ' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  // อัพเดทปุ่มใน Welcome Box
+  router.post('/welcome/update-button', requireLogin, (req, res) => {
+    try {
+      const { boxId, buttonId, ...updates } = req.body;
+      
+      const box = welcomeConfig.welcomeBoxes.find(b => b.id === boxId);
+      if (!box || !box.templateSettings || !box.templateSettings.buttons) {
+        return res.status(404).json({ success: false, message: 'ไม่พบ Box หรือปุ่ม' });
+      }
+
+      const buttonIndex = box.templateSettings.buttons.findIndex(btn => btn.id === buttonId);
+      if (buttonIndex === -1) {
+        return res.status(404).json({ success: false, message: 'ไม่พบปุ่ม' });
+      }
+
+      const button = box.templateSettings.buttons[buttonIndex];
+      
+      // อัพเดทค่าต่างๆ
+      if (updates.type !== undefined) button.type = updates.type;
+      if (updates.label !== undefined) button.label = updates.label;
+      if (updates.enabled !== undefined) button.enabled = updates.enabled === true || updates.enabled === 'true';
+      if (updates.color !== undefined) button.color = updates.color;
+      if (updates.order !== undefined) button.order = updates.order;
+      
+      if (button.type === 'uri' && updates.uri !== undefined) {
+        button.uri = updates.uri;
+      } else if (button.type === 'message' && updates.text !== undefined) {
+        button.text = updates.text;
       }
 
       saveWelcomeConfig();
@@ -419,42 +547,20 @@ function setupWelcomeRoutes(requireLogin) {
     }
   });
 
-  // อัพเดทลำดับปุ่ม (ใหม่)
-  router.post('/welcome/reorder-buttons', requireLogin, (req, res) => {
-    try {
-      const { buttonIds } = req.body;
-      
-      if (!Array.isArray(buttonIds)) {
-        return res.status(400).json({ success: false, message: 'Invalid button IDs format' });
-      }
-
-      // อัพเดท order ตามลำดับใหม่
-      buttonIds.forEach((id, index) => {
-        const btn = welcomeConfig.welcomeButtons.find(b => b.id === id);
-        if (btn) {
-          btn.order = index;
-        }
-      });
-
-      saveWelcomeConfig();
-      
-      res.json({ success: true, message: 'จัดเรียงปุ่มสำเร็จ' });
-    } catch (error) {
-      console.error('Error reordering buttons:', error);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  });
-
-  // ลบปุ่ม Welcome
+  // ลบปุ่มใน Welcome Box
   router.post('/welcome/delete-button', requireLogin, (req, res) => {
     try {
-      const { id } = req.body;
+      const { boxId, buttonId } = req.body;
       
-      welcomeConfig.welcomeButtons = welcomeConfig.welcomeButtons.filter(btn => btn.id !== id);
+      const box = welcomeConfig.welcomeBoxes.find(b => b.id === boxId);
+      if (!box || !box.templateSettings || !box.templateSettings.buttons) {
+        return res.status(404).json({ success: false, message: 'ไม่พบ Box หรือปุ่ม' });
+      }
+
+      box.templateSettings.buttons = box.templateSettings.buttons.filter(btn => btn.id !== buttonId);
       
       // จัดเรียง order ใหม่
-      welcomeConfig.welcomeButtons
-        .sort((a, b) => (a.order || 0) - (b.order || 0))
+      box.templateSettings.buttons.sort((a, b) => (a.order || 0) - (b.order || 0))
         .forEach((btn, index) => {
           btn.order = index;
         });
@@ -467,19 +573,147 @@ function setupWelcomeRoutes(requireLogin) {
     }
   });
 
-  // Preview Welcome Message
-  router.get('/welcome/preview', requireLogin, (req, res) => {
+  // Preview Welcome Box
+  router.get('/welcome/preview/:boxId', requireLogin, (req, res) => {
     try {
-      const flexMessage = createWelcomeFlexMessage();
+      const { boxId } = req.params;
+      const box = welcomeConfig.welcomeBoxes.find(b => b.id === boxId);
       
-      if (flexMessage) {
-        res.json({ success: true, flex: flexMessage.contents });
-      } else {
-        res.json({ success: false, message: 'ไม่สามารถสร้าง Welcome Message ได้ กรุณาตรวจสอบการตั้งค่า' });
+      if (!box) {
+        return res.status(404).json({ success: false, message: 'ไม่พบ Welcome Box' });
       }
+
+      let flexContents;
+      
+      if (box.editorMode === 'json' && box.customFlexJson) {
+        try {
+          flexContents = JSON.parse(box.customFlexJson);
+        } catch (e) {
+          return res.json({ success: false, message: 'JSON ไม่ถูกต้อง' });
+        }
+      } else {
+        // สร้าง Flex จาก template - ใช้ logic เดียวกับ createWelcomeFlexMessage
+        const settings = box.templateSettings;
+        
+        const enabledButtons = (settings.buttons || [])
+          .filter(btn => btn.enabled !== false)
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        const buttonContents = enabledButtons.map(btn => {
+          if (!btn.label) return null;
+          
+          let action;
+          if (btn.type === 'uri' && btn.uri) {
+            action = { type: 'uri', label: btn.label, uri: btn.uri };
+          } else if (btn.type === 'message' && btn.text) {
+            action = { type: 'message', label: btn.label, text: btn.text };
+          } else {
+            return null;
+          }
+
+          return {
+            type: "button",
+            action: action,
+            style: "primary",
+            color: btn.color || "#667eea",
+            height: "sm"
+          };
+        }).filter(btn => btn !== null);
+
+        const bodyContents = [
+          {
+            type: "text",
+            text: settings.description || "ยินดีต้อนรับ",
+            color: "#666666",
+            size: "sm",
+            wrap: true,
+            align: "center",
+            margin: "md"
+          }
+        ];
+
+        if (buttonContents.length > 0) {
+          bodyContents.push({
+            type: "separator",
+            margin: "lg"
+          });
+          bodyContents.push({
+            type: "box",
+            layout: "vertical",
+            contents: buttonContents,
+            spacing: "sm",
+            margin: "lg"
+          });
+        }
+
+        flexContents = {
+          type: "bubble",
+          size: "mega"
+        };
+
+        if (settings.backgroundImageUrl) {
+          flexContents.hero = {
+            type: "image",
+            url: settings.backgroundImageUrl,
+            size: "full",
+            aspectRatio: "20:13",
+            aspectMode: "cover"
+          };
+        }
+
+        flexContents.header = {
+          type: "box",
+          layout: "vertical",
+          contents: [{
+            type: "text",
+            text: settings.title || "ยินดีต้อนรับ!",
+            color: settings.textColor || "#ffffff",
+            size: "xl",
+            weight: "bold",
+            align: "center"
+          }],
+          backgroundColor: settings.backgroundColor || "#667eea",
+          paddingAll: "20px"
+        };
+
+        flexContents.body = {
+          type: "box",
+          layout: "vertical",
+          contents: bodyContents,
+          paddingAll: "20px",
+          backgroundColor: settings.bodyBackgroundColor || "#ffffff"
+        };
+      }
+      
+      res.json({ success: true, flex: flexContents });
     } catch (error) {
       console.error('Error in preview:', error);
       res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  // Validate JSON
+  router.post('/welcome/validate-json', requireLogin, (req, res) => {
+    try {
+      const { json } = req.body;
+      
+      if (!json) {
+        return res.json({ success: false, message: 'กรุณาใส่ JSON' });
+      }
+
+      const parsed = JSON.parse(json);
+      
+      if (!parsed.type) {
+        return res.json({ success: false, message: 'JSON ต้องมี type field' });
+      }
+
+      if (parsed.type !== 'bubble' && parsed.type !== 'carousel') {
+        return res.json({ success: false, message: 'type ต้องเป็น bubble หรือ carousel' });
+      }
+
+      res.json({ success: true, message: 'JSON ถูกต้อง', flex: parsed });
+    } catch (error) {
+      res.json({ success: false, message: 'JSON ไม่ถูกต้อง: ' + error.message });
     }
   });
 

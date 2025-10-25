@@ -1,58 +1,92 @@
 {
   "welcomeSettings": {
     "enabled": true,
-    "showOnFollow": true,
-    "title": "ยินดีต้อนรับสู่ W99! 🎉",
-    "description": "ยินดีให้บริการ 24 ช.ม\nสามารถติดต่อสอบถามแอดมินได้24 ชม",
-    "backgroundColor": "#e3d10d",
-    "textColor": "#141414",
-    "bodyBackgroundColor": "#e5dcdc"
+    "showOnFollow": true
   },
-  "welcomeButtons": [
+  "welcomeBoxes": [
     {
-      "id": "btn-welcome-1",
-      "type": "message",
-      "label": "🎨 โปรโมชั่น",
-      "enabled": true,
-      "color": "#ed9907",
-      "text": "โปรโมชั่น",
-      "order": 2
+      "id": "box-1761432250793",
+      "name": "Welcome Box 1",
+      "editorMode": "template",
+      "enabledChannels": [],
+      "enabled": false,
+      "templateSettings": {
+        "title": "ยินดีต้อนรับสู่ W99! 🎉",
+        "description": "ยินดีให้บริการ 24 ช.ม\nสามารถติดต่อสอบถามแอดมินได้24 ชม",
+        "backgroundColor": "#e3d10d",
+        "textColor": "#141414",
+        "bodyBackgroundColor": "#e5dcdc",
+        "backgroundImageUrl": "",
+        "buttons": [
+          {
+            "id": "btn-welcome-1",
+            "type": "message",
+            "label": "🎨 โปรโมชั่น",
+            "enabled": true,
+            "color": "#ed9907",
+            "text": "โปรโมชั่น",
+            "order": 2
+          },
+          {
+            "id": "btn-welcome-2",
+            "type": "message",
+            "label": "🎁 รับเครดิตฟรี",
+            "enabled": true,
+            "color": "#28a745",
+            "text": "ฟรี",
+            "order": 1
+          },
+          {
+            "id": "btn-welcome-3",
+            "type": "uri",
+            "label": "📝 สมัครสมาชิก",
+            "enabled": true,
+            "color": "#c509c8",
+            "uri": "https://m.w99.in/register",
+            "order": 0
+          },
+          {
+            "id": "btn-welcome-4",
+            "type": "message",
+            "label": "🎮 เกมโบนัส",
+            "enabled": true,
+            "color": "#e53010",
+            "text": "โบนัสไทม์",
+            "order": 3
+          },
+          {
+            "id": "btn-welcome-5",
+            "type": "message",
+            "label": "🎛️ เลือกเมนู",
+            "enabled": true,
+            "color": "#0a37eb",
+            "text": "menu",
+            "order": 4
+          }
+        ]
+      },
+      "customFlexJson": null,
+      "createdAt": "2025-10-25T22:44:10.793Z"
     },
     {
-      "id": "btn-welcome-2",
-      "type": "message",
-      "label": "🎁 รับเครดิตฟรี",
+      "id": "box-1761432304735",
+      "name": "ทดสอบ",
+      "editorMode": "json",
+      "enabledChannels": [
+        "channel-1760958507894"
+      ],
       "enabled": true,
-      "color": "#28a745",
-      "text": "ฟรี",
-      "order": 1
-    },
-    {
-      "id": "btn-welcome-3",
-      "type": "uri",
-      "label": "📝 สมัครสมาชิก",
-      "enabled": true,
-      "color": "#c509c8",
-      "uri": "https://m.w99.in/register",
-      "order": 0
-    },
-    {
-      "id": "btn-welcome-4",
-      "type": "message",
-      "label": "🎮 เกมโบนัส",
-      "enabled": true,
-      "color": "#e53010",
-      "text": "โบนัสไทม์",
-      "order": 3
-    },
-    {
-      "id": "btn-welcome-5",
-      "type": "message",
-      "label": "🎛️ เลือกเมนู",
-      "enabled": true,
-      "color": "#0a37eb",
-      "text": "menu",
-      "order": 4
+      "templateSettings": {
+        "title": "ยินดีต้อนรับ! 🎉",
+        "description": "ขอบคุณที่เป็นเพื่อนกับเรา",
+        "backgroundColor": "#667eea",
+        "textColor": "#ffffff",
+        "bodyBackgroundColor": "#ffffff",
+        "backgroundImageUrl": null,
+        "buttons": []
+      },
+      "customFlexJson": "{\n  \"type\": \"bubble\",\n  \"body\": {\n    \"type\": \"box\",\n    \"layout\": \"vertical\",\n    \"contents\": [\n      {\n        \"type\": \"text\",\n        \"text\": \"PUNDEE99!\",\n        \"weight\": \"bold\",\n        \"color\": \"#1DB446\",\n        \"size\": \"sm\"\n      },\n      {\n        \"type\": \"text\",\n        \"text\": \"กรณีลืมรหัสผ่าน\",\n        \"weight\": \"bold\",\n        \"size\": \"xxl\",\n        \"margin\": \"md\"\n      },\n      {\n        \"type\": \"text\",\n        \"text\": \"เเจ้งข้อมูลดังนี้\",\n        \"size\": \"xs\",\n        \"color\": \"#aaaaaa\",\n        \"wrap\": true\n      },\n      {\n        \"type\": \"separator\",\n        \"margin\": \"xxl\"\n      },\n      {\n        \"type\": \"box\",\n        \"layout\": \"vertical\",\n        \"margin\": \"xxl\",\n        \"spacing\": \"sm\",\n        \"contents\": [\n          {\n            \"type\": \"box\",\n            \"layout\": \"horizontal\",\n            \"contents\": [\n              {\n                \"type\": \"text\",\n                \"text\": \"ชื่อ-นามสกุล :\",\n                \"size\": \"sm\",\n                \"color\": \"#555555\",\n                \"flex\": 0\n              },\n              {\n                \"type\": \"text\",\n                \"text\": \"✅ข้อมูลจริงที่สมัคร\",\n                \"size\": \"sm\",\n                \"color\": \"#111111\",\n                \"align\": \"end\"\n              }\n            ]\n          },\n          {\n            \"type\": \"box\",\n            \"layout\": \"horizontal\",\n            \"contents\": [\n              {\n                \"type\": \"text\",\n                \"text\": \"เบอร์โทรศัพท์ :\",\n                \"size\": \"sm\",\n                \"color\": \"#555555\",\n                \"flex\": 0\n              },\n              {\n                \"type\": \"text\",\n                \"text\": \"🔔ที่สมัครสมาชิก\",\n                \"size\": \"sm\",\n                \"color\": \"#111111\",\n                \"align\": \"end\"\n              }\n            ]\n          },\n          {\n            \"type\": \"separator\",\n            \"margin\": \"xxl\"\n          }\n        ]\n      },\n      {\n        \"type\": \"separator\",\n        \"margin\": \"xxl\"\n      },\n      {\n        \"type\": \"box\",\n        \"layout\": \"horizontal\",\n        \"margin\": \"md\",\n        \"contents\": [\n          {\n            \"type\": \"text\",\n            \"text\": \"Admin Porshe\",\n            \"size\": \"xs\",\n            \"color\": \"#aaaaaa\",\n            \"flex\": 0\n          },\n          {\n            \"type\": \"text\",\n            \"text\": \"#743289384279\",\n            \"color\": \"#aaaaaa\",\n            \"size\": \"xs\",\n            \"align\": \"end\"\n          }\n        ]\n      }\n    ]\n  },\n  \"styles\": {\n    \"footer\": {\n      \"separator\": true\n    }\n  }\n}",
+      "createdAt": "2025-10-25T22:45:04.735Z"
     }
   ]
 }
